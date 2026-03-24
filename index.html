@@ -6,12 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
   <!-- PWA мета-теги -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#222831">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Биллинг зоны">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="apple-mobile-web-app-title" content="Анализ биллинга и построение зон">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
@@ -40,6 +40,89 @@
       width: 100vw;
       overflow: hidden;
       position: relative;
+    }
+    
+    /* ========== SPLASH SCREEN ========== */
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      opacity: 1;
+      transition: opacity 1.0s ease-out;
+    }
+    
+    #splash-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    #splash-screen.removed {
+      display: none;
+    }
+    
+    .splash-content {
+      text-align: center;
+      color: white;
+      padding: 20px;
+    }
+    
+    .splash-logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+      animation: splash-pulse 2s ease-in-out infinite;
+      border-radius: 24px;
+      box-shadow: 0 10px 40px rgba(33, 150, 243, 0.4);
+    }
+    
+    @keyframes splash-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+    
+    .splash-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    
+    .splash-subtitle {
+      font-size: 14px;
+      opacity: 0.8;
+      margin: 0 0 30px 0;
+    }
+    
+    .splash-loader {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    .splash-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #2196f3;
+      border-radius: 50%;
+      animation: splash-spin 1s linear infinite;
+    }
+    
+    @keyframes splash-spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .splash-author {
+      font-size: 12px;
+      opacity: 0.5;
+      margin: 0;
     }
     
     /* Мобильная панель инструментов */
@@ -117,7 +200,6 @@
         transform: translateY(0);
       }
       
-      /* Ползунок для раскрытия */
       #sidebar .drag-handle {
         position: sticky;
         top: 0;
@@ -161,7 +243,6 @@
         flex-direction: column;
       }
       
-      /* Адаптация контролов */
       .field-grid {
         grid-template-columns: 80px 1fr;
         font-size: 13px;
@@ -197,7 +278,6 @@
         padding: 8px 0;
       }
       
-      /* Предотвращаем закрытие при вводе */
       #sidebar input, 
       #sidebar select, 
       #sidebar button {
@@ -316,51 +396,287 @@
       height: 20px;
     }
     
-    /* PWA кнопка установки */
-    #pwa-install-btn {
+    /* ========== ИКОНКА УСТАНОВКИ PWA ========== */
+    #pwa-install-icon {
       position: fixed;
-      bottom: 90px;
+      bottom: 20px;
       right: 20px;
       z-index: 1000;
-      background: #4caf50;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2196f3, #1976d2);
       color: white;
       border: none;
-      border-radius: 30px;
-      padding: 12px 20px;
-      font-size: 16px;
-      font-weight: bold;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+      cursor: pointer;
       display: none;
       align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      min-height: 48px;
+      justify-content: center;
+      transition: all 0.3s ease;
     }
     
-    #pwa-install-btn.show {
+    #pwa-install-icon:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(33, 150, 243, 0.5);
+    }
+    
+    #pwa-install-icon:active {
+      transform: scale(0.95);
+    }
+    
+    #pwa-install-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+    
+    #pwa-install-icon.show {
       display: flex;
     }
     
-    /* Индикатор загрузки */
-    #loading-indicator {
+    #pwa-install-icon.installed {
+      display: none !important;
+    }
+    
+    @media (max-width: 768px) {
+      #pwa-install-icon {
+        bottom: 80px;
+        right: 15px;
+        width: 56px;
+        height: 56px;
+      }
+      
+      #pwa-install-icon svg {
+        width: 28px;
+        height: 28px;
+      }
+    }
+    
+    /* ========== МОДАЛЬНОЕ ОКНО ИНСТРУКЦИЙ ========== */
+    .install-modal {
       position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.9);
-      color: white;
-      padding: 20px 30px;
-      border-radius: 12px;
-      z-index: 2000;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 10000;
       display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .install-modal.show {
+      display: flex;
+      opacity: 1;
+    }
+    
+    .install-modal-content {
+      background: white;
+      border-radius: 16px;
+      max-width: 400px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      position: relative;
+      animation: modalSlideIn 0.3s ease;
+    }
+    
+    @keyframes modalSlideIn {
+      from {
+        transform: translateY(20px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+    
+    .install-modal-content h2 {
+      margin: 0;
+      padding: 20px 20px 15px;
+      font-size: 20px;
+      color: #333;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .install-modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      width: 30px;
+      height: 30px;
+      border: none;
+      background: #f0f0f0;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #666;
+      transition: all 0.2s;
+      min-height: 30px;
+      padding: 0;
+    }
+    
+    .install-modal-close:hover {
+      background: #e0e0e0;
+      color: #333;
+    }
+    
+    #install-instructions {
+      padding: 20px;
+    }
+    
+    .install-modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid #eee;
+      text-align: center;
+    }
+    
+    .install-modal-footer button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .install-modal-footer button:hover {
+      background: #1976d2;
+    }
+    
+    /* ========== СТИЛИ ИНСТРУКЦИЙ ========== */
+    .browser-info {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .browser-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    
+    .browser-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #333;
+      margin: 0;
+    }
+    
+    .install-steps {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .install-steps li {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .install-steps li:last-child {
+      border-bottom: none;
+    }
+    
+    .step-number {
+      width: 28px;
+      height: 28px;
+      background: #2196f3;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    
+    .step-text {
+      flex: 1;
+      color: #444;
+      line-height: 1.5;
+    }
+    
+    .step-text strong {
+      color: #222;
+    }
+    
+    .step-text .icon {
+      display: inline-block;
+      background: #f0f0f0;
+      padding: 2px 6px;
+      border-radius: 4px;
       font-size: 16px;
     }
     
-    /* Исправленный стиль для логотипа - увеличенный в 3 раза */
+    .auto-install-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    
+    .auto-install-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+    }
+    
+    .auto-install-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .divider {
+      text-align: center;
+      margin: 15px 0;
+      color: #999;
+      font-size: 14px;
+    }
+    
+    .divider::before,
+    .divider::after {
+      content: '';
+      display: inline-block;
+      width: 40px;
+      height: 1px;
+      background: #ddd;
+      vertical-align: middle;
+      margin: 0 10px;
+    }
+    
+    /* Стиль для логотипа */
     .custom-logo-control {
       position: absolute !important;
-      top: 30px !important;
-      right: 30px !important;
+      top: 20px !important;
+      right: 20px !important;
       z-index: 1000 !important;
       background: transparent;
       padding: 0;
@@ -368,7 +684,7 @@
       box-shadow: none;
       border: none;
       pointer-events: none;
-      max-width: 300px;
+      max-width: 150px;
     }
     
     .custom-logo-control img {
@@ -376,7 +692,7 @@
       max-width: 100%;
       width: auto;
       height: auto;
-      max-height: 240px;
+      max-height: 60px;
       opacity: 0.35;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
       transition: opacity 0.2s;
@@ -386,49 +702,17 @@
       opacity: 0.5;
     }
     
-    /* Для мобильных устройств */
     @media (max-width: 768px) {
       .custom-logo-control {
-        top: 20px !important;
-        right: 20px !important;
-        max-width: 450px;
+        top: 15px !important;
+        right: 15px !important;
+        max-width: 100px;
       }
       
       .custom-logo-control img {
-        max-height: 180px;
+        max-height: 40px;
         opacity: 0.3;
       }
-    }
-    
-    /* Сообщение об установке */
-    #install-message {
-      position: fixed;
-      bottom: 150px;
-      right: 20px;
-      left: 20px;
-      background: #333;
-      color: white;
-      padding: 15px;
-      border-radius: 12px;
-      z-index: 1001;
-      display: none;
-      text-align: center;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    
-    #install-message.show {
-      display: block;
-    }
-    
-    #install-message button {
-      background: #4caf50;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      margin-top: 10px;
-      font-size: 16px;
-      width: 100%;
     }
     
     /* Стили для сетки */
@@ -462,7 +746,6 @@
       font-size: 13px;
     }
     
-    /* Кастомные стили для контрола слоёв */
     .leaflet-control-layers-toggle {
       width: 44px !important;
       height: 44px !important;
@@ -479,43 +762,54 @@
       }
     }
     
-    /* ========== СКРЫТЬ ATTRIBUTION LEAFLET ========== */
+    /* Скрыть attribution Leaflet */
     .leaflet-control-attribution {
       display: none !important;
     }
+    
   </style>
 </head>
 <body>
 
 <div id="app">
-  <!-- ========== SPLASH SCREEN (Экран загрузки) ========== -->
+  
+  <!-- ========== SPLASH SCREEN ========== -->
   <div id="splash-screen">
     <div class="splash-content">
       <img src="./icons/icon-192.png" alt="Logo" class="splash-logo">
-      <h1 class="splash-title">Анализ биллинга и построение зон покрытия</h1>
+      <h1 class="splash-title">Биллинг</h1>
       <p class="splash-subtitle">Анализ и построение зон покрытия</p>
       <div class="splash-loader">
         <div class="splash-spinner"></div>
       </div>
-      <p class="splash-author">Автор: Ергер Виталий, позывной "Ветер"</p>
+      <p class="splash-author">Автор: позывной "Ветер" Ергер Виталий</p>
     </div>
   </div>
   
-  <!-- Индикатор загрузки PWA -->
-  <div id="loading-indicator">
-    <span>Загрузка...</span>
-  </div>
-  
-  <!-- Кнопка установки PWA -->
-  <button id="pwa-install-btn">
-    <span>📱</span> Установить приложение
+  <!-- Иконка установки PWA -->
+  <button id="pwa-install-icon" title="Установить приложение">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="7 10 12 15 17 10"/>
+      <line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
   </button>
   
-  <!-- Сообщение для iOS -->
-  <div id="install-message">
-    <span>📱 Установите приложение:</span>
-    <p>Нажмите "Поделиться" → "На экран "Домой"</p>
-    <button onclick="this.parentElement.classList.remove('show')">OK</button>
+  <!-- Модальное окно с инструкциями -->
+  <div id="install-modal" class="install-modal">
+    <div class="install-modal-content">
+      <button class="install-modal-close" onclick="closeInstallModal()">&times;</button>
+      
+      <h2>📲 Установка приложения</h2>
+      
+      <div id="install-instructions">
+        <!-- Инструкции будут вставлены через JavaScript -->
+      </div>
+      
+      <div class="install-modal-footer">
+        <button onclick="closeInstallModal()">Закрыть</button>
+      </div>
+    </div>
   </div>
   
   <!-- Мобильная панель инструментов -->
@@ -753,7 +1047,6 @@
   
   <div id="map-container">
     <div id="map"></div>
-    <!-- Логотип вынесен отдельно от Leaflet контролов -->
     <div class="custom-logo-control">
       <img src="logo.png" alt="Логотип" onerror="this.style.display='none'">
     </div>
@@ -763,6 +1056,24 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
 <script>
+// ======== SPLASH SCREEN ========
+const splashScreen = document.getElementById('splash-screen');
+
+function hideSplashScreen() {
+  if (splashScreen) {
+    splashScreen.classList.add('hidden');
+    setTimeout(() => {
+      splashScreen.classList.add('removed');
+    }, 500);
+  }
+}
+
+window.addEventListener('load', () => {
+  setTimeout(hideSplashScreen, 1500);
+});
+
+setTimeout(hideSplashScreen, 5000);
+
 // ======== ДАННЫЕ ВЫШЕК, ЗОН И СЕТКИ ========
 let sites = [];
 let freeZones = [];
@@ -770,124 +1081,75 @@ let gridPoints = [];
 let gridLines = [];
 
 // ======== КАРТА (Омск) ========
-const map = L.map('map').setView([54.99, 73.37], 12);
+const map = L.map('map', {
+  attributionControl: false
+}).setView([54.99, 73.37], 12);
 
 // ======== ПРОВАЙДЕРЫ КАРТ ========
 const mapProviders = {
-  // OpenStreetMap варианты
   'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+    attribution: '© OSM'
   }),
   
   'OSM HOT': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap, Tiles: HOT'
+    attribution: '© OSM, HOT'
   }),
   
-  // CartoDB
   'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+    attribution: '© OSM, CartoDB'
   }),
   
   'CartoDB Тёмная': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+    attribution: '© OSM, CartoDB'
   }),
   
   'CartoDB Voyager': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+    attribution: '© OSM, CartoDB'
   }),
   
-  // ESRI
   'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
-    attribution: '&copy; Esri, DigitalGlobe, GeoEye, Earthstar Geographics'
+    attribution: '© Esri'
   }),
   
   'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
-    attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap'
+    attribution: '© Esri'
   }),
   
   'ESRI Улицы': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
-    attribution: '&copy; Esri, HERE, Garmin, USGS'
+    attribution: '© Esri'
   }),
   
-  // OpenTopoMap
   'Топографическая': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
     maxZoom: 17,
-    attribution: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap'
+    attribution: '© OpenTopoMap'
   }),
   
-  // Stadia Maps
-  'Stadia Smooth': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  'Stadia Тёмная': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  'Stadia Outdoors': L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  // Thunderforest (может требовать API ключ для интенсивного использования)
-  'Ландшафт': L.tileLayer('https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=', {
-    maxZoom: 22,
-    attribution: '&copy; Thunderforest, &copy; OpenStreetMap'
-  }),
-  
-  // Google Maps (неофициально, может не работать)
   'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
     maxZoom: 20,
-    attribution: '&copy; Google Maps'
+    attribution: '© Google'
   }),
   
   'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
     maxZoom: 20,
-    attribution: '&copy; Google Maps'
+    attribution: '© Google'
   }),
   
   'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
     maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Google Рельеф': L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  // Yandex (неофициально)
-  'Yandex Карта': L.tileLayer('https://core-renderer-tiles.maps.yandex.net/tiles?l=map&v=21.06.04-0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
-    maxZoom: 19,
-    attribution: '&copy; Яндекс Карты'
-  }),
-  
-  'Yandex Спутник': L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1030.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
-    maxZoom: 19,
-    attribution: '&copy; Яндекс Карты'
-  }),
-  
-  // 2GIS
-  '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', {
-    maxZoom: 18,
-    attribution: '&copy; 2GIS'
+    attribution: '© Google'
   })
 };
 
-// Добавляем стандартный слой по умолчанию
 mapProviders['OSM Стандартная'].addTo(map);
 
-// Добавляем контрол переключения слоёв
 const layerControl = L.control.layers(mapProviders, {}, {
   position: 'topleft',
   collapsed: true
@@ -903,7 +1165,6 @@ let addSiteMode = false;
 let searchMarker = null;
 let userLocationMarker = null;
 
-// Иконка маркера поиска
 const searchIcon = L.icon({
   iconUrl: 'search-marker.png',
   iconSize: [25, 41],
@@ -911,7 +1172,6 @@ const searchIcon = L.icon({
   popupAnchor: [0, -38]
 });
 
-// Иконка для местоположения пользователя
 const userLocationIcon = L.divIcon({
   className: 'user-location-marker',
   html: '<div style="background: #2196f3; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px #2196f3;"></div>',
@@ -919,7 +1179,6 @@ const userLocationIcon = L.divIcon({
   iconAnchor: [11, 11]
 });
 
-// Кастомная иконка для точек сетки
 const gridIcon = L.divIcon({
   className: 'grid-point-marker',
   html: '<div style="background: #3f51b5; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(63,81,181,0.5);"></div>',
@@ -1216,9 +1475,6 @@ function getUserLocation() {
     return;
   }
   
-  loadingIndicator.style.display = 'block';
-  loadingIndicator.innerHTML = 'Определение местоположения...';
-  
   const options = {
     enableHighAccuracy: true,
     timeout: 10000,
@@ -1227,7 +1483,6 @@ function getUserLocation() {
   
   function success(position) {
     const { latitude, longitude, accuracy } = position.coords;
-    console.log(`Местоположение определено: ${latitude}, ${longitude} (точность: ${accuracy}м)`);
     
     if (userLocationMarker) {
       map.removeLayer(userLocationMarker);
@@ -1253,29 +1508,23 @@ function getUserLocation() {
     setTimeout(() => {
       map.removeLayer(accuracyCircle);
     }, 5000);
-    
-    loadingIndicator.style.display = 'none';
   }
   
   function error(err) {
-    console.error('Ошибка геолокации:', err);
-    loadingIndicator.style.display = 'none';
-    
     let message = 'Не удалось определить местоположение: ';
     switch(err.code) {
       case err.PERMISSION_DENIED:
-        message += 'Пользователь запретил доступ к геолокации';
+        message += 'Доступ запрещён';
         break;
       case err.POSITION_UNAVAILABLE:
-        message += 'Информация о местоположении недоступна';
+        message += 'Недоступно';
         break;
       case err.TIMEOUT:
-        message += 'Время ожидания истекло';
+        message += 'Время истекло';
         break;
       default:
         message += 'Неизвестная ошибка';
     }
-    
     alert(message);
   }
   
@@ -1363,17 +1612,190 @@ const btnExportSelectedZonesGpx   = document.getElementById('btnExportSelectedZo
 const btnExportSelectedAzimuthAndZonesGpx = document.getElementById('btnExportSelectedAzimuthAndZonesGpx');
 
 // ======== PWA УСТАНОВКА ========
-let deferredPrompt;
-const pwaInstallBtn = document.getElementById('pwa-install-btn');
-const loadingIndicator = document.getElementById('loading-indicator');
-const installMessage = document.getElementById('install-message');
+let deferredPrompt = null;
+const pwaInstallIcon = document.getElementById('pwa-install-icon');
+const installModal = document.getElementById('install-modal');
+const installInstructions = document.getElementById('install-instructions');
 
-function showInstallButton() {
-  pwaInstallBtn.classList.add('show');
+function getBrowserInfo() {
+  const ua = navigator.userAgent;
+  
+  if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
+    if (/CriOS/.test(ua)) return { name: 'Chrome iOS', icon: '🌐', type: 'chrome-ios' };
+    if (/FxiOS/.test(ua)) return { name: 'Firefox iOS', icon: '🦊', type: 'firefox-ios' };
+    return { name: 'Safari', icon: '🧭', type: 'safari' };
+  }
+  
+  if (/Android/.test(ua)) {
+    if (/Chrome/.test(ua)) return { name: 'Chrome Android', icon: '🌐', type: 'chrome-android' };
+    if (/Firefox/.test(ua)) return { name: 'Firefox Android', icon: '🦊', type: 'firefox-android' };
+    if (/Samsung/.test(ua)) return { name: 'Samsung Internet', icon: '🌐', type: 'samsung' };
+    return { name: 'Android Browser', icon: '🤖', type: 'android' };
+  }
+  
+  if (/Edg/.test(ua)) return { name: 'Microsoft Edge', icon: '🌐', type: 'edge' };
+  if (/Chrome/.test(ua)) return { name: 'Google Chrome', icon: '🌐', type: 'chrome' };
+  if (/Firefox/.test(ua)) return { name: 'Firefox', icon: '🦊', type: 'firefox' };
+  if (/Safari/.test(ua)) return { name: 'Safari', icon: '🧭', type: 'safari-mac' };
+  
+  return { name: 'Браузер', icon: '🌐', type: 'other' };
 }
 
-function hideInstallButton() {
-  pwaInstallBtn.classList.remove('show');
+function getInstructions(browserType, canAutoInstall) {
+  const instructions = {
+    'safari': {
+      auto: false,
+      steps: [
+        { text: 'Нажмите кнопку <span class="icon">📤</span> <strong>«Поделиться»</strong> внизу экрана' },
+        { text: 'Прокрутите вниз и выберите <strong>«На экран Домой»</strong>' },
+        { text: 'Нажмите <strong>«Добавить»</strong> в правом верхнем углу' }
+      ]
+    },
+    'chrome-ios': {
+      auto: false,
+      steps: [
+        { text: 'Нажмите <span class="icon">⋯</span> <strong>меню</strong> (три точки) справа вверху' },
+        { text: 'Выберите <strong>«Поделиться...»</strong>' },
+        { text: 'Нажмите <strong>«На экран Домой»</strong>' },
+        { text: 'Подтвердите нажав <strong>«Добавить»</strong>' }
+      ]
+    },
+    'firefox-ios': {
+      auto: false,
+      steps: [
+        { text: 'Нажмите <span class="icon">☰</span> <strong>меню</strong> внизу экрана' },
+        { text: 'Выберите <strong>«Поделиться»</strong>' },
+        { text: 'Нажмите <strong>«На экран Домой»</strong>' }
+      ]
+    },
+    'chrome-android': {
+      auto: true,
+      steps: [
+        { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки) справа вверху' },
+        { text: 'Выберите <strong>«Установить приложение»</strong> или <strong>«Добавить на главный экран»</strong>' },
+        { text: 'Подтвердите установку' }
+      ]
+    },
+    'firefox-android': {
+      auto: false,
+      steps: [
+        { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки)' },
+        { text: 'Выберите <strong>«Установить»</strong>' },
+        { text: 'Подтвердите добавление на главный экран' }
+      ]
+    },
+    'samsung': {
+      auto: true,
+      steps: [
+        { text: 'Нажмите <span class="icon">☰</span> <strong>меню</strong> внизу' },
+        { text: 'Выберите <strong>«Добавить на главный экран»</strong>' },
+        { text: 'Нажмите <strong>«Добавить»</strong>' }
+      ]
+    },
+    'chrome': {
+      auto: true,
+      steps: [
+        { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки) справа вверху' },
+        { text: 'Выберите <strong>«Установить Биллинг зоны»</strong>' },
+        { text: 'Или нажмите значок <span class="icon">⊕</span> в адресной строке' }
+      ]
+    },
+    'edge': {
+      auto: true,
+      steps: [
+        { text: 'Нажмите <span class="icon">⋯</span> <strong>меню</strong> (три точки) справа вверху' },
+        { text: 'Выберите <strong>«Приложения»</strong> → <strong>«Установить этот сайт как приложение»</strong>' },
+        { text: 'Нажмите <strong>«Установить»</strong>' }
+      ]
+    },
+    'firefox': {
+      auto: false,
+      steps: [
+        { text: 'Firefox на десктопе не поддерживает установку PWA' },
+        { text: 'Рекомендуем использовать <strong>Chrome</strong> или <strong>Edge</strong>' },
+        { text: 'Или добавьте сайт в закладки для быстрого доступа' }
+      ]
+    },
+    'safari-mac': {
+      auto: false,
+      steps: [
+        { text: 'В macOS Sonoma и новее: <strong>Файл</strong> → <strong>Добавить в Dock</strong>' },
+        { text: 'Или добавьте сайт в закладки: <strong>⌘+D</strong>' },
+        { text: 'Для полной PWA поддержки используйте <strong>Chrome</strong>' }
+      ]
+    },
+    'other': {
+      auto: false,
+      steps: [
+        { text: 'Откройте <strong>меню браузера</strong>' },
+        { text: 'Найдите опцию <strong>«Установить»</strong> или <strong>«Добавить на главный экран»</strong>' },
+        { text: 'Если такой опции нет, добавьте сайт в закладки' }
+      ]
+    }
+  };
+  
+  return instructions[browserType] || instructions['other'];
+}
+
+function showInstallModal() {
+  const browser = getBrowserInfo();
+  const canAutoInstall = !!deferredPrompt;
+  const instructions = getInstructions(browser.type, canAutoInstall);
+  
+  let html = `
+    <div class="browser-info">
+      <div class="browser-icon">${browser.icon}</div>
+      <p class="browser-name">${browser.name}</p>
+    </div>
+  `;
+  
+  if (canAutoInstall) {
+    html += `
+      <button class="auto-install-btn" onclick="autoInstall()">
+        <span>📲</span>
+        <span>Установить сейчас</span>
+      </button>
+      <div class="divider">или вручную</div>
+    `;
+  }
+  
+  html += '<ol class="install-steps">';
+  instructions.steps.forEach((step, index) => {
+    html += `
+      <li>
+        <span class="step-number">${index + 1}</span>
+        <span class="step-text">${step.text}</span>
+      </li>
+    `;
+  });
+  html += '</ol>';
+  
+  installInstructions.innerHTML = html;
+  installModal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeInstallModal() {
+  installModal.classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+async function autoInstall() {
+  if (!deferredPrompt) return;
+  
+  try {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      hideInstallIcon();
+      closeInstallModal();
+    }
+    
+    deferredPrompt = null;
+  } catch (err) {
+    console.error('Ошибка установки:', err);
+  }
 }
 
 function isPwaInstalled() {
@@ -1381,84 +1803,66 @@ function isPwaInstalled() {
          window.navigator.standalone === true;
 }
 
+function showInstallIcon() {
+  if (!isPwaInstalled() && pwaInstallIcon) {
+    pwaInstallIcon.classList.add('show');
+  }
+}
+
+function hideInstallIcon() {
+  if (pwaInstallIcon) {
+    pwaInstallIcon.classList.remove('show');
+    pwaInstallIcon.classList.add('installed');
+  }
+}
+
+if (isPwaInstalled()) {
+  hideInstallIcon();
+} else {
+  setTimeout(showInstallIcon, 2000);
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  showInstallIcon();
+});
+
+if (pwaInstallIcon) {
+  pwaInstallIcon.addEventListener('click', showInstallModal);
+}
+
+if (installModal) {
+  installModal.addEventListener('click', (e) => {
+    if (e.target === installModal) {
+      closeInstallModal();
+    }
+  });
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && installModal.classList.contains('show')) {
+    closeInstallModal();
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  hideInstallIcon();
+  closeInstallModal();
+  deferredPrompt = null;
+});
+
 if ('serviceWorker' in navigator) {
-  loadingIndicator.style.display = 'block';
-  loadingIndicator.innerHTML = 'Регистрация Service Worker...';
-  
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('sw.js', {
+      const registration = await navigator.serviceWorker.register('./sw.js', {
         scope: './'
       });
       console.log('✅ ServiceWorker registered:', registration.scope);
-      
-      if (isPwaInstalled()) {
-        console.log('📱 Приложение запущено в режиме PWA');
-        hideInstallButton();
-      }
-      
-      loadingIndicator.style.display = 'none';
     } catch (err) {
       console.log('❌ ServiceWorker registration failed:', err);
-      loadingIndicator.style.display = 'none';
     }
   });
-  
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    console.log('📱 PWA можно установить');
-    
-    if (!isPwaInstalled()) {
-      showInstallButton();
-    }
-  });
-  
-  pwaInstallBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) {
-      if (isIos()) {
-        installMessage.classList.add('show');
-      }
-      return;
-    }
-    
-    try {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`📱 Установка PWA: ${outcome}`);
-      
-      if (outcome === 'accepted') {
-        hideInstallButton();
-      }
-      
-      deferredPrompt = null;
-    } catch (err) {
-      console.error('Ошибка установки:', err);
-    }
-  });
-  
-  window.addEventListener('online', () => {
-    console.log('🌐 Соединение восстановлено');
-  });
-  
-  window.addEventListener('offline', () => {
-    console.log('📴 Нет соединения');
-    if (!isPwaInstalled()) {
-      alert('Вы оффлайн. Некоторые функции могут быть недоступны.');
-    }
-  });
-} else {
-  console.log('❌ Service Worker не поддерживается');
-}
-
-function isIos() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
-
-if (isIos() && !isPwaInstalled()) {
-  setTimeout(() => {
-    installMessage.classList.add('show');
-  }, 3000);
 }
 
 // ======== МОБИЛЬНАЯ АДАПТАЦИЯ ========
@@ -1628,7 +2032,7 @@ function rebuildSectorsForSite(site, count) {
       azimuth: az,
       beamWidth,
       radius: defaultRadius,
-      selectedForExport: false  // Изменено на false по умолчанию
+      selectedForExport: false
     });
   }
 }
@@ -1757,7 +2161,7 @@ function buildExportConfig() {
       azimuth: sec.azimuth,
       beamWidth: sec.beamWidth,
       radius: sec.radius,
-      selectedForExport: sec.selectedForExport === true  // Явно проверяем на true
+      selectedForExport: sec.selectedForExport === true
     }))
   }));
 
@@ -1771,15 +2175,10 @@ function buildExportConfig() {
     radius: zone.radius,
     visible: zone.visible !== false,
     color: zone.color || null,
-    selectedForExport: zone.selectedForExport === true  // Явно проверяем на true
+    selectedForExport: zone.selectedForExport === true
   }));
 
   return { sites: cleanSites, freeZones: cleanFreeZones };
-}
-
-function debugLogConfig() {
-  const data = buildExportConfig();
-  console.log('DEBUG config before export:', data);
 }
 
 // ======== JSON ЭКСПОРТ/ИМПОРТ ========
@@ -1789,8 +2188,7 @@ function exportAllToJson() {
   try {
     dataStr = JSON.stringify(data, null, 2);
   } catch (e) {
-    console.error('JSON stringify failed:', e);
-    alert('Ошибка при подготовке JSON (см. консоль)');
+    alert('Ошибка при подготовке JSON');
     return;
   }
 
@@ -1820,8 +2218,7 @@ function exportAllToJson() {
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
   } catch (e2) {
-    console.error('fallback open failed', e2);
-    alert('Не удалось сохранить JSON. Попробуйте другой браузер или запустить через http-сервер.');
+    alert('Не удалось сохранить JSON.');
   }
 }
 
@@ -1840,7 +2237,7 @@ function importAllFromJsonFile(file) {
         s.cellId   = s.cellId || '';
         s.operator = s.operator || '';
         s.sectors.forEach(sec => {
-          sec.selectedForExport = (sec.selectedForExport === true);  // Только если явно true
+          sec.selectedForExport = (sec.selectedForExport === true);
         });
       });
 
@@ -1861,7 +2258,7 @@ function importAllFromJsonFile(file) {
             color: z.color || getUniqueColor(id),
             polyLayer: null,
             lineLayer: null,
-            selectedForExport: (z.selectedForExport === true)  // Только если явно true
+            selectedForExport: (z.selectedForExport === true)
           };
         });
       } else {
@@ -2040,7 +2437,6 @@ function buildSelectedAzimuthAndZonesGpx() {
 
 // ======== СОБЫТИЯ ========
 
-// Поиск по адресу
 btnSearchAddress.addEventListener('click', async () => {
   const query = addressInput.value.trim();
   if (!query) {
@@ -2059,7 +2455,7 @@ btnSearchAddress.addEventListener('click', async () => {
 
   map.setView(center, 17);
 
-  searchMarker = L.marker(center, { icon: searchIcon })
+  searchMarker = L.marker(center)
     .addTo(map)
     .bindPopup(res.displayName + '<br><button id="btnRemoveSearchMarker">Убрать маркер</button>')
     .openPopup();
@@ -2191,7 +2587,6 @@ btnClearAzimuthLine.addEventListener('click', () => {
   azimuthLayerGroup.clearLayers();
 });
 
-// Произвольные зоны
 freeZoneSelect.addEventListener('change', () => {
   syncInputsFromFreeZone();
 });
@@ -2307,12 +2702,10 @@ btnClearFree.addEventListener('click', () => {
   fillFreeZoneSelect();
 });
 
-// События для сетки
 btnGenerateGrid.addEventListener('click', generateGrid);
 btnClearGrid.addEventListener('click', clearGrid);
 btnExportGridGpx.addEventListener('click', exportGridToGpx);
 
-// Добавление вышки
 btnAddSite.addEventListener('click', () => {
   addSiteMode = !addSiteMode;
   btnAddSite.style.backgroundColor = addSiteMode ? '#c0ffc0' : '';
@@ -2346,7 +2739,6 @@ map.on('click', (e) => {
   btnAddSite.style.backgroundColor = '';
 });
 
-// Удаление вышки
 btnDeleteSite.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site) return;
@@ -2374,9 +2766,7 @@ btnDeleteSite.addEventListener('click', () => {
   }
 });
 
-// JSON
 btnExportJson.addEventListener('click', () => {
-  debugLogConfig();
   exportAllToJson();
 });
 
@@ -2389,7 +2779,6 @@ btnImportJson.addEventListener('click', () => {
   importAllFromJsonFile(file);
 });
 
-// GPX
 btnExportAzimuthGpx.addEventListener('click', () => {
   const gpx = buildAzimuthGpx(false);
   exportGpxString(gpx, 'azimuths_all.gpx');
@@ -2424,10 +2813,7 @@ btnExportAllGpx.addEventListener('click', () => {
 fillSiteSelect();
 drawSiteMarkers();
 fillFreeZoneSelect();
-  // Скрыть attribution Leaflet
-document.querySelector('.leaflet-control-attribution')?.remove();
-// Или через Leaflet API:
-map.attributionControl.remove();
+
 </script>
 
 </body>
