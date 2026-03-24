@@ -408,7 +408,7 @@
       box-shadow: none;
       border: none;
       pointer-events: none;
-      max-width: 300px;
+      max-width: 600px;
     }
     
     .custom-logo-control img {
@@ -416,7 +416,7 @@
       max-width: 100%;
       width: auto;
       height: auto;
-      max-height: 120px;
+      max-height: 240px;
       opacity: 0.35;
       filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
       transition: opacity 0.2s;
@@ -430,11 +430,11 @@
       .custom-logo-control {
         top: 15px !important;
         right: 15px !important;
-        max-width: 200px;
+        max-width: 400px;
       }
       
       .custom-logo-control img {
-        max-height: 80px;
+        max-height: 160px;
         opacity: 0.3;
       }
     }
@@ -442,7 +442,7 @@
     /* ========== ИКОНКА УСТАНОВКИ PWA - ПОД ЛОГОТИПОМ ========== */
     #pwa-install-icon {
       position: fixed;
-      top: 150px;
+      top: 270px;
       right: 25px;
       z-index: 1000;
       width: 50px;
@@ -483,7 +483,7 @@
     
     @media (max-width: 768px) {
       #pwa-install-icon {
-        top: 105px;
+        top: 185px;
         right: 20px;
         width: 46px;
         height: 46px;
@@ -767,6 +767,37 @@
       display: none !important;
     }
     
+    /* Индикатор сохранения */
+    #save-indicator {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(76, 175, 80, 0.9);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    
+    #save-indicator.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    @media (max-width: 768px) {
+      #save-indicator {
+        bottom: 90px;
+        left: 15px;
+        right: 15px;
+        text-align: center;
+      }
+    }
+    
   </style>
 </head>
 <body>
@@ -786,6 +817,9 @@
     </div>
   </div>
   
+  <!-- Индикатор сохранения -->
+  <div id="save-indicator">💾 Данные сохранены</div>
+  
   <!-- Иконка установки PWA -->
   <button id="pwa-install-icon" title="Установить приложение">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -799,12 +833,8 @@
   <div id="install-modal" class="install-modal">
     <div class="install-modal-content">
       <button class="install-modal-close" onclick="closeInstallModal()">&times;</button>
-      
       <h2>📲 Установка приложения</h2>
-      
-      <div id="install-instructions">
-      </div>
-      
+      <div id="install-instructions"></div>
       <div class="install-modal-footer">
         <button onclick="closeInstallModal()">Закрыть</button>
       </div>
@@ -966,7 +996,7 @@
       <div class="panel-block">
         <span class="panel-title">🔲 Генерация сетки</span>
         <div class="field-grid">
-          <label for="gridStep">Шаг сетки (м)</label>
+          <label for="gridStep">Шаг (м)</label>
           <select id="gridStep">
             <option value="50">50 м</option>
             <option value="100" selected>100 м</option>
@@ -1003,12 +1033,9 @@
           </select>
         </div>
         <div class="buttons-row">
-          <button id="btnGenerateGrid">🔲 Сгенерировать сетку</button>
-          <button id="btnClearGrid">🧹 Очистить сетку</button>
-          <button id="btnExportGridGpx">📥 GPX сетка</button>
-        </div>
-        <div style="font-size: 12px; color: #666; margin-top: 5px;">
-          Сетка генерируется в видимой области карты. Точки соединены линиями.
+          <button id="btnGenerateGrid">🔲 Сгенерировать</button>
+          <button id="btnClearGrid">🧹 Очистить</button>
+          <button id="btnExportGridGpx">📥 GPX</button>
         </div>
       </div>
       
@@ -1018,6 +1045,7 @@
         <div class="buttons-row">
           <button id="btnExportJson">📤 Экспорт JSON</button>
           <button id="btnImportJson">📥 Импорт JSON</button>
+          <button id="btnClearAll">🗑️ Очистить всё</button>
         </div>
         <div style="margin-top: 8px;">
           <input id="jsonFileInput" type="file" accept=".json" style="width: 100%; padding: 8px;">
@@ -1055,8 +1083,17 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
 <script>
+// ======== КОНСТАНТЫ ДЛЯ ЛОКАЛЬНОГО ХРАНИЛИЩА ========
+const STORAGE_KEYS = {
+  SITES: 'billing_sites',
+  FREE_ZONES: 'billing_freeZones',
+  MAP_VIEW: 'billing_mapView',
+  MAP_LAYER: 'billing_mapLayer'
+};
+
 // ======== SPLASH SCREEN ========
 const splashScreen = document.getElementById('splash-screen');
+const saveIndicator = document.getElementById('save-indicator');
 
 function hideSplashScreen() {
   if (splashScreen) {
@@ -1073,11 +1110,177 @@ window.addEventListener('load', () => {
 
 setTimeout(hideSplashScreen, 5000);
 
+// ======== ПОКАЗАТЬ ИНДИКАТОР СОХРАНЕНИЯ ========
+function showSaveIndicator(message = '💾 Данные сохранены') {
+  saveIndicator.textContent = message;
+  saveIndicator.classList.add('show');
+  setTimeout(() => {
+    saveIndicator.classList.remove('show');
+  }, 2000);
+}
+
 // ======== ДАННЫЕ ВЫШЕК, ЗОН И СЕТКИ ========
 let sites = [];
 let freeZones = [];
 let gridPoints = [];
 let gridLines = [];
+let currentMapLayer = 'OSM Стандартная';
+
+// ======== ФУНКЦИИ СОХРАНЕНИЯ/ЗАГРУЗКИ ========
+function saveToLocalStorage() {
+  try {
+    // Сохраняем вышки
+    const sitesData = sites.map(site => ({
+      id: site.id,
+      name: site.name || '',
+      cellId: site.cellId || '',
+      operator: site.operator || '',
+      lat: site.lat,
+      lng: site.lng,
+      sectors: site.sectors.map(sec => ({
+        id: sec.id,
+        azimuth: sec.azimuth,
+        beamWidth: sec.beamWidth,
+        radius: sec.radius,
+        selectedForExport: sec.selectedForExport === true
+      }))
+    }));
+    localStorage.setItem(STORAGE_KEYS.SITES, JSON.stringify(sitesData));
+    
+    // Сохраняем произвольные зоны
+    const freeZonesData = freeZones.map(zone => ({
+      id: zone.id,
+      name: zone.name || '',
+      lat: zone.lat,
+      lng: zone.lng,
+      azimuth: zone.azimuth,
+      beamWidth: zone.beamWidth,
+      radius: zone.radius,
+      visible: zone.visible !== false,
+      color: zone.color || null,
+      selectedForExport: zone.selectedForExport === true
+    }));
+    localStorage.setItem(STORAGE_KEYS.FREE_ZONES, JSON.stringify(freeZonesData));
+    
+    // Сохраняем позицию карты
+    const center = map.getCenter();
+    const zoom = map.getZoom();
+    localStorage.setItem(STORAGE_KEYS.MAP_VIEW, JSON.stringify({
+      lat: center.lat,
+      lng: center.lng,
+      zoom: zoom
+    }));
+    
+    // Сохраняем текущий слой карты
+    localStorage.setItem(STORAGE_KEYS.MAP_LAYER, currentMapLayer);
+    
+    console.log('✅ Данные сохранены в localStorage');
+    showSaveIndicator();
+  } catch (e) {
+    console.error('❌ Ошибка сохранения:', e);
+  }
+}
+
+function loadFromLocalStorage() {
+  try {
+    // Загружаем вышки
+    const sitesData = localStorage.getItem(STORAGE_KEYS.SITES);
+    if (sitesData) {
+      sites = JSON.parse(sitesData);
+      console.log(`✅ Загружено ${sites.length} вышек`);
+    }
+    
+    // Загружаем произвольные зоны
+    const freeZonesData = localStorage.getItem(STORAGE_KEYS.FREE_ZONES);
+    if (freeZonesData) {
+      const parsed = JSON.parse(freeZonesData);
+      freeZones = parsed.map(z => ({
+        ...z,
+        polyLayer: null,
+        lineLayer: null,
+        color: z.color || getUniqueColor(z.id)
+      }));
+      console.log(`✅ Загружено ${freeZones.length} произвольных зон`);
+    }
+    
+    // Загружаем позицию карты
+    const mapViewData = localStorage.getItem(STORAGE_KEYS.MAP_VIEW);
+    if (mapViewData) {
+      const mapView = JSON.parse(mapViewData);
+      map.setView([mapView.lat, mapView.lng], mapView.zoom);
+      console.log(`✅ Загружена позиция карты: ${mapView.lat}, ${mapView.lng}, zoom: ${mapView.zoom}`);
+    }
+    
+    // Загружаем слой карты
+    const mapLayerData = localStorage.getItem(STORAGE_KEYS.MAP_LAYER);
+    if (mapLayerData && mapProviders[mapLayerData]) {
+      currentMapLayer = mapLayerData;
+      // Переключаем слой карты
+      Object.keys(mapProviders).forEach(key => {
+        if (map.hasLayer(mapProviders[key])) {
+          map.removeLayer(mapProviders[key]);
+        }
+      });
+      mapProviders[currentMapLayer].addTo(map);
+      console.log(`✅ Загружен слой карты: ${currentMapLayer}`);
+    }
+    
+    return true;
+  } catch (e) {
+    console.error('❌ Ошибка загрузки:', e);
+    return false;
+  }
+}
+
+function clearAllData() {
+  if (!confirm('Удалить ВСЕ сохранённые данные? Это действие нельзя отменить!')) {
+    return;
+  }
+  
+  // Очищаем данные
+  sites = [];
+  freeZones = [];
+  
+  // Очищаем localStorage
+  Object.values(STORAGE_KEYS).forEach(key => {
+    localStorage.removeItem(key);
+  });
+  
+  // Очищаем карту
+  siteMarkerGroup.clearLayers();
+  zonesLayerGroup.clearLayers();
+  azimuthLayerGroup.clearLayers();
+  freeLayerGroup.clearLayers();
+  gridLayerGroup.clearLayers();
+  
+  // Обновляем UI
+  fillSiteSelect();
+  fillFreeZoneSelect();
+  
+  // Сбрасываем поля
+  nameInput.value = '';
+  cellIdInput.value = '';
+  operatorInput.value = '';
+  latInput.value = '';
+  lngInput.value = '';
+  
+  // Возвращаем карту в начальную позицию
+  map.setView([54.99, 73.37], 12);
+  
+  showSaveIndicator('🗑️ Все данные удалены');
+  console.log('🗑️ Все данные очищены');
+}
+
+// Автосохранение при изменениях (с debounce)
+let saveTimeout = null;
+function autoSave() {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+  }
+  saveTimeout = setTimeout(() => {
+    saveToLocalStorage();
+  }, 1000); // Сохраняем через 1 секунду после последнего изменения
+}
 
 // ======== КАРТА (Омск) ========
 const map = L.map('map', {
@@ -1106,11 +1309,6 @@ const mapProviders = {
     attribution: '© OSM, CartoDB'
   }),
   
-  'CartoDB Voyager': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '© OSM, CartoDB'
-  }),
-  
   'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
     attribution: '© Esri'
@@ -1119,16 +1317,6 @@ const mapProviders = {
   'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 19,
     attribution: '© Esri'
-  }),
-  
-  'ESRI Улицы': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '© Esri'
-  }),
-  
-  'Топографическая': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-    maxZoom: 17,
-    attribution: '© OpenTopoMap'
   }),
   
   'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
@@ -1153,6 +1341,16 @@ const layerControl = L.control.layers(mapProviders, {}, {
   position: 'topleft',
   collapsed: true
 }).addTo(map);
+
+// Отслеживаем смену слоя карты
+map.on('baselayerchange', (e) => {
+  currentMapLayer = e.name;
+  autoSave();
+});
+
+// Сохраняем позицию карты при изменении
+map.on('moveend', autoSave);
+map.on('zoomend', autoSave);
 
 const siteMarkerGroup   = L.layerGroup().addTo(map);
 const zonesLayerGroup   = L.layerGroup().addTo(map);
@@ -1203,24 +1401,16 @@ function makeSectorPolygon(lat, lng, azimuth, beamWidth, radius, steps = 32) {
   const start = azimuth - beamWidth / 2;
   const end   = azimuth + beamWidth / 2;
   const step  = beamWidth / steps;
-
   coords.push([lat, lng]);
-
   for (let a = start; a <= end; a += step) {
     const brng = deg2rad(a);
     const dR = radius / R;
-
     const lat1 = deg2rad(lat);
     const lon1 = deg2rad(lng);
-
-    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
-                           Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
-    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1),
-                                   Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
-
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) + Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
+    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1), Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
     coords.push([lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]);
   }
-
   coords.push([lat, lng]);
   return coords;
 }
@@ -1231,16 +1421,9 @@ function makeAzimuthLine(lat, lng, azimuth, radius) {
   const dR = radius / R;
   const lat1 = deg2rad(lat);
   const lon1 = deg2rad(lng);
-
-  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
-                         Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
-  const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1),
-                                 Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
-
-  return [
-    [lat, lng],
-    [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]
-  ];
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) + Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
+  const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1), Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
+  return [[lat, lng], [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]];
 }
 
 // ======== ФУНКЦИИ ДЛЯ РАБОТЫ С СЕТКОЙ ========
@@ -1248,125 +1431,56 @@ function generateGrid() {
   const step = parseInt(document.getElementById('gridStep').value);
   const startX = document.getElementById('gridStartX').value;
   const startY = parseInt(document.getElementById('gridStartY').value);
-  
   const bounds = map.getBounds();
   const padding = 0.01;
-  const northWest = {
-    lat: bounds.getNorth() + padding,
-    lng: bounds.getWest() - padding
-  };
-  const southEast = {
-    lat: bounds.getSouth() - padding,
-    lng: bounds.getEast() + padding
-  };
-  
+  const northWest = { lat: bounds.getNorth() + padding, lng: bounds.getWest() - padding };
+  const southEast = { lat: bounds.getSouth() - padding, lng: bounds.getEast() + padding };
   const latStep = step / 111000;
   const centerLat = (northWest.lat + southEast.lat) / 2;
   const lonStep = step / (111000 * Math.cos(centerLat * Math.PI / 180));
-  
-  let startLat = northWest.lat;
-  let startLon = northWest.lng;
-  
-  startLat = Math.floor(startLat / latStep) * latStep;
-  startLon = Math.floor(startLon / lonStep) * lonStep;
-  
+  let startLat = Math.floor(northWest.lat / latStep) * latStep;
+  let startLon = Math.floor(northWest.lng / lonStep) * lonStep;
   clearGrid();
-  
-  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const startLetterIndex = letters.indexOf(startX);
-  
   let lat = startLat;
   let row = 0;
   let gridMatrix = [];
-  
   while (lat > southEast.lat) {
     let rowPoints = [];
     let lng = startLon;
     let col = 0;
-    
     while (lng < southEast.lng) {
       const letterIndex = startLetterIndex + col;
       if (letterIndex >= letters.length) break;
-      
-      const letter = letters[letterIndex];
-      const number = startY + row;
-      
-      const point = {
-        lat: lat,
-        lng: lng,
-        label: `${letter}${number}`,
-        row: row,
-        col: col,
-        letter: letter,
-        number: number
-      };
-      
+      const point = { lat, lng, label: `${letters[letterIndex]}${startY + row}`, row, col };
       gridPoints.push(point);
       rowPoints.push(point);
-      
       const marker = L.marker([lat, lng], { icon: gridIcon }).addTo(gridLayerGroup);
-      
-      const tooltip = L.tooltip({
-        permanent: true,
-        direction: 'top',
-        offset: [0, -10],
-        className: 'grid-point-label'
-      }).setContent(point.label);
-      
-      marker.bindTooltip(tooltip).openTooltip();
-      
-      marker.on('click', () => {
-        alert(`Точка сетки: ${point.label}\nКоординаты: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
-      });
-      
+      marker.bindTooltip(L.tooltip({ permanent: true, direction: 'top', offset: [0, -10], className: 'grid-point-label' }).setContent(point.label)).openTooltip();
+      marker.on('click', () => alert(`Точка: ${point.label}\n${lat.toFixed(6)}, ${lng.toFixed(6)}`));
       lng += lonStep;
       col++;
     }
-    
-    if (rowPoints.length > 0) {
-      gridMatrix.push(rowPoints);
-    }
-    
+    if (rowPoints.length > 0) gridMatrix.push(rowPoints);
     lat -= latStep;
     row++;
   }
-  
   for (let r = 0; r < gridMatrix.length; r++) {
-    const rowData = gridMatrix[r];
-    for (let c = 0; c < rowData.length - 1; c++) {
-      const line = L.polyline([
-        [rowData[c].lat, rowData[c].lng],
-        [rowData[c + 1].lat, rowData[c + 1].lng]
-      ], {
-        color: '#3f51b5',
-        weight: 1.5,
-        opacity: 0.5,
-        dashArray: null
-      }).addTo(gridLayerGroup);
-      gridLines.push(line);
+    for (let c = 0; c < gridMatrix[r].length - 1; c++) {
+      gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], { color: '#3f51b5', weight: 1.5, opacity: 0.5 }).addTo(gridLayerGroup));
     }
   }
-  
   if (gridMatrix.length > 0) {
     for (let c = 0; c < gridMatrix[0].length; c++) {
       for (let r = 0; r < gridMatrix.length - 1; r++) {
-        if (gridMatrix[r][c] && gridMatrix[r + 1][c]) {
-          const line = L.polyline([
-            [gridMatrix[r][c].lat, gridMatrix[r][c].lng],
-            [gridMatrix[r + 1][c].lat, gridMatrix[r + 1][c].lng]
-          ], {
-            color: '#3f51b5',
-            weight: 1.5,
-            opacity: 0.5,
-            dashArray: null
-          }).addTo(gridLayerGroup);
-          gridLines.push(line);
+        if (gridMatrix[r][c] && gridMatrix[r+1][c]) {
+          gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r+1][c].lat, gridMatrix[r+1][c].lng]], { color: '#3f51b5', weight: 1.5, opacity: 0.5 }).addTo(gridLayerGroup));
         }
       }
     }
   }
-  
-  alert(`Сгенерировано ${gridPoints.length} точек сетки и ${gridLines.length} линий`);
+  alert(`Сгенерировано ${gridPoints.length} точек и ${gridLines.length} линий`);
 }
 
 function clearGrid() {
@@ -1376,226 +1490,93 @@ function clearGrid() {
 }
 
 function exportGridToGpx() {
-  if (gridPoints.length === 0) {
-    alert('Сначала сгенерируйте сетку');
-    return;
-  }
-  
-  let waypoints = '';
-  let tracks = '';
-  
-  gridPoints.forEach(point => {
-    waypoints += `
-  <wpt lat="${point.lat}" lon="${point.lng}">
-    <name>${point.label}</name>
-    <cmt>Точка сетки ${point.label}</cmt>
-    <desc>Сетка: ряд ${point.row + 1}, колонка ${point.col + 1}</desc>
-  </wpt>`;
-  });
-  
-  const rows = {};
-  gridPoints.forEach(point => {
-    if (!rows[point.row]) rows[point.row] = [];
-    rows[point.row].push(point);
-  });
-  
-  Object.values(rows).forEach(rowPoints => {
-    rowPoints.sort((a, b) => a.col - b.col);
-    
-    if (rowPoints.length > 1) {
-      let trkpts = '';
-      rowPoints.forEach(point => {
-        trkpts += `\n      <trkpt lat="${point.lat}" lon="${point.lng}"></trkpt>`;
-      });
-      
-      tracks += `
-  <trk>
-    <name>Горизонтальная линия ряд ${rowPoints[0].row + 1}</name>
-    <trkseg>${trkpts}
-    </trkseg>
-  </trk>`;
-    }
-  });
-  
-  const cols = {};
-  gridPoints.forEach(point => {
-    if (!cols[point.col]) cols[point.col] = [];
-    cols[point.col].push(point);
-  });
-  
-  Object.values(cols).forEach(colPoints => {
-    colPoints.sort((a, b) => a.row - b.row);
-    
-    if (colPoints.length > 1) {
-      let trkpts = '';
-      colPoints.forEach(point => {
-        trkpts += `\n      <trkpt lat="${point.lat}" lon="${point.lng}"></trkpt>`;
-      });
-      
-      tracks += `
-  <trk>
-    <name>Вертикальная линия колонка ${colPoints[0].col + 1}</name>
-    <trkseg>${trkpts}
-    </trkseg>
-  </trk>`;
-    }
-  });
-  
-  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="GridGenerator" xmlns="http://www.topografix.com/GPX/1/1">
-  <metadata>
-    <name>Сетка точек</name>
-    <desc>Сгенерированная сетка с шагом ${document.getElementById('gridStep').value}м</desc>
-  </metadata>${waypoints}${tracks}
-</gpx>`;
-  
+  if (gridPoints.length === 0) { alert('Сначала сгенерируйте сетку'); return; }
+  let wpts = '', trks = '';
+  gridPoints.forEach(p => { wpts += `<wpt lat="${p.lat}" lon="${p.lng}"><name>${p.label}</name></wpt>\n`; });
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n${wpts}</gpx>`;
   const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
-  a.download = `grid_${document.getElementById('gridStep').value}m.gpx`;
-  document.body.appendChild(a);
+  a.href = URL.createObjectURL(blob);
+  a.download = 'grid.gpx';
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
-// ======== ФУНКЦИЯ ДЛЯ ОПРЕДЕЛЕНИЯ МЕСТОПОЛОЖЕНИЯ ========
+// ======== ГЕОЛОКАЦИЯ ========
 function getUserLocation() {
-  if (!navigator.geolocation) {
-    alert('Геолокация не поддерживается вашим браузером');
-    return;
-  }
-  
-  const options = {
-    enableHighAccuracy: true,
-    timeout: 10000,
-    maximumAge: 0
-  };
-  
-  function success(position) {
-    const { latitude, longitude, accuracy } = position.coords;
-    
-    if (userLocationMarker) {
-      map.removeLayer(userLocationMarker);
-    }
-    
-    userLocationMarker = L.marker([latitude, longitude], { 
-      icon: userLocationIcon,
-      zIndexOffset: 1000
-    }).addTo(map)
-      .bindPopup(`Ваше местоположение<br>Точность: ${Math.round(accuracy)}м`)
-      .openPopup();
-    
-    map.setView([latitude, longitude], 16);
-    
-    const accuracyCircle = L.circle([latitude, longitude], {
-      radius: accuracy,
-      color: '#2196f3',
-      fillColor: '#2196f3',
-      fillOpacity: 0.1,
-      weight: 1
-    }).addTo(map);
-    
-    setTimeout(() => {
-      map.removeLayer(accuracyCircle);
-    }, 5000);
-  }
-  
-  function error(err) {
-    let message = 'Не удалось определить местоположение: ';
-    switch(err.code) {
-      case err.PERMISSION_DENIED:
-        message += 'Доступ запрещён';
-        break;
-      case err.POSITION_UNAVAILABLE:
-        message += 'Недоступно';
-        break;
-      case err.TIMEOUT:
-        message += 'Время истекло';
-        break;
-      default:
-        message += 'Неизвестная ошибка';
-    }
-    alert(message);
-  }
-  
-  navigator.geolocation.getCurrentPosition(success, error, options);
+  if (!navigator.geolocation) { alert('Геолокация не поддерживается'); return; }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude, accuracy } = pos.coords;
+      if (userLocationMarker) map.removeLayer(userLocationMarker);
+      userLocationMarker = L.marker([latitude, longitude], { icon: userLocationIcon, zIndexOffset: 1000 })
+        .addTo(map).bindPopup(`Ваше местоположение<br>Точность: ${Math.round(accuracy)}м`).openPopup();
+      map.setView([latitude, longitude], 16);
+    },
+    (err) => { alert('Не удалось определить местоположение'); },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
 }
 
-// ======== ГЕОКОДЕР (Nominatim) ========
+// ======== ГЕОКОДЕР ========
 async function geocodeAddress(query) {
-  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q='
-    + encodeURIComponent(query);
-
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query);
   try {
-    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-    if (!resp.ok) throw new Error('Ошибка ответа геокодера');
+    const resp = await fetch(url);
     const data = await resp.json();
-    if (!data || data.length === 0) {
-      alert('Адрес не найден');
-      return null;
-    }
-    return {
-      lat: parseFloat(data[0].lat),
-      lng: parseFloat(data[0].lon),
-      displayName: data[0].display_name
-    };
-  } catch (e) {
-    console.error(e);
-    alert('Ошибка запроса геокодера');
-    return null;
-  }
+    if (!data || data.length === 0) { alert('Адрес не найден'); return null; }
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), displayName: data[0].display_name };
+  } catch (e) { alert('Ошибка геокодера'); return null; }
 }
 
 // ======== UI-ЭЛЕМЕНТЫ ========
-const addressInput       = document.getElementById('addressInput');
-const btnSearchAddress   = document.getElementById('btnSearchAddress');
-const siteSelect          = document.getElementById('siteSelect');
-const btnAddSite          = document.getElementById('btnAddSite');
-const btnDeleteSite       = document.getElementById('btnDeleteSite');
-const nameInput           = document.getElementById('nameInput');
-const cellIdInput         = document.getElementById('cellIdInput');
-const operatorInput       = document.getElementById('operatorInput');
-const btnApplySiteFields  = document.getElementById('btnApplySiteFields');
-const latInput            = document.getElementById('latInput');
-const lngInput            = document.getElementById('lngInput');
-const btnSetCoords        = document.getElementById('btnSetCoords');
-const sectorsCountInput   = document.getElementById('sectorsCountInput');
-const btnRebuildSectors   = document.getElementById('btnRebuildSectors');
-const sectorSelect        = document.getElementById('sectorSelect');
-const azInput             = document.getElementById('azInput');
-const bwInput             = document.getElementById('bwInput');
-const rInput              = document.getElementById('rInput');
-const sectorExportCheckbox= document.getElementById('sectorExportCheckbox');
-const btnApplySector      = document.getElementById('btnApplySector');
-const btnDrawAll          = document.getElementById('btnDrawAll');
-const btnClearZones       = document.getElementById('btnClearZones');
-const btnDrawAzimuthLine  = document.getElementById('btnDrawAzimuthLine');
+const addressInput = document.getElementById('addressInput');
+const btnSearchAddress = document.getElementById('btnSearchAddress');
+const siteSelect = document.getElementById('siteSelect');
+const btnAddSite = document.getElementById('btnAddSite');
+const btnDeleteSite = document.getElementById('btnDeleteSite');
+const nameInput = document.getElementById('nameInput');
+const cellIdInput = document.getElementById('cellIdInput');
+const operatorInput = document.getElementById('operatorInput');
+const btnApplySiteFields = document.getElementById('btnApplySiteFields');
+const latInput = document.getElementById('latInput');
+const lngInput = document.getElementById('lngInput');
+const btnSetCoords = document.getElementById('btnSetCoords');
+const sectorsCountInput = document.getElementById('sectorsCountInput');
+const btnRebuildSectors = document.getElementById('btnRebuildSectors');
+const sectorSelect = document.getElementById('sectorSelect');
+const azInput = document.getElementById('azInput');
+const bwInput = document.getElementById('bwInput');
+const rInput = document.getElementById('rInput');
+const sectorExportCheckbox = document.getElementById('sectorExportCheckbox');
+const btnApplySector = document.getElementById('btnApplySector');
+const btnDrawAll = document.getElementById('btnDrawAll');
+const btnClearZones = document.getElementById('btnClearZones');
+const btnDrawAzimuthLine = document.getElementById('btnDrawAzimuthLine');
 const btnClearAzimuthLine = document.getElementById('btnClearAzimuthLine');
-const freeZoneSelect      = document.getElementById('freeZoneSelect');
-const freeLatInput        = document.getElementById('freeLat');
-const freeLngInput        = document.getElementById('freeLng');
-const freeAzInput         = document.getElementById('freeAz');
-const freeBwInput         = document.getElementById('freeBw');
-const freeRInput          = document.getElementById('freeR');
-const freeNameInput       = document.getElementById('freeName');
-const freeExportCheckbox  = document.getElementById('freeExportCheckbox');
-const btnDrawFree         = document.getElementById('btnDrawFree');
-const btnToggleFreeVisible= document.getElementById('btnToggleFreeVisible');
-const btnDeleteFree       = document.getElementById('btnDeleteFree');
-const btnClearFree        = document.getElementById('btnClearFree');
-const btnGenerateGrid     = document.getElementById('btnGenerateGrid');
-const btnClearGrid        = document.getElementById('btnClearGrid');
-const btnExportGridGpx    = document.getElementById('btnExportGridGpx');
-const btnExportJson       = document.getElementById('btnExportJson');
-const jsonFileInput       = document.getElementById('jsonFileInput');
-const btnImportJson       = document.getElementById('btnImportJson');
-const btnExportAzimuthGpx         = document.getElementById('btnExportAzimuthGpx');
-const btnExportZonesGpx           = document.getElementById('btnExportZonesGpx');
-const btnExportAllGpx             = document.getElementById('btnExportAllGpx');
+const freeZoneSelect = document.getElementById('freeZoneSelect');
+const freeLatInput = document.getElementById('freeLat');
+const freeLngInput = document.getElementById('freeLng');
+const freeAzInput = document.getElementById('freeAz');
+const freeBwInput = document.getElementById('freeBw');
+const freeRInput = document.getElementById('freeR');
+const freeNameInput = document.getElementById('freeName');
+const freeExportCheckbox = document.getElementById('freeExportCheckbox');
+const btnDrawFree = document.getElementById('btnDrawFree');
+const btnToggleFreeVisible = document.getElementById('btnToggleFreeVisible');
+const btnDeleteFree = document.getElementById('btnDeleteFree');
+const btnClearFree = document.getElementById('btnClearFree');
+const btnGenerateGrid = document.getElementById('btnGenerateGrid');
+const btnClearGrid = document.getElementById('btnClearGrid');
+const btnExportGridGpx = document.getElementById('btnExportGridGpx');
+const btnExportJson = document.getElementById('btnExportJson');
+const jsonFileInput = document.getElementById('jsonFileInput');
+const btnImportJson = document.getElementById('btnImportJson');
+const btnClearAll = document.getElementById('btnClearAll');
+const btnExportAzimuthGpx = document.getElementById('btnExportAzimuthGpx');
+const btnExportZonesGpx = document.getElementById('btnExportZonesGpx');
+const btnExportAllGpx = document.getElementById('btnExportAllGpx');
 const btnExportSelectedAzimuthGpx = document.getElementById('btnExportSelectedAzimuthGpx');
-const btnExportSelectedZonesGpx   = document.getElementById('btnExportSelectedZonesGpx');
+const btnExportSelectedZonesGpx = document.getElementById('btnExportSelectedZonesGpx');
 const btnExportSelectedAzimuthAndZonesGpx = document.getElementById('btnExportSelectedAzimuthAndZonesGpx');
 
 // ======== PWA УСТАНОВКА ========
@@ -1606,146 +1587,43 @@ const installInstructions = document.getElementById('install-instructions');
 
 function getBrowserInfo() {
   const ua = navigator.userAgent;
-  
-  if (/iPad|iPhone|iPod/.test(ua) && !window.MSStream) {
+  if (/iPad|iPhone|iPod/.test(ua)) {
     if (/CriOS/.test(ua)) return { name: 'Chrome iOS', icon: '🌐', type: 'chrome-ios' };
-    if (/FxiOS/.test(ua)) return { name: 'Firefox iOS', icon: '🦊', type: 'firefox-ios' };
     return { name: 'Safari', icon: '🧭', type: 'safari' };
   }
-  
   if (/Android/.test(ua)) {
     if (/Chrome/.test(ua)) return { name: 'Chrome Android', icon: '🌐', type: 'chrome-android' };
-    if (/Firefox/.test(ua)) return { name: 'Firefox Android', icon: '🦊', type: 'firefox-android' };
-    if (/Samsung/.test(ua)) return { name: 'Samsung Internet', icon: '🌐', type: 'samsung' };
     return { name: 'Android Browser', icon: '🤖', type: 'android' };
   }
-  
   if (/Edg/.test(ua)) return { name: 'Microsoft Edge', icon: '🌐', type: 'edge' };
   if (/Chrome/.test(ua)) return { name: 'Google Chrome', icon: '🌐', type: 'chrome' };
   if (/Firefox/.test(ua)) return { name: 'Firefox', icon: '🦊', type: 'firefox' };
-  if (/Safari/.test(ua)) return { name: 'Safari', icon: '🧭', type: 'safari-mac' };
-  
   return { name: 'Браузер', icon: '🌐', type: 'other' };
 }
 
 function getInstructions(browserType) {
   const instructions = {
-    'safari': {
-      steps: [
-        { text: 'Нажмите кнопку <span class="icon">📤</span> <strong>«Поделиться»</strong> внизу экрана' },
-        { text: 'Прокрутите вниз и выберите <strong>«На экран Домой»</strong>' },
-        { text: 'Нажмите <strong>«Добавить»</strong> в правом верхнем углу' }
-      ]
-    },
-    'chrome-ios': {
-      steps: [
-        { text: 'Нажмите <span class="icon">⋯</span> <strong>меню</strong> (три точки) справа вверху' },
-        { text: 'Выберите <strong>«Поделиться...»</strong>' },
-        { text: 'Нажмите <strong>«На экран Домой»</strong>' },
-        { text: 'Подтвердите нажав <strong>«Добавить»</strong>' }
-      ]
-    },
-    'firefox-ios': {
-      steps: [
-        { text: 'Нажмите <span class="icon">☰</span> <strong>меню</strong> внизу экрана' },
-        { text: 'Выберите <strong>«Поделиться»</strong>' },
-        { text: 'Нажмите <strong>«На экран Домой»</strong>' }
-      ]
-    },
-    'chrome-android': {
-      steps: [
-        { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки) справа вверху' },
-        { text: 'Выберите <strong>«Установить приложение»</strong> или <strong>«Добавить на главный экран»</strong>' },
-        { text: 'Подтвердите установку' }
-      ]
-    },
-    'firefox-android': {
-      steps: [
-        { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки)' },
-        { text: 'Выберите <strong>«Установить»</strong>' },
-        { text: 'Подтвердите добавление на главный экран' }
-      ]
-    },
-    'samsung': {
-      steps: [
-        { text: 'Нажмите <span class="icon">☰</span> <strong>меню</strong> внизу' },
-        { text: 'Выберите <strong>«Добавить на главный экран»</strong>' },
-        { text: 'Нажмите <strong>«Добавить»</strong>' }
-      ]
-    },
-    'chrome': {
-      steps: [
-        { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки) справа вверху' },
-        { text: 'Выберите <strong>«Установить Биллинг зоны»</strong>' },
-        { text: 'Или нажмите значок <span class="icon">⊕</span> в адресной строке' }
-      ]
-    },
-    'edge': {
-      steps: [
-        { text: 'Нажмите <span class="icon">⋯</span> <strong>меню</strong> (три точки) справа вверху' },
-        { text: 'Выберите <strong>«Приложения»</strong> → <strong>«Установить этот сайт как приложение»</strong>' },
-        { text: 'Нажмите <strong>«Установить»</strong>' }
-      ]
-    },
-    'firefox': {
-      steps: [
-        { text: 'Firefox на десктопе не поддерживает установку PWA' },
-        { text: 'Рекомендуем использовать <strong>Chrome</strong> или <strong>Edge</strong>' },
-        { text: 'Или добавьте сайт в закладки для быстрого доступа' }
-      ]
-    },
-    'safari-mac': {
-      steps: [
-        { text: 'В macOS Sonoma и новее: <strong>Файл</strong> → <strong>Добавить в Dock</strong>' },
-        { text: 'Или добавьте сайт в закладки: <strong>⌘+D</strong>' },
-        { text: 'Для полной PWA поддержки используйте <strong>Chrome</strong>' }
-      ]
-    },
-    'other': {
-      steps: [
-        { text: 'Откройте <strong>меню браузера</strong>' },
-        { text: 'Найдите опцию <strong>«Установить»</strong> или <strong>«Добавить на главный экран»</strong>' },
-        { text: 'Если такой опции нет, добавьте сайт в закладки' }
-      ]
-    }
+    'safari': { steps: [{ text: 'Нажмите <strong>📤 Поделиться</strong>' }, { text: 'Выберите <strong>На экран Домой</strong>' }, { text: 'Нажмите <strong>Добавить</strong>' }] },
+    'chrome-ios': { steps: [{ text: 'Нажмите <strong>⋯ меню</strong>' }, { text: 'Выберите <strong>Поделиться</strong>' }, { text: 'Нажмите <strong>На экран Домой</strong>' }] },
+    'chrome-android': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Установить приложение</strong>' }] },
+    'chrome': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Установить</strong>' }] },
+    'edge': { steps: [{ text: 'Нажмите <strong>⋯ меню</strong>' }, { text: '<strong>Приложения → Установить</strong>' }] },
+    'firefox': { steps: [{ text: 'Firefox не поддерживает PWA' }, { text: 'Используйте Chrome или Edge' }] },
+    'other': { steps: [{ text: 'Откройте меню браузера' }, { text: 'Найдите "Установить" или "На главный экран"' }] }
   };
-  
   return instructions[browserType] || instructions['other'];
 }
 
 function showInstallModal() {
   const browser = getBrowserInfo();
-  const canAutoInstall = !!deferredPrompt;
   const instructions = getInstructions(browser.type);
-  
-  let html = `
-    <div class="browser-info">
-      <div class="browser-icon">${browser.icon}</div>
-      <p class="browser-name">${browser.name}</p>
-    </div>
-  `;
-  
-  if (canAutoInstall) {
-    html += `
-      <button class="auto-install-btn" onclick="autoInstall()">
-        <span>📲</span>
-        <span>Установить сейчас</span>
-      </button>
-      <div class="divider">или вручную</div>
-    `;
+  let html = `<div class="browser-info"><div class="browser-icon">${browser.icon}</div><p class="browser-name">${browser.name}</p></div>`;
+  if (deferredPrompt) {
+    html += `<button class="auto-install-btn" onclick="autoInstall()"><span>📲</span><span>Установить сейчас</span></button><div class="divider">или вручную</div>`;
   }
-  
   html += '<ol class="install-steps">';
-  instructions.steps.forEach((step, index) => {
-    html += `
-      <li>
-        <span class="step-number">${index + 1}</span>
-        <span class="step-text">${step.text}</span>
-      </li>
-    `;
-  });
+  instructions.steps.forEach((step, i) => { html += `<li><span class="step-number">${i+1}</span><span class="step-text">${step.text}</span></li>`; });
   html += '</ol>';
-  
   installInstructions.innerHTML = html;
   installModal.classList.add('show');
   document.body.style.overflow = 'hidden';
@@ -1758,86 +1636,37 @@ function closeInstallModal() {
 
 async function autoInstall() {
   if (!deferredPrompt) return;
-  
-  try {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      hideInstallIcon();
-      closeInstallModal();
-    }
-    
-    deferredPrompt = null;
-  } catch (err) {
-    console.error('Ошибка установки:', err);
-  }
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') { hideInstallIcon(); closeInstallModal(); }
+  deferredPrompt = null;
 }
 
 function isPwaInstalled() {
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         window.navigator.standalone === true;
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 }
 
 function showInstallIcon() {
-  if (!isPwaInstalled() && pwaInstallIcon) {
-    pwaInstallIcon.classList.add('show');
-  }
+  if (!isPwaInstalled() && pwaInstallIcon) pwaInstallIcon.classList.add('show');
 }
 
 function hideInstallIcon() {
-  if (pwaInstallIcon) {
-    pwaInstallIcon.classList.remove('show');
-    pwaInstallIcon.classList.add('installed');
-  }
+  if (pwaInstallIcon) { pwaInstallIcon.classList.remove('show'); pwaInstallIcon.classList.add('installed'); }
 }
 
-if (isPwaInstalled()) {
-  hideInstallIcon();
-} else {
-  setTimeout(showInstallIcon, 2000);
-}
+if (isPwaInstalled()) { hideInstallIcon(); } else { setTimeout(showInstallIcon, 2000); }
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  showInstallIcon();
-});
-
-if (pwaInstallIcon) {
-  pwaInstallIcon.addEventListener('click', showInstallModal);
-}
-
-if (installModal) {
-  installModal.addEventListener('click', (e) => {
-    if (e.target === installModal) {
-      closeInstallModal();
-    }
-  });
-}
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && installModal.classList.contains('show')) {
-    closeInstallModal();
-  }
-});
-
-window.addEventListener('appinstalled', () => {
-  hideInstallIcon();
-  closeInstallModal();
-  deferredPrompt = null;
-});
+window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; showInstallIcon(); });
+if (pwaInstallIcon) pwaInstallIcon.addEventListener('click', showInstallModal);
+if (installModal) installModal.addEventListener('click', (e) => { if (e.target === installModal) closeInstallModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && installModal.classList.contains('show')) closeInstallModal(); });
+window.addEventListener('appinstalled', () => { hideInstallIcon(); closeInstallModal(); deferredPrompt = null; });
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
-      const registration = await navigator.serviceWorker.register('./sw.js', {
-        scope: './'
-      });
-      console.log('ServiceWorker registered:', registration.scope);
-    } catch (err) {
-      console.log('ServiceWorker registration failed:', err);
-    }
+      await navigator.serviceWorker.register('./sw.js', { scope: './' });
+    } catch (err) { console.log('SW registration failed'); }
   });
 }
 
@@ -1847,89 +1676,34 @@ if (window.innerWidth <= 768) {
   const menuToggle = document.getElementById('mobile-menu-toggle');
   const centerBtn = document.getElementById('mobile-center-btn');
   const dragHandle = document.getElementById('drag-handle');
-  
-  let startY = 0;
-  let isDragging = false;
-  let isInputFocused = false;
+  let startY = 0, isDragging = false, isInputFocused = false;
   
   document.querySelectorAll('input, select').forEach(el => {
-    el.addEventListener('focus', () => {
-      isInputFocused = true;
-      sidebar.classList.add('expanded');
-    });
-    
-    el.addEventListener('blur', () => {
-      isInputFocused = false;
-    });
+    el.addEventListener('focus', () => { isInputFocused = true; sidebar.classList.add('expanded'); });
+    el.addEventListener('blur', () => { isInputFocused = false; });
   });
   
-  menuToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    sidebar.classList.toggle('expanded');
-  });
-  
-  dragHandle.addEventListener('click', () => {
-    sidebar.classList.add('expanded');
-  });
-  
-  dragHandle.addEventListener('touchstart', (e) => {
-    startY = e.touches[0].clientY;
-    isDragging = true;
-    sidebar.classList.add('dragging');
-  }, { passive: true });
-  
+  menuToggle.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('expanded'); });
+  dragHandle.addEventListener('click', () => { sidebar.classList.add('expanded'); });
+  dragHandle.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; isDragging = true; }, { passive: true });
   dragHandle.addEventListener('touchmove', (e) => {
     if (!isDragging || isInputFocused) return;
-    e.preventDefault();
-    
-    const currentY = e.touches[0].clientY;
-    const delta = currentY - startY;
-    
-    if (delta > 30) {
-      sidebar.classList.remove('expanded');
-    } else if (delta < -30) {
-      sidebar.classList.add('expanded');
-    }
-  }, { passive: false });
-  
-  dragHandle.addEventListener('touchend', () => {
-    isDragging = false;
-    sidebar.classList.remove('dragging');
-  });
-  
-  centerBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    getUserLocation();
-  });
-  
-  map.on('click', () => {
-    if (!isInputFocused) {
-      sidebar.classList.remove('expanded');
-    }
-  });
-  
-  map.on('dragstart', () => {
-    if (!isInputFocused) {
-      sidebar.classList.remove('expanded');
-    }
-  });
-  
-  sidebar.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
+    const delta = e.touches[0].clientY - startY;
+    if (delta > 30) sidebar.classList.remove('expanded');
+    else if (delta < -30) sidebar.classList.add('expanded');
+  }, { passive: true });
+  dragHandle.addEventListener('touchend', () => { isDragging = false; });
+  centerBtn.addEventListener('click', (e) => { e.stopPropagation(); getUserLocation(); });
+  map.on('click', () => { if (!isInputFocused) sidebar.classList.remove('expanded'); });
+  sidebar.addEventListener('click', (e) => { e.stopPropagation(); });
 }
 
-// ======== ОТРИСОВКА МАРКЕРОВ ВЫШЕК ========
+// ======== ОТРИСОВКА МАРКЕРОВ ========
 function drawSiteMarkers() {
   siteMarkerGroup.clearLayers();
   sites.forEach(site => {
     const m = L.marker([site.lat, site.lng]).addTo(siteMarkerGroup);
-    m.bindPopup(
-      `${site.name} (${site.id})<br>` +
-      `CellID: ${site.cellId || '-'}<br>` +
-      `Оператор: ${site.operator || '-'}<br>` +
-      `Lat: ${site.lat.toFixed(5)}<br>Lng: ${site.lng.toFixed(5)}`
-    );
+    m.bindPopup(`${site.name} (${site.id})<br>CellID: ${site.cellId || '-'}<br>Оператор: ${site.operator || '-'}`);
   });
 }
 
@@ -1945,8 +1719,7 @@ function fillSiteSelect() {
 }
 
 function getCurrentSite() {
-  const id = siteSelect.value;
-  return sites.find(s => s.id === id);
+  return sites.find(s => s.id === siteSelect.value);
 }
 
 function fillSectorSelect() {
@@ -1956,8 +1729,7 @@ function fillSectorSelect() {
   site.sectors.forEach(sec => {
     const opt = document.createElement('option');
     opt.value = sec.id;
-    const mark = sec.selectedForExport ? '✓ ' : '';
-    opt.textContent = `${mark}Сектор ${sec.id}`;
+    opt.textContent = `${sec.selectedForExport ? '✓ ' : ''}Сектор ${sec.id}`;
     sectorSelect.appendChild(opt);
   });
 }
@@ -1965,118 +1737,70 @@ function fillSectorSelect() {
 function syncSectorInputsFromSelect() {
   const site = getCurrentSite();
   if (!site) return;
-  const secId = parseInt(sectorSelect.value, 10);
-  const sec = site.sectors.find(s => s.id === secId);
+  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
   if (!sec) return;
   azInput.value = sec.azimuth;
   bwInput.value = sec.beamWidth;
-  rInput.value  = sec.radius;
+  rInput.value = sec.radius;
   sectorExportCheckbox.checked = !!sec.selectedForExport;
 }
 
 function syncUiFromSite() {
   const site = getCurrentSite();
   if (!site) return;
-  nameInput.value     = site.name || '';
-  cellIdInput.value   = site.cellId || '';
+  nameInput.value = site.name || '';
+  cellIdInput.value = site.cellId || '';
   operatorInput.value = site.operator || '';
-  latInput.value      = site.lat.toFixed(5);
-  lngInput.value      = site.lng.toFixed(5);
+  latInput.value = site.lat.toFixed(5);
+  lngInput.value = site.lng.toFixed(5);
   sectorsCountInput.value = site.sectors.length;
-
   fillSectorSelect();
-  const sec = site.sectors[0];
-  if (sec) {
-    sectorSelect.value = sec.id;
-    syncSectorInputsFromSelect();
-  }
-
+  if (site.sectors[0]) { sectorSelect.value = site.sectors[0].id; syncSectorInputsFromSelect(); }
   freeLatInput.value = site.lat.toFixed(5);
   freeLngInput.value = site.lng.toFixed(5);
 }
 
 function rebuildSectorsForSite(site, count) {
   const n = Math.max(1, count);
-  const beamWidth = 360 / n;
-  const defaultRadius = (site.sectors[0] && site.sectors[0].radius) || 2000;
-
+  const bw = 360 / n;
+  const r = (site.sectors[0] && site.sectors[0].radius) || 2000;
   site.sectors = [];
   for (let i = 0; i < n; i++) {
-    const az = i * beamWidth;
-    site.sectors.push({
-      id: i + 1,
-      azimuth: az,
-      beamWidth,
-      radius: defaultRadius,
-      selectedForExport: false
-    });
+    site.sectors.push({ id: i + 1, azimuth: i * bw, beamWidth: bw, radius: r, selectedForExport: false });
   }
 }
 
-// ======== ЗОНЫ ПО ВЫШКАМ ========
+// ======== ЗОНЫ ========
 function drawAllZones() {
   zonesLayerGroup.clearLayers();
-
   sites.forEach(site => {
     site.sectors.forEach(sec => {
-      const colorIndex = site.id.charCodeAt(site.id.length - 1) * 100 + sec.id;
-      const color = getUniqueColor(colorIndex);
-
-      const polyCoords = makeSectorPolygon(
-        site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius
-      );
-      const poly = L.polygon(polyCoords, {
-        color,
-        fillColor: color,
-        fillOpacity: 0.25,
-        weight: 1
-      }).addTo(zonesLayerGroup);
-
-      poly.bindTooltip(
-        `${site.name} (${site.id})\n` +
-        `CellID: ${site.cellId || '-'}\n` +
-        `Оператор: ${site.operator || '-'}\n` +
-        `Сектор ${sec.id}\nAz ${sec.azimuth}°\nBw ${sec.beamWidth}°\nR ${sec.radius} м` +
-        `\nЭкспорт: ${sec.selectedForExport ? 'да' : 'нет'}`,
-        { permanent: false }
-      );
+      const color = getUniqueColor(site.id.charCodeAt(site.id.length - 1) * 100 + sec.id);
+      const poly = L.polygon(makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius), { color, fillColor: color, fillOpacity: 0.25, weight: 1 }).addTo(zonesLayerGroup);
+      poly.bindTooltip(`${site.name}\nСектор ${sec.id}\nAz ${sec.azimuth}°`);
     });
   });
 }
 
 // ======== ПРОИЗВОЛЬНЫЕ ЗОНЫ ========
 function fillFreeZoneSelect() {
-  freeZoneSelect.innerHTML = '';
-  const placeholder = document.createElement('option');
-  placeholder.value = '';
-  placeholder.textContent = '— новая зона —';
-  freeZoneSelect.appendChild(placeholder);
-
+  freeZoneSelect.innerHTML = '<option value="">— новая зона —</option>';
   freeZones.forEach(zone => {
     const opt = document.createElement('option');
     opt.value = zone.id;
-    const vis = zone.visible === false ? ' (скрыта)' : '';
-    const sel = zone.selectedForExport ? '✓ ' : '';
-    opt.textContent = `${sel}${zone.id}: ${zone.name || 'без имени'}${vis}`;
+    opt.textContent = `${zone.selectedForExport ? '✓ ' : ''}${zone.id}: ${zone.name || 'без имени'}${zone.visible === false ? ' (скрыта)' : ''}`;
     freeZoneSelect.appendChild(opt);
   });
 }
 
 function syncInputsFromFreeZone() {
-  const idStr = freeZoneSelect.value;
-  if (!idStr) {
-    freeExportCheckbox.checked = false;
-    return;
-  }
-  const id = parseInt(idStr, 10);
-  const zone = freeZones.find(z => z.id === id);
-  if (!zone) return;
-
-  freeLatInput.value  = zone.lat;
-  freeLngInput.value  = zone.lng;
-  freeAzInput.value   = zone.azimuth;
-  freeBwInput.value   = zone.beamWidth;
-  freeRInput.value    = zone.radius;
+  const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
+  if (!zone) { freeExportCheckbox.checked = false; return; }
+  freeLatInput.value = zone.lat;
+  freeLngInput.value = zone.lng;
+  freeAzInput.value = zone.azimuth;
+  freeBwInput.value = zone.beamWidth;
+  freeRInput.value = zone.radius;
   freeNameInput.value = zone.name || '';
   freeExportCheckbox.checked = !!zone.selectedForExport;
 }
@@ -2086,37 +1810,11 @@ function redrawFreeZones() {
   freeZones.forEach(zone => {
     zone.polyLayer = null;
     zone.lineLayer = null;
-
     if (zone.visible === false) return;
-
     const color = zone.color || getUniqueColor(zone.id);
-    const polyCoords = makeSectorPolygon(
-      zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius
-    );
-    const lineCoords = makeAzimuthLine(
-      zone.lat, zone.lng, zone.azimuth, zone.radius
-    );
-
-    const poly = L.polygon(polyCoords, {
-      color,
-      fillColor: color,
-      fillOpacity: 0.25,
-      weight: 1
-    }).addTo(freeLayerGroup);
-
-    const line = L.polyline(lineCoords, {
-      color,
-      weight: 2,
-      dashArray: '4,4'
-    }).addTo(freeLayerGroup);
-
-    const name = zone.name || `zone ${zone.id}`;
-    poly.bindTooltip(
-      `${name}\nAz ${zone.azimuth}°\nBw ${zone.beamWidth}°\nR ${zone.radius} м` +
-      `\nЭкспорт: ${zone.selectedForExport ? 'да' : 'нет'}`,
-      { permanent: false }
-    );
-
+    const poly = L.polygon(makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius), { color, fillColor: color, fillOpacity: 0.25, weight: 1 }).addTo(freeLayerGroup);
+    const line = L.polyline(makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius), { color, weight: 2, dashArray: '4,4' }).addTo(freeLayerGroup);
+    poly.bindTooltip(`${zone.name || 'zone ' + zone.id}\nAz ${zone.azimuth}°`);
     zone.polyLayer = poly;
     zone.lineLayer = line;
     zone.color = color;
@@ -2125,57 +1823,18 @@ function redrawFreeZones() {
 
 // ======== JSON ========
 function buildExportConfig() {
-  const cleanSites = sites.map(site => ({
-    id: site.id,
-    name: site.name || '',
-    cellId: site.cellId || '',
-    operator: site.operator || '',
-    lat: site.lat,
-    lng: site.lng,
-    sectors: (site.sectors || []).map(sec => ({
-      id: sec.id,
-      azimuth: sec.azimuth,
-      beamWidth: sec.beamWidth,
-      radius: sec.radius,
-      selectedForExport: sec.selectedForExport === true
-    }))
-  }));
-
-  const cleanFreeZones = freeZones.map(zone => ({
-    id: zone.id,
-    name: zone.name || '',
-    lat: zone.lat,
-    lng: zone.lng,
-    azimuth: zone.azimuth,
-    beamWidth: zone.beamWidth,
-    radius: zone.radius,
-    visible: zone.visible !== false,
-    color: zone.color || null,
-    selectedForExport: zone.selectedForExport === true
-  }));
-
-  return { sites: cleanSites, freeZones: cleanFreeZones };
+  return {
+    sites: sites.map(site => ({ id: site.id, name: site.name, cellId: site.cellId, operator: site.operator, lat: site.lat, lng: site.lng, sectors: site.sectors.map(s => ({ id: s.id, azimuth: s.azimuth, beamWidth: s.beamWidth, radius: s.radius, selectedForExport: s.selectedForExport === true })) })),
+    freeZones: freeZones.map(z => ({ id: z.id, name: z.name, lat: z.lat, lng: z.lng, azimuth: z.azimuth, beamWidth: z.beamWidth, radius: z.radius, visible: z.visible !== false, color: z.color, selectedForExport: z.selectedForExport === true }))
+  };
 }
 
 function exportAllToJson() {
-  const data = buildExportConfig();
-  let dataStr;
-  try {
-    dataStr = JSON.stringify(data, null, 2);
-  } catch (e) {
-    alert('Ошибка при подготовке JSON');
-    return;
-  }
-
-  const blob = new Blob([dataStr], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
+  const blob = new Blob([JSON.stringify(buildExportConfig(), null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
-  a.href = url;
+  a.href = URL.createObjectURL(blob);
   a.download = 'config.json';
-  document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 function importAllFromJsonFile(file) {
@@ -2183,236 +1842,92 @@ function importAllFromJsonFile(file) {
   reader.onload = (e) => {
     try {
       const json = JSON.parse(e.target.result);
-
-      if (!Array.isArray(json.sites)) throw new Error('Поле "sites" должно быть массивом');
-      json.sites.forEach(s => {
-        if (!s.id || typeof s.lat !== 'number' || typeof s.lng !== 'number' || !Array.isArray(s.sectors)) {
-          throw new Error('Неверный формат site');
-        }
-        s.name     = s.name || s.id;
-        s.cellId   = s.cellId || '';
-        s.operator = s.operator || '';
-        s.sectors.forEach(sec => {
-          sec.selectedForExport = (sec.selectedForExport === true);
-        });
-      });
-
+      if (!Array.isArray(json.sites)) throw new Error('sites должен быть массивом');
       sites = json.sites;
-
-      if (Array.isArray(json.freeZones)) {
-        freeZones = json.freeZones.map((z, idx) => {
-          const id = z.id || (idx + 1);
-          return {
-            id,
-            name: z.name || '',
-            lat: z.lat,
-            lng: z.lng,
-            azimuth: z.azimuth,
-            beamWidth: z.beamWidth,
-            radius: z.radius,
-            visible: (z.visible !== false),
-            color: z.color || getUniqueColor(id),
-            polyLayer: null,
-            lineLayer: null,
-            selectedForExport: (z.selectedForExport === true)
-          };
-        });
-      } else {
-        freeZones = [];
-      }
-
+      sites.forEach(s => { s.name = s.name || s.id; s.cellId = s.cellId || ''; s.operator = s.operator || ''; });
+      freeZones = (json.freeZones || []).map((z, i) => ({ ...z, id: z.id || i + 1, polyLayer: null, lineLayer: null, color: z.color || getUniqueColor(z.id || i + 1) }));
       fillSiteSelect();
-      if (sites.length > 0) {
-        siteSelect.value = sites[0].id;
-      }
+      if (sites.length > 0) { siteSelect.value = sites[0].id; }
       syncUiFromSite();
       drawSiteMarkers();
       zonesLayerGroup.clearLayers();
-      azimuthLayerGroup.clearLayers();
       fillFreeZoneSelect();
       redrawFreeZones();
-    } catch (err) {
-      alert('Ошибка чтения JSON: ' + err.message);
-    }
+      autoSave(); // Сохраняем после импорта
+    } catch (err) { alert('Ошибка: ' + err.message); }
   };
-  reader.readAsText(file, 'utf-8');
+  reader.readAsText(file);
 }
 
 // ======== GPX ========
 function exportGpxString(gpxStr, fileName) {
-  const blob = new Blob([gpxStr], { type: 'application/gpx+xml' });
-  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = URL.createObjectURL(new Blob([gpxStr], { type: 'application/gpx+xml' }));
   a.download = fileName;
-  document.body.appendChild(a);
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
-function buildGpxFromTracks(tracksXml) {
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<gpx version="1.1" creator="TowerTool" xmlns="http://www.topografix.com/GPX/1/1">
-${tracksXml.join('\n')}
-</gpx>`;
+function buildGpxFromTracks(tracks) {
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n${tracks.join('\n')}\n</gpx>`;
 }
 
 function buildAzimuthGpx(onlySelected = false) {
   const tracks = [];
-
   sites.forEach(site => {
     site.sectors.forEach(sec => {
       if (onlySelected && !sec.selectedForExport) return;
-
       const line = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
-      const name = `${site.name || site.id} азимут ${sec.azimuth}°`;
-
-      tracks.push(
-`  <trk>
-    <name>${name}</name>
-    <trkseg>
-      <trkpt lat="${line[0][0]}" lon="${line[0][1]}"></trkpt>
-      <trkpt lat="${line[1][0]}" lon="${line[1][1]}"></trkpt>
-    </trkseg>
-  </trk>`
-      );
+      tracks.push(`<trk><name>${site.name} Az ${sec.azimuth}°</name><trkseg><trkpt lat="${line[0][0]}" lon="${line[0][1]}"/><trkpt lat="${line[1][0]}" lon="${line[1][1]}"/></trkseg></trk>`);
     });
   });
-
   freeZones.forEach(zone => {
     if (onlySelected && !zone.selectedForExport) return;
-
     const line = makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius);
-    const baseName = zone.name && zone.name.trim() ? zone.name.trim() : `zone ${zone.id}`;
-
-    tracks.push(
-`  <trk>
-    <name>${baseName} азимут ${zone.azimuth}°</name>
-    <trkseg>
-      <trkpt lat="${line[0][0]}" lon="${line[0][1]}"></trkpt>
-      <trkpt lat="${line[1][0]}" lon="${line[1][1]}"></trkpt>
-    </trkseg>
-  </trk>`
-    );
+    tracks.push(`<trk><name>${zone.name || 'zone'} Az ${zone.azimuth}°</name><trkseg><trkpt lat="${line[0][0]}" lon="${line[0][1]}"/><trkpt lat="${line[1][0]}" lon="${line[1][1]}"/></trkseg></trk>`);
   });
-
   return buildGpxFromTracks(tracks);
 }
 
 function buildZonesGpx(onlySelected = false) {
   const tracks = [];
-
   sites.forEach(site => {
     site.sectors.forEach(sec => {
       if (onlySelected && !sec.selectedForExport) return;
-
-      const poly = makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius, 32);
-      const name = `${site.name || site.id} зона сектор ${sec.id}`;
-
-      let trkpts = '';
-      poly.forEach(p => {
-        trkpts += `\n      <trkpt lat="${p[0]}" lon="${p[1]}"></trkpt>`;
-      });
-
-      tracks.push(
-`  <trk>
-    <name>${name}</name>
-    <trkseg>${trkpts}
-    </trkseg>
-  </trk>`
-      );
+      const poly = makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius);
+      let pts = poly.map(p => `<trkpt lat="${p[0]}" lon="${p[1]}"/>`).join('');
+      tracks.push(`<trk><name>${site.name} Сектор ${sec.id}</name><trkseg>${pts}</trkseg></trk>`);
     });
   });
-
   freeZones.forEach(zone => {
     if (onlySelected && !zone.selectedForExport) return;
-
-    const poly = makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius, 32);
-    const baseName = zone.name && zone.name.trim() ? zone.name.trim() : `zone ${zone.id}`;
-
-    let trkpts = '';
-    poly.forEach(p => {
-      trkpts += `\n      <trkpt lat="${p[0]}" lon="${p[1]}"></trkpt>`;
-    });
-
-    tracks.push(
-`  <trk>
-    <name>${baseName} зона</name>
-    <trkseg>${trkpts}
-    </trkseg>
-  </trk>`
-    );
+    const poly = makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius);
+    let pts = poly.map(p => `<trkpt lat="${p[0]}" lon="${p[1]}"/>`).join('');
+    tracks.push(`<trk><name>${zone.name || 'zone'}</name><trkseg>${pts}</trkseg></trk>`);
   });
-
   return buildGpxFromTracks(tracks);
 }
 
 function buildAllGpx() {
-  const tracks = [];
-  const azAll    = buildAzimuthGpx(false);
-  const zonesAll = buildZonesGpx(false);
-
-  const azTrks   = azAll.match(/<trk>[\s\S]*?<\/trk>/g)    || [];
-  const zoneTrks = zonesAll.match(/<trk>[\s\S]*?<\/trk>/g) || [];
-  azTrks.forEach(t => tracks.push(t));
-  zoneTrks.forEach(t => tracks.push(t));
-
-  return buildGpxFromTracks(tracks);
+  const az = buildAzimuthGpx(false).match(/<trk>[\s\S]*?<\/trk>/g) || [];
+  const zones = buildZonesGpx(false).match(/<trk>[\s\S]*?<\/trk>/g) || [];
+  return buildGpxFromTracks([...az, ...zones]);
 }
 
 function buildSelectedAzimuthAndZonesGpx() {
-  const tracks = [];
-  const azSel    = buildAzimuthGpx(true);
-  const zonesSel = buildZonesGpx(true);
-
-  const azTrks   = azSel.match(/<trk>[\s\S]*?<\/trk>/g)    || [];
-  const zoneTrks = zonesSel.match(/<trk>[\s\S]*?<\/trk>/g) || [];
-
-  azTrks.forEach(t => tracks.push(t));
-  zoneTrks.forEach(t => tracks.push(t));
-
-  return buildGpxFromTracks(tracks);
+  const az = buildAzimuthGpx(true).match(/<trk>[\s\S]*?<\/trk>/g) || [];
+  const zones = buildZonesGpx(true).match(/<trk>[\s\S]*?<\/trk>/g) || [];
+  return buildGpxFromTracks([...az, ...zones]);
 }
 
 // ======== СОБЫТИЯ ========
 btnSearchAddress.addEventListener('click', async () => {
-  const query = addressInput.value.trim();
-  if (!query) {
-    alert('Введите адрес для поиска');
-    return;
-  }
-  const res = await geocodeAddress(query);
+  const res = await geocodeAddress(addressInput.value.trim());
   if (!res) return;
-
-  const center = { lat: res.lat, lng: res.lng };
-
-  if (searchMarker) {
-    map.removeLayer(searchMarker);
-    searchMarker = null;
-  }
-
-  map.setView(center, 17);
-
-  searchMarker = L.marker(center)
-    .addTo(map)
-    .bindPopup(res.displayName + '<br><button id="btnRemoveSearchMarker">Убрать маркер</button>')
-    .openPopup();
-
-  freeLatInput.value = center.lat.toFixed(6);
-  freeLngInput.value = center.lng.toFixed(6);
-
-  setTimeout(() => {
-    const btn = document.getElementById('btnRemoveSearchMarker');
-    if (btn) {
-      btn.onclick = () => {
-        if (searchMarker) {
-          map.removeLayer(searchMarker);
-          searchMarker = null;
-        }
-      };
-    }
-  }, 0);
+  if (searchMarker) map.removeLayer(searchMarker);
+  map.setView([res.lat, res.lng], 17);
+  searchMarker = L.marker([res.lat, res.lng]).addTo(map).bindPopup(res.displayName).openPopup();
+  freeLatInput.value = res.lat.toFixed(6);
+  freeLngInput.value = res.lng.toFixed(6);
 });
 
 siteSelect.addEventListener('change', () => {
@@ -2421,224 +1936,124 @@ siteSelect.addEventListener('change', () => {
   if (site) map.setView([site.lat, site.lng], 13);
 });
 
-sectorSelect.addEventListener('change', () => {
-  syncSectorInputsFromSelect();
-});
+sectorSelect.addEventListener('change', syncSectorInputsFromSelect);
 
 sectorExportCheckbox.addEventListener('change', () => {
   const site = getCurrentSite();
   if (!site) return;
-  const secId = parseInt(sectorSelect.value, 10);
-  const sec = site.sectors.find(s => s.id === secId);
-  if (!sec) return;
-  sec.selectedForExport = sectorExportCheckbox.checked;
-  fillSectorSelect();
-  sectorSelect.value = sec.id;
+  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
+  if (sec) { sec.selectedForExport = sectorExportCheckbox.checked; fillSectorSelect(); sectorSelect.value = sec.id; autoSave(); }
 });
 
 btnSetCoords.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site) return;
-  const lat = parseFloat(latInput.value);
-  const lng = parseFloat(lngInput.value);
-  if (Number.isNaN(lat) || Number.isNaN(lng)) return;
-  site.lat = lat;
-  site.lng = lng;
+  site.lat = parseFloat(latInput.value);
+  site.lng = parseFloat(lngInput.value);
   drawSiteMarkers();
-  map.setView([lat, lng], 15);
+  map.setView([site.lat, site.lng], 15);
+  autoSave();
 });
 
 btnApplySiteFields.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site) return;
-  site.name     = nameInput.value || site.id;
-  site.cellId   = cellIdInput.value || '';
-  site.operator = operatorInput.value || '';
+  site.name = nameInput.value || site.id;
+  site.cellId = cellIdInput.value;
+  site.operator = operatorInput.value;
   fillSiteSelect();
   siteSelect.value = site.id;
   drawSiteMarkers();
+  autoSave();
 });
 
 btnApplySector.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site) return;
-  const secId = parseInt(sectorSelect.value, 10);
-  const sec = site.sectors.find(s => s.id === secId);
+  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
   if (!sec) return;
-
-  const az = parseFloat(azInput.value);
-  const bw = parseFloat(bwInput.value);
-  const r  = parseFloat(rInput.value);
-  if (Number.isNaN(az) || Number.isNaN(bw) || Number.isNaN(r)) return;
-
-  sec.azimuth   = az;
-  sec.beamWidth = bw;
-  sec.radius    = r;
+  sec.azimuth = parseFloat(azInput.value);
+  sec.beamWidth = parseFloat(bwInput.value);
+  sec.radius = parseFloat(rInput.value);
   sec.selectedForExport = sectorExportCheckbox.checked;
   fillSectorSelect();
   sectorSelect.value = sec.id;
+  autoSave();
 });
 
 btnRebuildSectors.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site) return;
-  const n = parseInt(sectorsCountInput.value, 10) || 1;
-  rebuildSectorsForSite(site, n);
+  rebuildSectorsForSite(site, parseInt(sectorsCountInput.value) || 1);
   fillSectorSelect();
   syncSectorInputsFromSelect();
+  autoSave();
 });
 
-btnDrawAll.addEventListener('click', () => {
-  drawAllZones();
-});
-
-btnClearZones.addEventListener('click', () => {
-  zonesLayerGroup.clearLayers();
-});
+btnDrawAll.addEventListener('click', drawAllZones);
+btnClearZones.addEventListener('click', () => zonesLayerGroup.clearLayers());
 
 btnDrawAzimuthLine.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site) return;
-  const secId = parseInt(sectorSelect.value, 10);
-  const sec = site.sectors.find(s => s.id === secId);
+  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
   if (!sec) return;
-
   azimuthLayerGroup.clearLayers();
-  const lineCoords = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
-  const colorIndex = site.id.charCodeAt(site.id.length - 1) * 100 + sec.id;
-  const color = getUniqueColor(colorIndex);
-
-  const line = L.polyline(lineCoords, {
-    color,
-    weight: 2,
-    dashArray: '5,5'
-  }).addTo(azimuthLayerGroup);
-
-  line.bindTooltip(
-    `${site.name || site.id}\nAz ${sec.azimuth}° R ${sec.radius} м`,
-    { permanent: false }
-  );
-
+  const line = L.polyline(makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius), { color: getUniqueColor(site.id.charCodeAt(0) * 100 + sec.id), weight: 2, dashArray: '5,5' }).addTo(azimuthLayerGroup);
   map.fitBounds(line.getBounds(), { maxZoom: 16 });
 });
 
-btnClearAzimuthLine.addEventListener('click', () => {
-  azimuthLayerGroup.clearLayers();
-});
+btnClearAzimuthLine.addEventListener('click', () => azimuthLayerGroup.clearLayers());
 
-freeZoneSelect.addEventListener('change', () => {
-  syncInputsFromFreeZone();
-});
+freeZoneSelect.addEventListener('change', syncInputsFromFreeZone);
 
 freeExportCheckbox.addEventListener('change', () => {
-  const idStr = freeZoneSelect.value;
-  if (!idStr) return;
-  const id = parseInt(idStr, 10);
-  const zone = freeZones.find(z => z.id === id);
-  if (!zone) return;
-  zone.selectedForExport = freeExportCheckbox.checked;
-  fillFreeZoneSelect();
-  freeZoneSelect.value = id;
+  const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
+  if (zone) { zone.selectedForExport = freeExportCheckbox.checked; fillFreeZoneSelect(); freeZoneSelect.value = zone.id; autoSave(); }
 });
 
 btnDrawFree.addEventListener('click', () => {
-  const lat = parseFloat(freeLatInput.value);
-  const lng = parseFloat(freeLngInput.value);
-  const az  = parseFloat(freeAzInput.value);
-  const bw  = parseFloat(freeBwInput.value) || 60;
-  const r   = parseFloat(freeRInput.value)  || 1000;
-  const name = freeNameInput.value.trim();
-
-  if ([lat, lng, az].some(v => Number.isNaN(v))) {
-    alert('Заполните Lat, Lng и Az для произвольной зоны');
-    return;
-  }
-
-  const idStr = freeZoneSelect.value;
-  if (idStr) {
-    const id = parseInt(idStr, 10);
-    const zone = freeZones.find(z => z.id === id);
-    if (zone) {
-      zone.lat      = lat;
-      zone.lng      = lng;
-      zone.azimuth  = az;
-      zone.beamWidth= bw;
-      zone.radius   = r;
-      zone.name     = name;
-      zone.visible  = (zone.visible !== false);
-      zone.selectedForExport = freeExportCheckbox.checked;
-    }
+  const lat = parseFloat(freeLatInput.value), lng = parseFloat(freeLngInput.value), az = parseFloat(freeAzInput.value);
+  const bw = parseFloat(freeBwInput.value) || 60, r = parseFloat(freeRInput.value) || 1000, name = freeNameInput.value.trim();
+  if ([lat, lng, az].some(v => isNaN(v))) { alert('Заполните координаты и азимут'); return; }
+  
+  const existing = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
+  if (existing) {
+    Object.assign(existing, { lat, lng, azimuth: az, beamWidth: bw, radius: r, name, selectedForExport: freeExportCheckbox.checked });
   } else {
-    const newId = freeZones.length > 0 ? freeZones[freeZones.length - 1].id + 1 : 1;
-    const zone = {
-      id: newId,
-      name,
-      lat,
-      lng,
-      azimuth: az,
-      beamWidth: bw,
-      radius: r,
-      visible: true,
-      color: getUniqueColor(newId),
-      polyLayer: null,
-      lineLayer: null,
-      selectedForExport: freeExportCheckbox.checked
-    };
-    freeZones.push(zone);
+    const newId = freeZones.length > 0 ? Math.max(...freeZones.map(z => z.id)) + 1 : 1;
+    freeZones.push({ id: newId, name, lat, lng, azimuth: az, beamWidth: bw, radius: r, visible: true, color: getUniqueColor(newId), polyLayer: null, lineLayer: null, selectedForExport: freeExportCheckbox.checked });
   }
-
   fillFreeZoneSelect();
   redrawFreeZones();
-
-  const polyCoords = makeSectorPolygon(lat, lng, az, bw, r);
-  const bounds = L.latLngBounds(polyCoords);
-  map.fitBounds(bounds, { maxZoom: 16 });
+  map.fitBounds(L.latLngBounds(makeSectorPolygon(lat, lng, az, bw, r)), { maxZoom: 16 });
+  autoSave();
 });
 
 btnToggleFreeVisible.addEventListener('click', () => {
-  const idStr = freeZoneSelect.value;
-  if (!idStr) {
-    alert('Сначала выберите зону в списке');
-    return;
-  }
-  const id = parseInt(idStr, 10);
-  const zone = freeZones.find(z => z.id === id);
-  if (!zone) return;
-
+  const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
+  if (!zone) { alert('Выберите зону'); return; }
   zone.visible = !zone.visible;
-
-  if (zone.visible === false) {
-    if (zone.polyLayer) freeLayerGroup.removeLayer(zone.polyLayer);
-    if (zone.lineLayer) freeLayerGroup.removeLayer(zone.lineLayer);
-    zone.polyLayer = null;
-    zone.lineLayer = null;
-  } else {
-    redrawFreeZones();
-  }
   fillFreeZoneSelect();
-  freeZoneSelect.value = id;
+  freeZoneSelect.value = zone.id;
+  redrawFreeZones();
+  autoSave();
 });
 
 btnDeleteFree.addEventListener('click', () => {
-  const idStr = freeZoneSelect.value;
-  if (!idStr) {
-    alert('Сначала выберите зону в списке');
-    return;
-  }
-  const id = parseInt(idStr, 10);
+  const id = parseInt(freeZoneSelect.value);
+  if (!id) { alert('Выберите зону'); return; }
   freeZones = freeZones.filter(z => z.id !== id);
   fillFreeZoneSelect();
   redrawFreeZones();
+  autoSave();
 });
 
 btnClearFree.addEventListener('click', () => {
-  freeZones.forEach(zone => {
-    if (zone.polyLayer) freeLayerGroup.removeLayer(zone.polyLayer);
-    if (zone.lineLayer) freeLayerGroup.removeLayer(zone.lineLayer);
-  });
   freeZones = [];
   freeLayerGroup.clearLayers();
   fillFreeZoneSelect();
+  autoSave();
 });
 
 btnGenerateGrid.addEventListener('click', generateGrid);
@@ -2652,106 +2067,73 @@ btnAddSite.addEventListener('click', () => {
 
 map.on('click', (e) => {
   if (!addSiteMode) return;
-
   const newId = 'SITE_' + (sites.length + 1);
-  const newSite = {
-    id: newId,
-    name: 'Вышка ' + (sites.length + 1),
-    cellId: '',
-    operator: '',
-    lat: e.latlng.lat,
-    lng: e.latlng.lng,
+  sites.push({
+    id: newId, name: 'Вышка ' + (sites.length + 1), cellId: '', operator: '',
+    lat: e.latlng.lat, lng: e.latlng.lng,
     sectors: [
-      { id: 1, azimuth: 0,   beamWidth: 120, radius: 2000, selectedForExport: false },
+      { id: 1, azimuth: 0, beamWidth: 120, radius: 2000, selectedForExport: false },
       { id: 2, azimuth: 120, beamWidth: 120, radius: 2000, selectedForExport: false },
       { id: 3, azimuth: 240, beamWidth: 120, radius: 2000, selectedForExport: false }
     ]
-  };
-  sites.push(newSite);
+  });
   fillSiteSelect();
   siteSelect.value = newId;
   syncUiFromSite();
   drawSiteMarkers();
   map.setView(e.latlng, 15);
-
   addSiteMode = false;
   btnAddSite.style.backgroundColor = '';
+  autoSave();
 });
 
 btnDeleteSite.addEventListener('click', () => {
   const site = getCurrentSite();
-  if (!site) return;
-  if (!confirm(`Удалить ${site.name || site.id}?`)) return;
-
+  if (!site || !confirm(`Удалить ${site.name}?`)) return;
   sites = sites.filter(s => s.id !== site.id);
   fillSiteSelect();
   zonesLayerGroup.clearLayers();
   azimuthLayerGroup.clearLayers();
   drawSiteMarkers();
-
-  if (sites.length > 0) {
-    siteSelect.value = sites[0].id;
-    syncUiFromSite();
-    map.setView([sites[0].lat, sites[0].lng], 12);
-  } else {
-    nameInput.value = '';
-    cellIdInput.value = '';
-    operatorInput.value = '';
-    latInput.value = '';
-    lngInput.value = '';
-    sectorsCountInput.value = 1;
-    sectorSelect.innerHTML = '';
-    map.setView([54.99, 73.37], 12);
-  }
+  if (sites.length > 0) { siteSelect.value = sites[0].id; syncUiFromSite(); map.setView([sites[0].lat, sites[0].lng], 12); }
+  else { nameInput.value = ''; cellIdInput.value = ''; operatorInput.value = ''; latInput.value = ''; lngInput.value = ''; map.setView([54.99, 73.37], 12); }
+  autoSave();
 });
 
-btnExportJson.addEventListener('click', () => {
-  exportAllToJson();
-});
+btnExportJson.addEventListener('click', exportAllToJson);
+btnImportJson.addEventListener('click', () => { const file = jsonFileInput.files[0]; if (file) importAllFromJsonFile(file); else alert('Выберите файл'); });
+btnClearAll.addEventListener('click', clearAllData);
 
-btnImportJson.addEventListener('click', () => {
-  const file = jsonFileInput.files[0];
-  if (!file) {
-    alert('Выберите JSON-файл');
-    return;
-  }
-  importAllFromJsonFile(file);
-});
-
-btnExportAzimuthGpx.addEventListener('click', () => {
-  const gpx = buildAzimuthGpx(false);
-  exportGpxString(gpx, 'azimuths_all.gpx');
-});
-
-btnExportZonesGpx.addEventListener('click', () => {
-  const gpx = buildZonesGpx(false);
-  exportGpxString(gpx, 'zones_all.gpx');
-});
-
-btnExportSelectedAzimuthGpx.addEventListener('click', () => {
-  const gpx = buildAzimuthGpx(true);
-  exportGpxString(gpx, 'azimuths_selected.gpx');
-});
-
-btnExportSelectedZonesGpx.addEventListener('click', () => {
-  const gpx = buildZonesGpx(true);
-  exportGpxString(gpx, 'zones_selected.gpx');
-});
-
-btnExportSelectedAzimuthAndZonesGpx.addEventListener('click', () => {
-  const gpx = buildSelectedAzimuthAndZonesGpx();
-  exportGpxString(gpx, 'azimuths_zones_selected.gpx');
-});
-
-btnExportAllGpx.addEventListener('click', () => {
-  const gpx = buildAllGpx();
-  exportGpxString(gpx, 'all.gpx');
-});
+btnExportAzimuthGpx.addEventListener('click', () => exportGpxString(buildAzimuthGpx(false), 'azimuths_all.gpx'));
+btnExportZonesGpx.addEventListener('click', () => exportGpxString(buildZonesGpx(false), 'zones_all.gpx'));
+btnExportSelectedAzimuthGpx.addEventListener('click', () => exportGpxString(buildAzimuthGpx(true), 'azimuths_selected.gpx'));
+btnExportSelectedZonesGpx.addEventListener('click', () => exportGpxString(buildZonesGpx(true), 'zones_selected.gpx'));
+btnExportSelectedAzimuthAndZonesGpx.addEventListener('click', () => exportGpxString(buildSelectedAzimuthAndZonesGpx(), 'selected.gpx'));
+btnExportAllGpx.addEventListener('click', () => exportGpxString(buildAllGpx(), 'all.gpx'));
 
 // ======== ИНИЦИАЛИЗАЦИЯ ========
+// Загружаем сохранённые данные при запуске
+loadFromLocalStorage();
+
+// Обновляем UI
 fillSiteSelect();
+if (sites.length > 0) {
+  siteSelect.value = sites[0].id;
+  syncUiFromSite();
+}
 drawSiteMarkers();
 fillFreeZoneSelect();
+redrawFreeZones();
+
+// Показываем уведомление о загрузке
+if (sites.length > 0 || freeZones.length > 0) {
+  setTimeout(() => {
+    showSaveIndicator(`📂 Загружено: ${sites.length} вышек, ${freeZones.length} зон`);
+  }, 2000);
+}
+
+console.log('✅ Приложение инициализировано');
+console.log(`📊 Загружено: ${sites.length} вышек, ${freeZones.length} произвольных зон`);
 
 </script>
 
