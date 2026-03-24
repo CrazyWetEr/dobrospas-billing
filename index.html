@@ -2411,6 +2411,10 @@ btnExportAllGpx.addEventListener('click', () => {
 fillSiteSelect();
 drawSiteMarkers();
 fillFreeZoneSelect();
+  // Скрыть attribution Leaflet
+document.querySelector('.leaflet-control-attribution')?.remove();
+// Или через Leaflet API:
+map.attributionControl.remove();
 </script>
 
 </body>
