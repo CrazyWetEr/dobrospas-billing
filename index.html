@@ -1,0 +1,2412 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Анализ биллинга и построение зон — Автор: Ергер Виталий, позывной "Ветер"</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  
+  <!-- PWA мета-теги -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#222831">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Биллинг зоны">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  
+  <style>
+    * { 
+      box-sizing: border-box; 
+      margin: 0;
+      padding: 0;
+    }
+    
+    html, body { 
+      height: 100%; 
+      width: 100%;
+      overflow: hidden;
+      position: fixed;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      color: #222;
+    }
+    
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100vw;
+      overflow: hidden;
+      position: relative;
+    }
+    
+    /* Мобильная панель инструментов */
+    #mobile-toolbar {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      gap: 10px;
+    }
+    
+    .mobile-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #2196f3;
+      color: white;
+      border: none;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      font-size: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .mobile-btn.secondary {
+      background: #4caf50;
+    }
+    
+    .mobile-btn:active {
+      transform: scale(0.95);
+    }
+    
+    /* Сайдбар - адаптивный */
+    #sidebar {
+      width: 100%;
+      max-width: 420px;
+      background: #f5f5f7;
+      border-right: 1px solid #d0d0d5;
+      overflow-y: auto;
+      padding: 10px;
+      transition: transform 0.3s ease;
+      z-index: 900;
+    }
+    
+    /* Мобильная версия */
+    @media (max-width: 768px) {
+      #app {
+        flex-direction: column;
+      }
+      
+      #sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-width: 100%;
+        height: 60vh;
+        border-right: none;
+        border-top: 2px solid #2196f3;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
+        transform: translateY(calc(100% - 70px));
+        transition: transform 0.3s ease;
+        padding-bottom: 80px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      #sidebar.expanded {
+        transform: translateY(0);
+      }
+      
+      /* Ползунок для раскрытия */
+      #sidebar .drag-handle {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        height: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #f5f5f7;
+        border-radius: 20px 20px 0 0;
+        z-index: 10;
+        margin-top: -10px;
+        padding-top: 5px;
+        cursor: pointer;
+      }
+      
+      #sidebar .drag-handle::before {
+        content: '';
+        width: 60px;
+        height: 5px;
+        background: #ccc;
+        border-radius: 10px;
+      }
+      
+      #sidebar.dragging {
+        transition: none;
+      }
+      
+      #map-container {
+        height: 100vh;
+        width: 100vw;
+      }
+      
+      #map {
+        height: 100%;
+        width: 100%;
+      }
+      
+      #mobile-toolbar {
+        display: flex;
+        flex-direction: column;
+      }
+      
+      /* Адаптация контролов */
+      .field-grid {
+        grid-template-columns: 80px 1fr;
+        font-size: 13px;
+      }
+      
+      input, select, button {
+        font-size: 16px !important;
+        padding: 12px !important;
+        min-height: 48px;
+        border-radius: 8px;
+      }
+      
+      input:focus, select:focus {
+        outline: 2px solid #2196f3;
+        border-color: transparent;
+      }
+      
+      .buttons-row {
+        flex-wrap: wrap;
+      }
+      
+      .buttons-row button {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 120px;
+      }
+      
+      .panel-block {
+        margin-bottom: 12px;
+      }
+      
+      .panel-title {
+        font-size: 15px;
+        padding: 8px 0;
+      }
+      
+      /* Предотвращаем закрытие при вводе */
+      #sidebar input, 
+      #sidebar select, 
+      #sidebar button {
+        pointer-events: auto;
+        touch-action: manipulation;
+      }
+    }
+    
+    /* Десктопная версия */
+    @media (min-width: 769px) {
+      #app {
+        flex-direction: row;
+      }
+      
+      #sidebar {
+        width: 380px;
+        min-width: 320px;
+        max-width: 420px;
+        height: 100vh;
+      }
+      
+      #map-container {
+        flex: 1;
+        height: 100vh;
+      }
+    }
+    
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #ddd;
+    }
+    
+    /* Стили панелей */
+    .panel-block {
+      border-radius: 8px;
+      padding: 12px;
+      background: #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: 1px solid #e0e0e5;
+      margin-bottom: 8px;
+    }
+    
+    .panel-title {
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: 14px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .field-grid {
+      display: grid;
+      grid-template-columns: 90px 1fr;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .field-grid label {
+      text-align: right;
+      padding-right: 8px;
+      white-space: nowrap;
+      color: #444;
+      font-size: 13px;
+    }
+    
+    .field-grid input,
+    .field-grid select {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #c0c0c8;
+      font-size: 13px;
+    }
+    
+    .buttons-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    button {
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #b0b0c0;
+      background: #f0f0f7;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    button:hover {
+      background: #e2e2f0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    button:active {
+      background: #d0d0e0;
+      transform: scale(0.98);
+    }
+    
+    .inline-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      justify-content: flex-start;
+    }
+    
+    .inline-checkbox input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+    }
+    
+    /* PWA кнопка установки */
+    #pwa-install-btn {
+      position: fixed;
+      bottom: 90px;
+      right: 20px;
+      z-index: 1000;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 12px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      display: none;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      min-height: 48px;
+    }
+    
+    #pwa-install-btn.show {
+      display: flex;
+    }
+    
+    /* Индикатор загрузки */
+    #loading-indicator {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      z-index: 2000;
+      display: none;
+      font-size: 16px;
+    }
+    
+    /* Исправленный стиль для логотипа - увеличенный в 3 раза */
+    .custom-logo-control {
+      position: absolute !important;
+      top: 30px !important;
+      right: 30px !important;
+      z-index: 1000 !important;
+      background: transparent;
+      padding: 0;
+      border-radius: 12px;
+      box-shadow: none;
+      border: none;
+      pointer-events: none;
+      max-width: 600px;
+    }
+    
+    .custom-logo-control img {
+      display: block;
+      max-width: 100%;
+      width: auto;
+      height: auto;
+      max-height: 240px;
+      opacity: 0.35;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+      transition: opacity 0.2s;
+    }
+    
+    .custom-logo-control img:hover {
+      opacity: 0.5;
+    }
+    
+    /* Для мобильных устройств */
+    @media (max-width: 768px) {
+      .custom-logo-control {
+        top: 20px !important;
+        right: 20px !important;
+        max-width: 450px;
+      }
+      
+      .custom-logo-control img {
+        max-height: 180px;
+        opacity: 0.3;
+      }
+    }
+    
+    /* Сообщение об установке */
+    #install-message {
+      position: fixed;
+      bottom: 150px;
+      right: 20px;
+      left: 20px;
+      background: #333;
+      color: white;
+      padding: 15px;
+      border-radius: 12px;
+      z-index: 1001;
+      display: none;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    
+    #install-message.show {
+      display: block;
+    }
+    
+    #install-message button {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 16px;
+      width: 100%;
+    }
+    
+    /* Стили для сетки */
+    .grid-point-marker {
+      background: transparent;
+    }
+    
+    .grid-point-label {
+      color: #333;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px white;
+      font-size: 12px;
+      background: rgba(255,255,255,0.7);
+      padding: 2px 4px;
+      border-radius: 4px;
+      border: 1px solid #666;
+    }
+    
+    /* Стили для переключателя слоёв карты */
+    .leaflet-control-layers {
+      border-radius: 8px !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2) !important;
+    }
+    
+    .leaflet-control-layers-expanded {
+      padding: 10px 14px !important;
+    }
+    
+    .leaflet-control-layers-base label {
+      padding: 4px 0;
+      font-size: 13px;
+    }
+    
+    /* Кастомные стили для контрола слоёв */
+    .leaflet-control-layers-toggle {
+      width: 44px !important;
+      height: 44px !important;
+      background-size: 24px 24px !important;
+    }
+    
+    @media (max-width: 768px) {
+      .leaflet-control-layers {
+        max-width: 200px;
+      }
+      
+      .leaflet-control-layers-expanded {
+        padding: 8px 12px !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Индикатор загрузки PWA -->
+  <div id="loading-indicator">
+    <span>Загрузка...</span>
+  </div>
+  
+  <!-- Кнопка установки PWA -->
+  <button id="pwa-install-btn">
+    <span>📱</span> Установить приложение
+  </button>
+  
+  <!-- Сообщение для iOS -->
+  <div id="install-message">
+    <span>📱 Установите приложение:</span>
+    <p>Нажмите "Поделиться" → "На экран "Домой"</p>
+    <button onclick="this.parentElement.classList.remove('show')">OK</button>
+  </div>
+  
+  <!-- Мобильная панель инструментов -->
+  <div id="mobile-toolbar">
+    <button class="mobile-btn" id="mobile-center-btn" title="Моё местоположение">📍</button>
+    <button class="mobile-btn secondary" id="mobile-menu-toggle" title="Меню">☰</button>
+  </div>
+  
+  <div id="sidebar">
+    <div class="drag-handle" id="drag-handle"></div>
+    <div id="controls">
+      
+      <!-- Поиск по адресу -->
+      <div class="panel-block">
+        <span class="panel-title">🔍 Поиск по адресу</span>
+        <div class="field-grid">
+          <label for="addressInput">Адрес</label>
+          <input id="addressInput" type="text" placeholder="Омск, улица ...">
+        </div>
+        <div class="buttons-row">
+          <button id="btnSearchAddress">Найти</button>
+        </div>
+      </div>
+      
+      <!-- Вышки -->
+      <div class="panel-block">
+        <span class="panel-title">📡 Вышки</span>
+        <div class="field-grid">
+          <label for="siteSelect">Текущая</label>
+          <select id="siteSelect"></select>
+        </div>
+        <div class="buttons-row">
+          <button id="btnAddSite">➕ Добавить</button>
+          <button id="btnDeleteSite">🗑️ Удалить</button>
+        </div>
+      </div>
+      
+      <!-- Параметры вышки -->
+      <div class="panel-block">
+        <span class="panel-title">⚙️ Параметры вышки</span>
+        <div class="field-grid">
+          <label for="nameInput">Имя</label>
+          <input id="nameInput" type="text" placeholder="Название">
+          
+          <label for="cellIdInput">CellID</label>
+          <input id="cellIdInput" type="text" placeholder="ID">
+          
+          <label for="operatorInput">Оператор</label>
+          <input id="operatorInput" type="text" placeholder="Оператор">
+        </div>
+        <div class="buttons-row">
+          <button id="btnApplySiteFields">💾 Сохранить</button>
+        </div>
+      </div>
+      
+      <!-- Координаты -->
+      <div class="panel-block">
+        <span class="panel-title">📍 Координаты</span>
+        <div class="field-grid">
+          <label for="latInput">Широта</label>
+          <input id="latInput" type="number" step="0.0001" placeholder="54.9900">
+          
+          <label for="lngInput">Долгота</label>
+          <input id="lngInput" type="number" step="0.0001" placeholder="73.3700">
+        </div>
+        <div class="buttons-row">
+          <button id="btnSetCoords">🔄 Обновить</button>
+        </div>
+      </div>
+      
+      <!-- Секторы -->
+      <div class="panel-block">
+        <span class="panel-title">📐 Секторы</span>
+        <div class="field-grid">
+          <label for="sectorsCountInput">Кол-во</label>
+          <input id="sectorsCountInput" type="number" min="1" max="12" value="3">
+          
+          <label for="sectorSelect">Сектор</label>
+          <select id="sectorSelect"></select>
+          
+          <label for="azInput">Азимут</label>
+          <input id="azInput" type="number" placeholder="0">
+          
+          <label for="bwInput">Ширина</label>
+          <input id="bwInput" type="number" placeholder="120">
+          
+          <label for="rInput">Радиус</label>
+          <input id="rInput" type="number" placeholder="2000">
+          
+          <label>В экспорт</label>
+          <div class="inline-checkbox">
+            <input id="sectorExportCheckbox" type="checkbox">
+            <span>Да</span>
+          </div>
+        </div>
+        <div class="buttons-row">
+          <button id="btnRebuildSectors">🔄 Пересчитать</button>
+          <button id="btnApplySector">💾 Сохранить</button>
+        </div>
+      </div>
+      
+      <!-- Зоны -->
+      <div class="panel-block">
+        <span class="panel-title">🗺️ Зоны</span>
+        <div class="buttons-row">
+          <button id="btnDrawAll">🏗️ Построить все</button>
+          <button id="btnClearZones">🧹 Очистить</button>
+        </div>
+        <div class="buttons-row">
+          <button id="btnDrawAzimuthLine">📏 Линия азимута</button>
+          <button id="btnClearAzimuthLine">❌ Убрать линию</button>
+        </div>
+      </div>
+      
+      <!-- Произвольные зоны -->
+      <div class="panel-block">
+        <span class="panel-title">🎨 Произвольные зоны</span>
+        <div class="field-grid">
+          <label for="freeZoneSelect">Зона</label>
+          <select id="freeZoneSelect"></select>
+          
+          <label for="freeLat">Широта</label>
+          <input id="freeLat" type="number" step="0.0001">
+          
+          <label for="freeLng">Долгота</label>
+          <input id="freeLng" type="number" step="0.0001">
+          
+          <label for="freeAz">Азимут</label>
+          <input id="freeAz" type="number">
+          
+          <label for="freeBw">Ширина</label>
+          <input id="freeBw" type="number" value="60">
+          
+          <label for="freeR">Радиус</label>
+          <input id="freeR" type="number" value="1000">
+          
+          <label for="freeName">Имя</label>
+          <input id="freeName" type="text" placeholder="Название">
+          
+          <label>В экспорт</label>
+          <div class="inline-checkbox">
+            <input id="freeExportCheckbox" type="checkbox">
+            <span>Да</span>
+          </div>
+        </div>
+        <div class="buttons-row">
+          <button id="btnDrawFree">➕ Создать</button>
+          <button id="btnToggleFreeVisible">👁️ Скрыть</button>
+          <button id="btnDeleteFree">🗑️ Удалить</button>
+          <button id="btnClearFree">🧹 Очистить все</button>
+        </div>
+      </div>
+      
+      <!-- Генерация сетки -->
+      <div class="panel-block">
+        <span class="panel-title">🔲 Генерация сетки</span>
+        <div class="field-grid">
+          <label for="gridStep">Шаг сетки (м)</label>
+          <select id="gridStep">
+            <option value="50">50 м</option>
+            <option value="100" selected>100 м</option>
+            <option value="200">200 м</option>
+            <option value="300">300 м</option>
+            <option value="500">500 м</option>
+            <option value="1000">1000 м</option>
+          </select>
+          
+          <label for="gridStartX">Начало X</label>
+          <select id="gridStartX">
+            <option value="A">A</option>
+            <option value="B">B</option>
+            <option value="C">C</option>
+            <option value="D">D</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="G">G</option>
+            <option value="H">H</option>
+          </select>
+          
+          <label for="gridStartY">Начало Y</label>
+          <select id="gridStartY">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+        <div class="buttons-row">
+          <button id="btnGenerateGrid">🔲 Сгенерировать сетку</button>
+          <button id="btnClearGrid">🧹 Очистить сетку</button>
+          <button id="btnExportGridGpx">📥 GPX сетка</button>
+        </div>
+        <div style="font-size: 12px; color: #666; margin-top: 5px;">
+          Сетка генерируется в видимой области карты. Точки соединены линиями.
+        </div>
+      </div>
+      
+      <!-- JSON -->
+      <div class="panel-block">
+        <span class="panel-title">📦 Конфигурация</span>
+        <div class="buttons-row">
+          <button id="btnExportJson">📤 Экспорт JSON</button>
+          <button id="btnImportJson">📥 Импорт JSON</button>
+        </div>
+        <div style="margin-top: 8px;">
+          <input id="jsonFileInput" type="file" accept=".json" style="width: 100%; padding: 8px;">
+        </div>
+      </div>
+      
+      <!-- GPX -->
+      <div class="panel-block">
+        <span class="panel-title">🎯 Экспорт GPX</span>
+        <div class="buttons-row">
+          <button id="btnExportAzimuthGpx">📏 Все азимуты</button>
+          <button id="btnExportZonesGpx">🗺️ Все зоны</button>
+        </div>
+        <div class="buttons-row">
+          <button id="btnExportSelectedAzimuthGpx">📏 Выбр. азимуты</button>
+          <button id="btnExportSelectedZonesGpx">🗺️ Выбр. зоны</button>
+        </div>
+        <div class="buttons-row">
+          <button id="btnExportSelectedAzimuthAndZonesGpx">📦 Выбр. вместе</button>
+          <button id="btnExportAllGpx">📦 Всё</button>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+  
+  <div id="map-container">
+    <div id="map"></div>
+    <!-- Логотип вынесен отдельно от Leaflet контролов -->
+    <div class="custom-logo-control">
+      <img src="logo.png" alt="Логотип" onerror="this.style.display='none'">
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+<script>
+// ======== ДАННЫЕ ВЫШЕК, ЗОН И СЕТКИ ========
+let sites = [];
+let freeZones = [];
+let gridPoints = [];
+let gridLines = [];
+
+// ======== КАРТА (Омск) ========
+const map = L.map('map').setView([54.99, 73.37], 12);
+
+// ======== ПРОВАЙДЕРЫ КАРТ ========
+const mapProviders = {
+  // OpenStreetMap варианты
+  'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+  }),
+  
+  'OSM HOT': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap, Tiles: HOT'
+  }),
+  
+  // CartoDB
+  'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+  }),
+  
+  'CartoDB Тёмная': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+  }),
+  
+  'CartoDB Voyager': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+  }),
+  
+  // ESRI
+  'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri, DigitalGlobe, GeoEye, Earthstar Geographics'
+  }),
+  
+  'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap'
+  }),
+  
+  'ESRI Улицы': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri, HERE, Garmin, USGS'
+  }),
+  
+  // OpenTopoMap
+  'Топографическая': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    maxZoom: 17,
+    attribution: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap'
+  }),
+  
+  // Stadia Maps
+  'Stadia Smooth': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
+  }),
+  
+  'Stadia Тёмная': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
+  }),
+  
+  'Stadia Outdoors': L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
+  }),
+  
+  // Thunderforest (может требовать API ключ для интенсивного использования)
+  'Ландшафт': L.tileLayer('https://{s}.tile.thunderforest.com/landscape/{z}/{x}/{y}.png?apikey=', {
+    maxZoom: 22,
+    attribution: '&copy; Thunderforest, &copy; OpenStreetMap'
+  }),
+  
+  // Google Maps (неофициально, может не работать)
+  'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }),
+  
+  'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }),
+  
+  'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }),
+  
+  'Google Рельеф': L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }),
+  
+  // Yandex (неофициально)
+  'Yandex Карта': L.tileLayer('https://core-renderer-tiles.maps.yandex.net/tiles?l=map&v=21.06.04-0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+    maxZoom: 19,
+    attribution: '&copy; Яндекс Карты'
+  }),
+  
+  'Yandex Спутник': L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1030.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+    maxZoom: 19,
+    attribution: '&copy; Яндекс Карты'
+  }),
+  
+  // 2GIS
+  '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', {
+    maxZoom: 18,
+    attribution: '&copy; 2GIS'
+  })
+};
+
+// Добавляем стандартный слой по умолчанию
+mapProviders['OSM Стандартная'].addTo(map);
+
+// Добавляем контрол переключения слоёв
+const layerControl = L.control.layers(mapProviders, {}, {
+  position: 'topleft',
+  collapsed: true
+}).addTo(map);
+
+const siteMarkerGroup   = L.layerGroup().addTo(map);
+const zonesLayerGroup   = L.layerGroup().addTo(map);
+const azimuthLayerGroup = L.layerGroup().addTo(map);
+const freeLayerGroup    = L.layerGroup().addTo(map);
+const gridLayerGroup    = L.layerGroup().addTo(map);
+
+let addSiteMode = false;
+let searchMarker = null;
+let userLocationMarker = null;
+
+// Иконка маркера поиска
+const searchIcon = L.icon({
+  iconUrl: 'search-marker.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [0, -38]
+});
+
+// Иконка для местоположения пользователя
+const userLocationIcon = L.divIcon({
+  className: 'user-location-marker',
+  html: '<div style="background: #2196f3; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px #2196f3;"></div>',
+  iconSize: [22, 22],
+  iconAnchor: [11, 11]
+});
+
+// Кастомная иконка для точек сетки
+const gridIcon = L.divIcon({
+  className: 'grid-point-marker',
+  html: '<div style="background: #3f51b5; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(63,81,181,0.5);"></div>',
+  iconSize: [12, 12],
+  iconAnchor: [6, 6]
+});
+
+// ======== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ========
+function deg2rad(d) { return d * Math.PI / 180; }
+
+function hslToHex(h, s, l) {
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => {
+    const c = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return Math.round(255 * c).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function getUniqueColor(index) {
+  const hue = (index * 47) % 360;
+  return hslToHex(hue, 85, 50);
+}
+
+function makeSectorPolygon(lat, lng, azimuth, beamWidth, radius, steps = 32) {
+  const coords = [];
+  const R = 6371000;
+  const start = azimuth - beamWidth / 2;
+  const end   = azimuth + beamWidth / 2;
+  const step  = beamWidth / steps;
+
+  coords.push([lat, lng]);
+
+  for (let a = start; a <= end; a += step) {
+    const brng = deg2rad(a);
+    const dR = radius / R;
+
+    const lat1 = deg2rad(lat);
+    const lon1 = deg2rad(lng);
+
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
+                           Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
+    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1),
+                                   Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
+
+    coords.push([lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]);
+  }
+
+  coords.push([lat, lng]);
+  return coords;
+}
+
+function makeAzimuthLine(lat, lng, azimuth, radius) {
+  const R = 6371000;
+  const brng = deg2rad(azimuth);
+  const dR = radius / R;
+  const lat1 = deg2rad(lat);
+  const lon1 = deg2rad(lng);
+
+  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) +
+                         Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
+  const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1),
+                                 Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
+
+  return [
+    [lat, lng],
+    [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]
+  ];
+}
+
+// ======== ФУНКЦИИ ДЛЯ РАБОТЫ С СЕТКОЙ ========
+function generateGrid() {
+  const step = parseInt(document.getElementById('gridStep').value);
+  const startX = document.getElementById('gridStartX').value;
+  const startY = parseInt(document.getElementById('gridStartY').value);
+  
+  const bounds = map.getBounds();
+  const padding = 0.01;
+  const northWest = {
+    lat: bounds.getNorth() + padding,
+    lng: bounds.getWest() - padding
+  };
+  const southEast = {
+    lat: bounds.getSouth() - padding,
+    lng: bounds.getEast() + padding
+  };
+  
+  const latStep = step / 111000;
+  const centerLat = (northWest.lat + southEast.lat) / 2;
+  const lonStep = step / (111000 * Math.cos(centerLat * Math.PI / 180));
+  
+  let startLat = northWest.lat;
+  let startLon = northWest.lng;
+  
+  startLat = Math.floor(startLat / latStep) * latStep;
+  startLon = Math.floor(startLon / lonStep) * lonStep;
+  
+  clearGrid();
+  
+  const letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+  const startLetterIndex = letters.indexOf(startX);
+  
+  let lat = startLat;
+  let row = 0;
+  let gridMatrix = [];
+  
+  while (lat > southEast.lat) {
+    let rowPoints = [];
+    let lng = startLon;
+    let col = 0;
+    
+    while (lng < southEast.lng) {
+      const letterIndex = startLetterIndex + col;
+      if (letterIndex >= letters.length) break;
+      
+      const letter = letters[letterIndex];
+      const number = startY + row;
+      
+      const point = {
+        lat: lat,
+        lng: lng,
+        label: `${letter}${number}`,
+        row: row,
+        col: col,
+        letter: letter,
+        number: number
+      };
+      
+      gridPoints.push(point);
+      rowPoints.push(point);
+      
+      const marker = L.marker([lat, lng], { icon: gridIcon }).addTo(gridLayerGroup);
+      
+      const tooltip = L.tooltip({
+        permanent: true,
+        direction: 'top',
+        offset: [0, -10],
+        className: 'grid-point-label'
+      }).setContent(point.label);
+      
+      marker.bindTooltip(tooltip).openTooltip();
+      
+      marker.on('click', () => {
+        alert(`Точка сетки: ${point.label}\nКоординаты: ${lat.toFixed(6)}, ${lng.toFixed(6)}`);
+      });
+      
+      lng += lonStep;
+      col++;
+    }
+    
+    if (rowPoints.length > 0) {
+      gridMatrix.push(rowPoints);
+    }
+    
+    lat -= latStep;
+    row++;
+  }
+  
+  for (let r = 0; r < gridMatrix.length; r++) {
+    const row = gridMatrix[r];
+    for (let c = 0; c < row.length - 1; c++) {
+      const line = L.polyline([
+        [row[c].lat, row[c].lng],
+        [row[c + 1].lat, row[c + 1].lng]
+      ], {
+        color: '#3f51b5',
+        weight: 1.5,
+        opacity: 0.5,
+        dashArray: null
+      }).addTo(gridLayerGroup);
+      gridLines.push(line);
+    }
+  }
+  
+  if (gridMatrix.length > 0) {
+    for (let c = 0; c < gridMatrix[0].length; c++) {
+      for (let r = 0; r < gridMatrix.length - 1; r++) {
+        if (gridMatrix[r][c] && gridMatrix[r + 1][c]) {
+          const line = L.polyline([
+            [gridMatrix[r][c].lat, gridMatrix[r][c].lng],
+            [gridMatrix[r + 1][c].lat, gridMatrix[r + 1][c].lng]
+          ], {
+            color: '#3f51b5',
+            weight: 1.5,
+            opacity: 0.5,
+            dashArray: null
+          }).addTo(gridLayerGroup);
+          gridLines.push(line);
+        }
+      }
+    }
+  }
+  
+  alert(`Сгенерировано ${gridPoints.length} точек сетки и ${gridLines.length} линий`);
+}
+
+function clearGrid() {
+  gridLayerGroup.clearLayers();
+  gridPoints = [];
+  gridLines = [];
+}
+
+function exportGridToGpx() {
+  if (gridPoints.length === 0) {
+    alert('Сначала сгенерируйте сетку');
+    return;
+  }
+  
+  let waypoints = '';
+  let tracks = '';
+  
+  gridPoints.forEach(point => {
+    waypoints += `
+  <wpt lat="${point.lat}" lon="${point.lng}">
+    <name>${point.label}</name>
+    <cmt>Точка сетки ${point.label}</cmt>
+    <desc>Сетка: ряд ${point.row + 1}, колонка ${point.col + 1}</desc>
+  </wpt>`;
+  });
+  
+  const rows = {};
+  gridPoints.forEach(point => {
+    if (!rows[point.row]) rows[point.row] = [];
+    rows[point.row].push(point);
+  });
+  
+  Object.values(rows).forEach(rowPoints => {
+    rowPoints.sort((a, b) => a.col - b.col);
+    
+    if (rowPoints.length > 1) {
+      let trkpts = '';
+      rowPoints.forEach(point => {
+        trkpts += `\n      <trkpt lat="${point.lat}" lon="${point.lng}"></trkpt>`;
+      });
+      
+      tracks += `
+  <trk>
+    <name>Горизонтальная линия ряд ${rowPoints[0].row + 1}</name>
+    <trkseg>${trkpts}
+    </trkseg>
+  </trk>`;
+    }
+  });
+  
+  const cols = {};
+  gridPoints.forEach(point => {
+    if (!cols[point.col]) cols[point.col] = [];
+    cols[point.col].push(point);
+  });
+  
+  Object.values(cols).forEach(colPoints => {
+    colPoints.sort((a, b) => a.row - b.row);
+    
+    if (colPoints.length > 1) {
+      let trkpts = '';
+      colPoints.forEach(point => {
+        trkpts += `\n      <trkpt lat="${point.lat}" lon="${point.lng}"></trkpt>`;
+      });
+      
+      tracks += `
+  <trk>
+    <name>Вертикальная линия колонка ${colPoints[0].col + 1}</name>
+    <trkseg>${trkpts}
+    </trkseg>
+  </trk>`;
+    }
+  });
+  
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="GridGenerator" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Сетка точек</name>
+    <desc>Сгенерированная сетка с шагом ${document.getElementById('gridStep').value}м</desc>
+  </metadata>${waypoints}${tracks}
+</gpx>`;
+  
+  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `grid_${document.getElementById('gridStep').value}m.gpx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ======== ФУНКЦИЯ ДЛЯ ОПРЕДЕЛЕНИЯ МЕСТОПОЛОЖЕНИЯ ========
+function getUserLocation() {
+  if (!navigator.geolocation) {
+    alert('Геолокация не поддерживается вашим браузером');
+    return;
+  }
+  
+  loadingIndicator.style.display = 'block';
+  loadingIndicator.innerHTML = 'Определение местоположения...';
+  
+  const options = {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0
+  };
+  
+  function success(position) {
+    const { latitude, longitude, accuracy } = position.coords;
+    console.log(`Местоположение определено: ${latitude}, ${longitude} (точность: ${accuracy}м)`);
+    
+    if (userLocationMarker) {
+      map.removeLayer(userLocationMarker);
+    }
+    
+    userLocationMarker = L.marker([latitude, longitude], { 
+      icon: userLocationIcon,
+      zIndexOffset: 1000
+    }).addTo(map)
+      .bindPopup(`Ваше местоположение<br>Точность: ${Math.round(accuracy)}м`)
+      .openPopup();
+    
+    map.setView([latitude, longitude], 16);
+    
+    const accuracyCircle = L.circle([latitude, longitude], {
+      radius: accuracy,
+      color: '#2196f3',
+      fillColor: '#2196f3',
+      fillOpacity: 0.1,
+      weight: 1
+    }).addTo(map);
+    
+    setTimeout(() => {
+      map.removeLayer(accuracyCircle);
+    }, 5000);
+    
+    loadingIndicator.style.display = 'none';
+  }
+  
+  function error(err) {
+    console.error('Ошибка геолокации:', err);
+    loadingIndicator.style.display = 'none';
+    
+    let message = 'Не удалось определить местоположение: ';
+    switch(err.code) {
+      case err.PERMISSION_DENIED:
+        message += 'Пользователь запретил доступ к геолокации';
+        break;
+      case err.POSITION_UNAVAILABLE:
+        message += 'Информация о местоположении недоступна';
+        break;
+      case err.TIMEOUT:
+        message += 'Время ожидания истекло';
+        break;
+      default:
+        message += 'Неизвестная ошибка';
+    }
+    
+    alert(message);
+  }
+  
+  navigator.geolocation.getCurrentPosition(success, error, options);
+}
+
+// ======== ГЕОКОДЕР (Nominatim) ========
+async function geocodeAddress(query) {
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q='
+    + encodeURIComponent(query);
+
+  try {
+    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+    if (!resp.ok) throw new Error('Ошибка ответа геокодера');
+    const data = await resp.json();
+    if (!data || data.length === 0) {
+      alert('Адрес не найден');
+      return null;
+    }
+    return {
+      lat: parseFloat(data[0].lat),
+      lng: parseFloat(data[0].lon),
+      displayName: data[0].display_name
+    };
+  } catch (e) {
+    console.error(e);
+    alert('Ошибка запроса геокодера');
+    return null;
+  }
+}
+
+// ======== UI-ЭЛЕМЕНТЫ ========
+const addressInput       = document.getElementById('addressInput');
+const btnSearchAddress   = document.getElementById('btnSearchAddress');
+
+const siteSelect          = document.getElementById('siteSelect');
+const btnAddSite          = document.getElementById('btnAddSite');
+const btnDeleteSite       = document.getElementById('btnDeleteSite');
+const nameInput           = document.getElementById('nameInput');
+const cellIdInput         = document.getElementById('cellIdInput');
+const operatorInput       = document.getElementById('operatorInput');
+const btnApplySiteFields  = document.getElementById('btnApplySiteFields');
+const latInput            = document.getElementById('latInput');
+const lngInput            = document.getElementById('lngInput');
+const btnSetCoords        = document.getElementById('btnSetCoords');
+const sectorsCountInput   = document.getElementById('sectorsCountInput');
+const btnRebuildSectors   = document.getElementById('btnRebuildSectors');
+const sectorSelect        = document.getElementById('sectorSelect');
+const azInput             = document.getElementById('azInput');
+const bwInput             = document.getElementById('bwInput');
+const rInput              = document.getElementById('rInput');
+const sectorExportCheckbox= document.getElementById('sectorExportCheckbox');
+const btnApplySector      = document.getElementById('btnApplySector');
+const btnDrawAll          = document.getElementById('btnDrawAll');
+const btnClearZones       = document.getElementById('btnClearZones');
+const btnDrawAzimuthLine  = document.getElementById('btnDrawAzimuthLine');
+const btnClearAzimuthLine = document.getElementById('btnClearAzimuthLine');
+
+const freeZoneSelect      = document.getElementById('freeZoneSelect');
+const freeLatInput        = document.getElementById('freeLat');
+const freeLngInput        = document.getElementById('freeLng');
+const freeAzInput         = document.getElementById('freeAz');
+const freeBwInput         = document.getElementById('freeBw');
+const freeRInput          = document.getElementById('freeR');
+const freeNameInput       = document.getElementById('freeName');
+const freeExportCheckbox  = document.getElementById('freeExportCheckbox');
+const btnDrawFree         = document.getElementById('btnDrawFree');
+const btnToggleFreeVisible= document.getElementById('btnToggleFreeVisible');
+const btnDeleteFree       = document.getElementById('btnDeleteFree');
+const btnClearFree        = document.getElementById('btnClearFree');
+
+const btnGenerateGrid     = document.getElementById('btnGenerateGrid');
+const btnClearGrid        = document.getElementById('btnClearGrid');
+const btnExportGridGpx    = document.getElementById('btnExportGridGpx');
+
+const btnExportJson       = document.getElementById('btnExportJson');
+const jsonFileInput       = document.getElementById('jsonFileInput');
+const btnImportJson       = document.getElementById('btnImportJson');
+
+const btnExportAzimuthGpx         = document.getElementById('btnExportAzimuthGpx');
+const btnExportZonesGpx           = document.getElementById('btnExportZonesGpx');
+const btnExportAllGpx             = document.getElementById('btnExportAllGpx');
+const btnExportSelectedAzimuthGpx = document.getElementById('btnExportSelectedAzimuthGpx');
+const btnExportSelectedZonesGpx   = document.getElementById('btnExportSelectedZonesGpx');
+const btnExportSelectedAzimuthAndZonesGpx = document.getElementById('btnExportSelectedAzimuthAndZonesGpx');
+
+// ======== PWA УСТАНОВКА ========
+let deferredPrompt;
+const pwaInstallBtn = document.getElementById('pwa-install-btn');
+const loadingIndicator = document.getElementById('loading-indicator');
+const installMessage = document.getElementById('install-message');
+
+function showInstallButton() {
+  pwaInstallBtn.classList.add('show');
+}
+
+function hideInstallButton() {
+  pwaInstallBtn.classList.remove('show');
+}
+
+function isPwaInstalled() {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+if ('serviceWorker' in navigator) {
+  loadingIndicator.style.display = 'block';
+  loadingIndicator.innerHTML = 'Регистрация Service Worker...';
+  
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('sw.js', {
+        scope: './'
+      });
+      console.log('✅ ServiceWorker registered:', registration.scope);
+      
+      if (isPwaInstalled()) {
+        console.log('📱 Приложение запущено в режиме PWA');
+        hideInstallButton();
+      }
+      
+      loadingIndicator.style.display = 'none';
+    } catch (err) {
+      console.log('❌ ServiceWorker registration failed:', err);
+      loadingIndicator.style.display = 'none';
+    }
+  });
+  
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    console.log('📱 PWA можно установить');
+    
+    if (!isPwaInstalled()) {
+      showInstallButton();
+    }
+  });
+  
+  pwaInstallBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) {
+      if (isIos()) {
+        installMessage.classList.add('show');
+      }
+      return;
+    }
+    
+    try {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log(`📱 Установка PWA: ${outcome}`);
+      
+      if (outcome === 'accepted') {
+        hideInstallButton();
+      }
+      
+      deferredPrompt = null;
+    } catch (err) {
+      console.error('Ошибка установки:', err);
+    }
+  });
+  
+  window.addEventListener('online', () => {
+    console.log('🌐 Соединение восстановлено');
+  });
+  
+  window.addEventListener('offline', () => {
+    console.log('📴 Нет соединения');
+    if (!isPwaInstalled()) {
+      alert('Вы оффлайн. Некоторые функции могут быть недоступны.');
+    }
+  });
+} else {
+  console.log('❌ Service Worker не поддерживается');
+}
+
+function isIos() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+if (isIos() && !isPwaInstalled()) {
+  setTimeout(() => {
+    installMessage.classList.add('show');
+  }, 3000);
+}
+
+// ======== МОБИЛЬНАЯ АДАПТАЦИЯ ========
+if (window.innerWidth <= 768) {
+  const sidebar = document.getElementById('sidebar');
+  const menuToggle = document.getElementById('mobile-menu-toggle');
+  const centerBtn = document.getElementById('mobile-center-btn');
+  const dragHandle = document.getElementById('drag-handle');
+  
+  let startY = 0;
+  let isDragging = false;
+  let isInputFocused = false;
+  
+  document.querySelectorAll('input, select').forEach(el => {
+    el.addEventListener('focus', () => {
+      isInputFocused = true;
+      sidebar.classList.add('expanded');
+    });
+    
+    el.addEventListener('blur', () => {
+      isInputFocused = false;
+    });
+  });
+  
+  menuToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sidebar.classList.toggle('expanded');
+  });
+  
+  dragHandle.addEventListener('click', () => {
+    sidebar.classList.add('expanded');
+  });
+  
+  dragHandle.addEventListener('touchstart', (e) => {
+    startY = e.touches[0].clientY;
+    isDragging = true;
+    sidebar.classList.add('dragging');
+  }, { passive: true });
+  
+  dragHandle.addEventListener('touchmove', (e) => {
+    if (!isDragging || isInputFocused) return;
+    e.preventDefault();
+    
+    const currentY = e.touches[0].clientY;
+    const delta = currentY - startY;
+    
+    if (delta > 30) {
+      sidebar.classList.remove('expanded');
+    } else if (delta < -30) {
+      sidebar.classList.add('expanded');
+    }
+  }, { passive: false });
+  
+  dragHandle.addEventListener('touchend', () => {
+    isDragging = false;
+    sidebar.classList.remove('dragging');
+  });
+  
+  centerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    getUserLocation();
+  });
+  
+  map.on('click', () => {
+    if (!isInputFocused) {
+      sidebar.classList.remove('expanded');
+    }
+  });
+  
+  map.on('dragstart', () => {
+    if (!isInputFocused) {
+      sidebar.classList.remove('expanded');
+    }
+  });
+  
+  sidebar.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+}
+
+// ======== ОТРИСОВКА МАРКЕРОВ ВЫШЕК ========
+function drawSiteMarkers() {
+  siteMarkerGroup.clearLayers();
+  sites.forEach(site => {
+    const m = L.marker([site.lat, site.lng]).addTo(siteMarkerGroup);
+    m.bindPopup(
+      `${site.name} (${site.id})<br>` +
+      `CellID: ${site.cellId || '-'}<br>` +
+      `Оператор: ${site.operator || '-'}<br>` +
+      `Lat: ${site.lat.toFixed(5)}<br>Lng: ${site.lng.toFixed(5)}`
+    );
+  });
+}
+
+// ======== ВЫШКИ/СЕКТОРА ========
+function fillSiteSelect() {
+  siteSelect.innerHTML = '';
+  sites.forEach(site => {
+    const opt = document.createElement('option');
+    opt.value = site.id;
+    opt.textContent = `${site.name} (${site.id})`;
+    siteSelect.appendChild(opt);
+  });
+}
+
+function getCurrentSite() {
+  const id = siteSelect.value;
+  return sites.find(s => s.id === id);
+}
+
+function fillSectorSelect() {
+  const site = getCurrentSite();
+  sectorSelect.innerHTML = '';
+  if (!site) return;
+  site.sectors.forEach(sec => {
+    const opt = document.createElement('option');
+    opt.value = sec.id;
+    const mark = sec.selectedForExport ? '✓ ' : '';
+    opt.textContent = `${mark}Сектор ${sec.id}`;
+    sectorSelect.appendChild(opt);
+  });
+}
+
+function syncSectorInputsFromSelect() {
+  const site = getCurrentSite();
+  if (!site) return;
+  const secId = parseInt(sectorSelect.value, 10);
+  const sec = site.sectors.find(s => s.id === secId);
+  if (!sec) return;
+  azInput.value = sec.azimuth;
+  bwInput.value = sec.beamWidth;
+  rInput.value  = sec.radius;
+  sectorExportCheckbox.checked = !!sec.selectedForExport;
+}
+
+function syncUiFromSite() {
+  const site = getCurrentSite();
+  if (!site) return;
+  nameInput.value     = site.name || '';
+  cellIdInput.value   = site.cellId || '';
+  operatorInput.value = site.operator || '';
+  latInput.value      = site.lat.toFixed(5);
+  lngInput.value      = site.lng.toFixed(5);
+  sectorsCountInput.value = site.sectors.length;
+
+  fillSectorSelect();
+  const sec = site.sectors[0];
+  if (sec) {
+    sectorSelect.value = sec.id;
+    syncSectorInputsFromSelect();
+  }
+
+  freeLatInput.value = site.lat.toFixed(5);
+  freeLngInput.value = site.lng.toFixed(5);
+}
+
+function rebuildSectorsForSite(site, count) {
+  const n = Math.max(1, count);
+  const beamWidth = 360 / n;
+  const defaultRadius = (site.sectors[0] && site.sectors[0].radius) || 2000;
+
+  site.sectors = [];
+  for (let i = 0; i < n; i++) {
+    const az = i * beamWidth;
+    site.sectors.push({
+      id: i + 1,
+      azimuth: az,
+      beamWidth,
+      radius: defaultRadius,
+      selectedForExport: false  // Изменено на false по умолчанию
+    });
+  }
+}
+
+// ======== ЗОНЫ ПО ВЫШКАМ ========
+function drawAllZones() {
+  zonesLayerGroup.clearLayers();
+
+  sites.forEach(site => {
+    site.sectors.forEach(sec => {
+      const colorIndex = site.id.charCodeAt(site.id.length - 1) * 100 + sec.id;
+      const color = getUniqueColor(colorIndex);
+
+      const polyCoords = makeSectorPolygon(
+        site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius
+      );
+      const poly = L.polygon(polyCoords, {
+        color,
+        fillColor: color,
+        fillOpacity: 0.25,
+        weight: 1
+      }).addTo(zonesLayerGroup);
+
+      poly.bindTooltip(
+        `${site.name} (${site.id})\n` +
+        `CellID: ${site.cellId || '-'}\n` +
+        `Оператор: ${site.operator || '-'}\n` +
+        `Сектор ${sec.id}\nAz ${sec.azimuth}°\nBw ${sec.beamWidth}°\nR ${sec.radius} м` +
+        `\nЭкспорт: ${sec.selectedForExport ? 'да' : 'нет'}`,
+        { permanent: false }
+      );
+    });
+  });
+}
+
+// ======== ПРОИЗВОЛЬНЫЕ ЗОНЫ ========
+function fillFreeZoneSelect() {
+  freeZoneSelect.innerHTML = '';
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.textContent = '— новая зона —';
+  freeZoneSelect.appendChild(placeholder);
+
+  freeZones.forEach(zone => {
+    const opt = document.createElement('option');
+    opt.value = zone.id;
+    const vis = zone.visible === false ? ' (скрыта)' : '';
+    const sel = zone.selectedForExport ? '✓ ' : '';
+    opt.textContent = `${sel}${zone.id}: ${zone.name || 'без имени'}${vis}`;
+    freeZoneSelect.appendChild(opt);
+  });
+}
+
+function syncInputsFromFreeZone() {
+  const idStr = freeZoneSelect.value;
+  if (!idStr) {
+    freeExportCheckbox.checked = false;
+    return;
+  }
+  const id = parseInt(idStr, 10);
+  const zone = freeZones.find(z => z.id === id);
+  if (!zone) return;
+
+  freeLatInput.value  = zone.lat;
+  freeLngInput.value  = zone.lng;
+  freeAzInput.value   = zone.azimuth;
+  freeBwInput.value   = zone.beamWidth;
+  freeRInput.value    = zone.radius;
+  freeNameInput.value = zone.name || '';
+  freeExportCheckbox.checked = !!zone.selectedForExport;
+}
+
+function redrawFreeZones() {
+  freeLayerGroup.clearLayers();
+  freeZones.forEach(zone => {
+    zone.polyLayer = null;
+    zone.lineLayer = null;
+
+    if (zone.visible === false) return;
+
+    const color = zone.color || getUniqueColor(zone.id);
+    const polyCoords = makeSectorPolygon(
+      zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius
+    );
+    const lineCoords = makeAzimuthLine(
+      zone.lat, zone.lng, zone.azimuth, zone.radius
+    );
+
+    const poly = L.polygon(polyCoords, {
+      color,
+      fillColor: color,
+      fillOpacity: 0.25,
+      weight: 1
+    }).addTo(freeLayerGroup);
+
+    const line = L.polyline(lineCoords, {
+      color,
+      weight: 2,
+      dashArray: '4,4'
+    }).addTo(freeLayerGroup);
+
+    const name = zone.name || `zone ${zone.id}`;
+    poly.bindTooltip(
+      `${name}\nAz ${zone.azimuth}°\nBw ${zone.beamWidth}°\nR ${zone.radius} м` +
+      `\nЭкспорт: ${zone.selectedForExport ? 'да' : 'нет'}`,
+      { permanent: false }
+    );
+
+    zone.polyLayer = poly;
+    zone.lineLayer = line;
+    zone.color = color;
+  });
+}
+
+// ======== JSON: построение чистой конфигурации ========
+function buildExportConfig() {
+  const cleanSites = sites.map(site => ({
+    id: site.id,
+    name: site.name || '',
+    cellId: site.cellId || '',
+    operator: site.operator || '',
+    lat: site.lat,
+    lng: site.lng,
+    sectors: (site.sectors || []).map(sec => ({
+      id: sec.id,
+      azimuth: sec.azimuth,
+      beamWidth: sec.beamWidth,
+      radius: sec.radius,
+      selectedForExport: sec.selectedForExport === true  // Явно проверяем на true
+    }))
+  }));
+
+  const cleanFreeZones = freeZones.map(zone => ({
+    id: zone.id,
+    name: zone.name || '',
+    lat: zone.lat,
+    lng: zone.lng,
+    azimuth: zone.azimuth,
+    beamWidth: zone.beamWidth,
+    radius: zone.radius,
+    visible: zone.visible !== false,
+    color: zone.color || null,
+    selectedForExport: zone.selectedForExport === true  // Явно проверяем на true
+  }));
+
+  return { sites: cleanSites, freeZones: cleanFreeZones };
+}
+
+function debugLogConfig() {
+  const data = buildExportConfig();
+  console.log('DEBUG config before export:', data);
+}
+
+// ======== JSON ЭКСПОРТ/ИМПОРТ ========
+function exportAllToJson() {
+  const data = buildExportConfig();
+  let dataStr;
+  try {
+    dataStr = JSON.stringify(data, null, 2);
+  } catch (e) {
+    console.error('JSON stringify failed:', e);
+    alert('Ошибка при подготовке JSON (см. консоль)');
+    return;
+  }
+
+  try {
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = 'config.json';
+
+    document.body.appendChild(a);
+    a.click();
+
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 500);
+
+    return;
+  } catch (e) {
+    console.error('download via link failed', e);
+  }
+
+  try {
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  } catch (e2) {
+    console.error('fallback open failed', e2);
+    alert('Не удалось сохранить JSON. Попробуйте другой браузер или запустить через http-сервер.');
+  }
+}
+
+function importAllFromJsonFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const json = JSON.parse(e.target.result);
+
+      if (!Array.isArray(json.sites)) throw new Error('Поле "sites" должно быть массивом');
+      json.sites.forEach(s => {
+        if (!s.id || typeof s.lat !== 'number' || typeof s.lng !== 'number' || !Array.isArray(s.sectors)) {
+          throw new Error('Неверный формат site');
+        }
+        s.name     = s.name || s.id;
+        s.cellId   = s.cellId || '';
+        s.operator = s.operator || '';
+        s.sectors.forEach(sec => {
+          sec.selectedForExport = (sec.selectedForExport === true);  // Только если явно true
+        });
+      });
+
+      sites = json.sites;
+
+      if (Array.isArray(json.freeZones)) {
+        freeZones = json.freeZones.map((z, idx) => {
+          const id = z.id || (idx + 1);
+          return {
+            id,
+            name: z.name || '',
+            lat: z.lat,
+            lng: z.lng,
+            azimuth: z.azimuth,
+            beamWidth: z.beamWidth,
+            radius: z.radius,
+            visible: (z.visible !== false),
+            color: z.color || getUniqueColor(id),
+            polyLayer: null,
+            lineLayer: null,
+            selectedForExport: (z.selectedForExport === true)  // Только если явно true
+          };
+        });
+      } else {
+        freeZones = [];
+      }
+
+      fillSiteSelect();
+      if (sites.length > 0) {
+        siteSelect.value = sites[0].id;
+      }
+      syncUiFromSite();
+      drawSiteMarkers();
+      zonesLayerGroup.clearLayers();
+      azimuthLayerGroup.clearLayers();
+      fillFreeZoneSelect();
+      redrawFreeZones();
+    } catch (err) {
+      console.error(err);
+      alert('Ошибка чтения JSON: ' + err.message);
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
+// ======== GPX ЭКСПОРТ ========
+function exportGpxString(gpxStr, fileName) {
+  const blob = new Blob([gpxStr], { type: 'application/gpx+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildGpxFromTracks(tracksXml) {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TowerTool" xmlns="http://www.topografix.com/GPX/1/1">
+${tracksXml.join('\n')}
+</gpx>`;
+}
+
+function buildAzimuthGpx(onlySelected = false) {
+  const tracks = [];
+
+  sites.forEach(site => {
+    site.sectors.forEach(sec => {
+      if (onlySelected && !sec.selectedForExport) return;
+
+      const line = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
+      const name = `${site.name || site.id} азимут ${sec.azimuth}°`;
+      const desc = `siteId=${site.id}; cellId=${site.cellId || '-'}; operator=${site.operator || '-'}; Az=${sec.azimuth}; Bw=${sec.beamWidth}; R=${sec.radius}`;
+
+      tracks.push(
+`  <trk>
+    <name>${name}</name>
+    <desc>${desc}</desc>
+    <trkseg>
+      <trkpt lat="${line[0][0]}" lon="${line[0][1]}"></trkpt>
+      <trkpt lat="${line[1][0]}" lon="${line[1][1]}"></trkpt>
+    </trkseg>
+  </trk>`
+      );
+    });
+  });
+
+  freeZones.forEach(zone => {
+    if (onlySelected && !zone.selectedForExport) return;
+
+    const line = makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius);
+    const baseName = zone.name && zone.name.trim()
+      ? zone.name.trim()
+      : `zone ${zone.id}`;
+    const name = `${baseName} азимут ${zone.azimuth}°`;
+    const desc = `id=${zone.id}; Az=${zone.azimuth}; Bw=${zone.beamWidth}; R=${zone.radius}`;
+
+    tracks.push(
+`  <trk>
+    <name>${name}</name>
+    <desc>${desc}</desc>
+    <trkseg>
+      <trkpt lat="${line[0][0]}" lon="${line[0][1]}"></trkpt>
+      <trkpt lat="${line[1][0]}" lon="${line[1][1]}"></trkpt>
+    </trkseg>
+  </trk>`
+    );
+  });
+
+  return buildGpxFromTracks(tracks);
+}
+
+function buildZonesGpx(onlySelected = false) {
+  const tracks = [];
+
+  sites.forEach(site => {
+    site.sectors.forEach(sec => {
+      if (onlySelected && !sec.selectedForExport) return;
+
+      const poly = makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius, 32);
+      const name = `${site.name || site.id} зона сектор ${sec.id}`;
+      const desc = `siteId=${site.id}; cellId=${site.cellId || '-'}; operator=${site.operator || '-'}; Az=${sec.azimuth}; Bw=${sec.beamWidth}; R=${sec.radius}`;
+
+      let trkpts = '';
+      poly.forEach(p => {
+        trkpts += `\n      <trkpt lat="${p[0]}" lon="${p[1]}"></trkpt>`;
+      });
+
+      tracks.push(
+`  <trk>
+    <name>${name}</name>
+    <desc>${desc}</desc>
+    <trkseg>${trkpts}
+    </trkseg>
+  </trk>`
+      );
+    });
+  });
+
+  freeZones.forEach(zone => {
+    if (onlySelected && !zone.selectedForExport) return;
+
+    const poly = makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius, 32);
+    const baseName = zone.name && zone.name.trim()
+      ? zone.name.trim()
+      : `zone ${zone.id}`;
+    const name = `${baseName} зона`;
+    const desc = `id=${zone.id}; Az=${zone.azimuth}; Bw=${zone.beamWidth}; R=${zone.radius}`;
+
+    let trkpts = '';
+    poly.forEach(p => {
+      trkpts += `\n      <trkpt lat="${p[0]}" lon="${p[1]}"></trkpt>`;
+    });
+
+    tracks.push(
+`  <trk>
+    <name>${name}</name>
+    <desc>${desc}</desc>
+    <trkseg>${trkpts}
+    </trkseg>
+  </trk>`
+    );
+  });
+
+  return buildGpxFromTracks(tracks);
+}
+
+function buildAllGpx() {
+  const tracks = [];
+  const azAll    = buildAzimuthGpx(false);
+  const zonesAll = buildZonesGpx(false);
+
+  const azTrks   = azAll.match(/<trk>[\s\S]*?<\/trk>/g)    || [];
+  const zoneTrks = zonesAll.match(/<trk>[\s\S]*?<\/trk>/g) || [];
+  azTrks.forEach(t => tracks.push(t));
+  zoneTrks.forEach(t => tracks.push(t));
+
+  return buildGpxFromTracks(tracks);
+}
+
+function buildSelectedAzimuthAndZonesGpx() {
+  const tracks = [];
+
+  const azSel    = buildAzimuthGpx(true);
+  const zonesSel = buildZonesGpx(true);
+
+  const azTrks   = azSel.match(/<trk>[\s\S]*?<\/trk>/g)    || [];
+  const zoneTrks = zonesSel.match(/<trk>[\s\S]*?<\/trk>/g) || [];
+
+  azTrks.forEach(t => tracks.push(t));
+  zoneTrks.forEach(t => tracks.push(t));
+
+  return buildGpxFromTracks(tracks);
+}
+
+// ======== СОБЫТИЯ ========
+
+// Поиск по адресу
+btnSearchAddress.addEventListener('click', async () => {
+  const query = addressInput.value.trim();
+  if (!query) {
+    alert('Введите адрес для поиска');
+    return;
+  }
+  const res = await geocodeAddress(query);
+  if (!res) return;
+
+  const center = { lat: res.lat, lng: res.lng };
+
+  if (searchMarker) {
+    map.removeLayer(searchMarker);
+    searchMarker = null;
+  }
+
+  map.setView(center, 17);
+
+  searchMarker = L.marker(center, { icon: searchIcon })
+    .addTo(map)
+    .bindPopup(res.displayName + '<br><button id="btnRemoveSearchMarker">Убрать маркер</button>')
+    .openPopup();
+
+  freeLatInput.value = center.lat.toFixed(6);
+  freeLngInput.value = center.lng.toFixed(6);
+
+  setTimeout(() => {
+    const btn = document.getElementById('btnRemoveSearchMarker');
+    if (btn) {
+      btn.onclick = () => {
+        if (searchMarker) {
+          map.removeLayer(searchMarker);
+          searchMarker = null;
+        }
+      };
+    }
+  }, 0);
+});
+
+siteSelect.addEventListener('change', () => {
+  syncUiFromSite();
+  const site = getCurrentSite();
+  if (site) map.setView([site.lat, site.lng], 13);
+});
+
+sectorSelect.addEventListener('change', () => {
+  syncSectorInputsFromSelect();
+});
+
+sectorExportCheckbox.addEventListener('change', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  const secId = parseInt(sectorSelect.value, 10);
+  const sec = site.sectors.find(s => s.id === secId);
+  if (!sec) return;
+  sec.selectedForExport = sectorExportCheckbox.checked;
+  fillSectorSelect();
+  sectorSelect.value = sec.id;
+});
+
+btnSetCoords.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  const lat = parseFloat(latInput.value);
+  const lng = parseFloat(lngInput.value);
+  if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+  site.lat = lat;
+  site.lng = lng;
+  drawSiteMarkers();
+  map.setView([lat, lng], 15);
+});
+
+btnApplySiteFields.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  site.name     = nameInput.value || site.id;
+  site.cellId   = cellIdInput.value || '';
+  site.operator = operatorInput.value || '';
+  fillSiteSelect();
+  siteSelect.value = site.id;
+  drawSiteMarkers();
+});
+
+btnApplySector.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  const secId = parseInt(sectorSelect.value, 10);
+  const sec = site.sectors.find(s => s.id === secId);
+  if (!sec) return;
+
+  const az = parseFloat(azInput.value);
+  const bw = parseFloat(bwInput.value);
+  const r  = parseFloat(rInput.value);
+  if (Number.isNaN(az) || Number.isNaN(bw) || Number.isNaN(r)) return;
+
+  sec.azimuth   = az;
+  sec.beamWidth = bw;
+  sec.radius    = r;
+  sec.selectedForExport = sectorExportCheckbox.checked;
+  fillSectorSelect();
+  sectorSelect.value = sec.id;
+});
+
+btnRebuildSectors.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  const n = parseInt(sectorsCountInput.value, 10) || 1;
+  rebuildSectorsForSite(site, n);
+  fillSectorSelect();
+  syncSectorInputsFromSelect();
+});
+
+btnDrawAll.addEventListener('click', () => {
+  drawAllZones();
+});
+
+btnClearZones.addEventListener('click', () => {
+  zonesLayerGroup.clearLayers();
+});
+
+btnDrawAzimuthLine.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  const secId = parseInt(sectorSelect.value, 10);
+  const sec = site.sectors.find(s => s.id === secId);
+  if (!sec) return;
+
+  azimuthLayerGroup.clearLayers();
+  const lineCoords = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
+  const colorIndex = site.id.charCodeAt(site.id.length - 1) * 100 + sec.id;
+  const color = getUniqueColor(colorIndex);
+
+  const line = L.polyline(lineCoords, {
+    color,
+    weight: 2,
+    dashArray: '5,5'
+  }).addTo(azimuthLayerGroup);
+
+  line.bindTooltip(
+    `${site.name || site.id}\nAz ${sec.azimuth}° R ${sec.radius} м`,
+    { permanent: false }
+  );
+
+  map.fitBounds(line.getBounds(), { maxZoom: 16 });
+});
+
+btnClearAzimuthLine.addEventListener('click', () => {
+  azimuthLayerGroup.clearLayers();
+});
+
+// Произвольные зоны
+freeZoneSelect.addEventListener('change', () => {
+  syncInputsFromFreeZone();
+});
+
+freeExportCheckbox.addEventListener('change', () => {
+  const idStr = freeZoneSelect.value;
+  if (!idStr) return;
+  const id = parseInt(idStr, 10);
+  const zone = freeZones.find(z => z.id === id);
+  if (!zone) return;
+  zone.selectedForExport = freeExportCheckbox.checked;
+  fillFreeZoneSelect();
+  freeZoneSelect.value = id;
+});
+
+btnDrawFree.addEventListener('click', () => {
+  const lat = parseFloat(freeLatInput.value);
+  const lng = parseFloat(freeLngInput.value);
+  const az  = parseFloat(freeAzInput.value);
+  const bw  = parseFloat(freeBwInput.value) || 60;
+  const r   = parseFloat(freeRInput.value)  || 1000;
+  const name = freeNameInput.value.trim();
+
+  if ([lat, lng, az].some(v => Number.isNaN(v))) {
+    alert('Заполните Lat, Lng и Az для произвольной зоны');
+    return;
+  }
+
+  const idStr = freeZoneSelect.value;
+  if (idStr) {
+    const id = parseInt(idStr, 10);
+    const zone = freeZones.find(z => z.id === id);
+    if (zone) {
+      zone.lat      = lat;
+      zone.lng      = lng;
+      zone.azimuth  = az;
+      zone.beamWidth= bw;
+      zone.radius   = r;
+      zone.name     = name;
+      zone.visible  = (zone.visible !== false);
+      zone.selectedForExport = freeExportCheckbox.checked;
+    }
+  } else {
+    const newId = freeZones.length > 0 ? freeZones[freeZones.length - 1].id + 1 : 1;
+    const zone = {
+      id: newId,
+      name,
+      lat,
+      lng,
+      azimuth: az,
+      beamWidth: bw,
+      radius: r,
+      visible: true,
+      color: getUniqueColor(newId),
+      polyLayer: null,
+      lineLayer: null,
+      selectedForExport: freeExportCheckbox.checked
+    };
+    freeZones.push(zone);
+  }
+
+  fillFreeZoneSelect();
+  redrawFreeZones();
+
+  const polyCoords = makeSectorPolygon(lat, lng, az, bw, r);
+  const bounds = L.latLngBounds(polyCoords);
+  map.fitBounds(bounds, { maxZoom: 16 });
+});
+
+btnToggleFreeVisible.addEventListener('click', () => {
+  const idStr = freeZoneSelect.value;
+  if (!idStr) {
+    alert('Сначала выберите зону в списке');
+    return;
+  }
+  const id = parseInt(idStr, 10);
+  const zone = freeZones.find(z => z.id === id);
+  if (!zone) return;
+
+  zone.visible = !zone.visible;
+
+  if (zone.visible === false) {
+    if (zone.polyLayer) freeLayerGroup.removeLayer(zone.polyLayer);
+    if (zone.lineLayer) freeLayerGroup.removeLayer(zone.lineLayer);
+    zone.polyLayer = null;
+    zone.lineLayer = null;
+  } else {
+    redrawFreeZones();
+  }
+  fillFreeZoneSelect();
+  freeZoneSelect.value = id;
+});
+
+btnDeleteFree.addEventListener('click', () => {
+  const idStr = freeZoneSelect.value;
+  if (!idStr) {
+    alert('Сначала выберите зону в списке');
+    return;
+  }
+  const id = parseInt(idStr, 10);
+  freeZones = freeZones.filter(z => z.id !== id);
+  fillFreeZoneSelect();
+  redrawFreeZones();
+});
+
+btnClearFree.addEventListener('click', () => {
+  freeZones.forEach(zone => {
+    if (zone.polyLayer) freeLayerGroup.removeLayer(zone.polyLayer);
+    if (zone.lineLayer) freeLayerGroup.removeLayer(zone.lineLayer);
+  });
+  freeZones = [];
+  freeLayerGroup.clearLayers();
+  fillFreeZoneSelect();
+});
+
+// События для сетки
+btnGenerateGrid.addEventListener('click', generateGrid);
+btnClearGrid.addEventListener('click', clearGrid);
+btnExportGridGpx.addEventListener('click', exportGridToGpx);
+
+// Добавление вышки
+btnAddSite.addEventListener('click', () => {
+  addSiteMode = !addSiteMode;
+  btnAddSite.style.backgroundColor = addSiteMode ? '#c0ffc0' : '';
+});
+
+map.on('click', (e) => {
+  if (!addSiteMode) return;
+
+  const newId = 'SITE_' + (sites.length + 1);
+  const newSite = {
+    id: newId,
+    name: 'Вышка ' + (sites.length + 1),
+    cellId: '',
+    operator: '',
+    lat: e.latlng.lat,
+    lng: e.latlng.lng,
+    sectors: [
+      { id: 1, azimuth: 0,   beamWidth: 120, radius: 2000, selectedForExport: false },
+      { id: 2, azimuth: 120, beamWidth: 120, radius: 2000, selectedForExport: false },
+      { id: 3, azimuth: 240, beamWidth: 120, radius: 2000, selectedForExport: false }
+    ]
+  };
+  sites.push(newSite);
+  fillSiteSelect();
+  siteSelect.value = newId;
+  syncUiFromSite();
+  drawSiteMarkers();
+  map.setView(e.latlng, 15);
+
+  addSiteMode = false;
+  btnAddSite.style.backgroundColor = '';
+});
+
+// Удаление вышки
+btnDeleteSite.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  if (!confirm(`Удалить ${site.name || site.id}?`)) return;
+
+  sites = sites.filter(s => s.id !== site.id);
+  fillSiteSelect();
+  zonesLayerGroup.clearLayers();
+  azimuthLayerGroup.clearLayers();
+  drawSiteMarkers();
+
+  if (sites.length > 0) {
+    siteSelect.value = sites[0].id;
+    syncUiFromSite();
+    map.setView([sites[0].lat, sites[0].lng], 12);
+  } else {
+    nameInput.value = '';
+    cellIdInput.value = '';
+    operatorInput.value = '';
+    latInput.value = '';
+    lngInput.value = '';
+    sectorsCountInput.value = 1;
+    sectorSelect.innerHTML = '';
+    map.setView([54.99, 73.37], 12);
+  }
+});
+
+// JSON
+btnExportJson.addEventListener('click', () => {
+  debugLogConfig();
+  exportAllToJson();
+});
+
+btnImportJson.addEventListener('click', () => {
+  const file = jsonFileInput.files[0];
+  if (!file) {
+    alert('Выберите JSON-файл');
+    return;
+  }
+  importAllFromJsonFile(file);
+});
+
+// GPX
+btnExportAzimuthGpx.addEventListener('click', () => {
+  const gpx = buildAzimuthGpx(false);
+  exportGpxString(gpx, 'azimuths_all.gpx');
+});
+
+btnExportZonesGpx.addEventListener('click', () => {
+  const gpx = buildZonesGpx(false);
+  exportGpxString(gpx, 'zones_all.gpx');
+});
+
+btnExportSelectedAzimuthGpx.addEventListener('click', () => {
+  const gpx = buildAzimuthGpx(true);
+  exportGpxString(gpx, 'azimuths_selected.gpx');
+});
+
+btnExportSelectedZonesGpx.addEventListener('click', () => {
+  const gpx = buildZonesGpx(true);
+  exportGpxString(gpx, 'zones_selected.gpx');
+});
+
+btnExportSelectedAzimuthAndZonesGpx.addEventListener('click', () => {
+  const gpx = buildSelectedAzimuthAndZonesGpx();
+  exportGpxString(gpx, 'azimuths_zones_selected.gpx');
+});
+
+btnExportAllGpx.addEventListener('click', () => {
+  const gpx = buildAllGpx();
+  exportGpxString(gpx, 'all.gpx');
+});
+
+// ======== ИНИЦИАЛИЗАЦИЯ ========
+fillSiteSelect();
+drawSiteMarkers();
+fillFreeZoneSelect();
+</script>
+
+</body>
+</html>
