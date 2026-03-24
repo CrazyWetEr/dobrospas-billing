@@ -483,6 +483,196 @@
     .leaflet-control-attribution {
       display: none !important;
     }
+        /* ========== SPLASH SCREEN ========== */
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+    }
+    
+    #splash-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    #splash-screen.removed {
+      display: none;
+    }
+    
+    .splash-content {
+      text-align: center;
+      color: white;
+      padding: 20px;
+    }
+    
+    .splash-logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 20px;
+      animation: splash-pulse 2s ease-in-out infinite;
+      border-radius: 24px;
+      box-shadow: 0 10px 40px rgba(33, 150, 243, 0.4);
+    }
+    
+    @keyframes splash-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+    
+    .splash-title {
+      font-size: 28px;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    
+    .splash-subtitle {
+      font-size: 14px;
+      opacity: 0.8;
+      margin: 0 0 30px 0;
+    }
+    
+    .splash-loader {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    
+    .splash-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: #2196f3;
+      border-radius: 50%;
+      animation: splash-spin 1s linear infinite;
+    }
+    
+    @keyframes splash-spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .splash-author {
+      font-size: 12px;
+      opacity: 0.5;
+      margin: 0;
+    }
+    
+    /* ========== КНОПКА УСТАНОВКИ PWA (всегда видна) ========== */
+    #pwa-install-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      padding: 14px 24px;
+      font-size: 15px;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(76, 175, 80, 0.4);
+      display: none;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      min-height: 50px;
+      transition: all 0.3s ease;
+    }
+    
+    #pwa-install-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(76, 175, 80, 0.5);
+    }
+    
+    #pwa-install-btn:active {
+      transform: translateY(0);
+    }
+    
+    #pwa-install-btn.show {
+      display: flex;
+    }
+    
+    /* Иконка в кнопке */
+    #pwa-install-btn .install-icon {
+      font-size: 20px;
+    }
+    
+    /* Скрыть кнопку когда PWA уже установлено */
+    #pwa-install-btn.installed {
+      display: none !important;
+    }
+    
+    /* Адаптация для мобильных */
+    @media (max-width: 768px) {
+      #pwa-install-btn {
+        bottom: 80px;
+        right: 15px;
+        left: 15px;
+        justify-content: center;
+        border-radius: 16px;
+      }
+      
+      .splash-logo {
+        width: 100px;
+        height: 100px;
+      }
+      
+      .splash-title {
+        font-size: 24px;
+      }
+    }
+    
+    /* ========== СООБЩЕНИЕ ДЛЯ iOS ========== */
+    #install-message {
+      position: fixed;
+      bottom: 80px;
+      right: 20px;
+      left: 20px;
+      background: linear-gradient(135deg, #333, #222);
+      color: white;
+      padding: 20px;
+      border-radius: 16px;
+      z-index: 1001;
+      display: none;
+      text-align: center;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    #install-message.show {
+      display: block;
+    }
+    
+    #install-message h3 {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+    }
+    
+    #install-message p {
+      margin: 0 0 15px 0;
+      opacity: 0.8;
+      font-size: 14px;
+    }
+    
+    #install-message button {
+      background: #2196f3;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -508,14 +698,15 @@
   
   <!-- Кнопка установки PWA -->
   <button id="pwa-install-btn">
-    <span>📱</span> Установить приложение
+    <span class="install-icon">📲</span>
+    <span>Установить приложение</span>
   </button>
   
   <!-- Сообщение для iOS -->
   <div id="install-message">
-    <span>📱 Установите приложение:</span>
-    <p>Нажмите "Поделиться" → "На экран "Домой"</p>
-    <button onclick="this.parentElement.classList.remove('show')">OK</button>
+    <h3>📱 Установите приложение</h3>
+    <p>Нажмите <strong>«Поделиться»</strong> → <strong>«На экран Домой»</strong></p>
+    <button onclick="this.parentElement.classList.remove('show')">Понятно</button>
   </div>
   
   <!-- Мобильная панель инструментов -->
