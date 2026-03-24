@@ -55,7 +55,7 @@
       justify-content: center;
       z-index: 99999;
       opacity: 1;
-      transition: opacity 4.5s ease-out;
+      transition: opacity 5.5s ease-out;
     }
     
     #splash-screen.hidden {
@@ -322,8 +322,8 @@
     }
     
     .panel-block.backup-panel {
-      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-      border-color: #2196f3;
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-color: #4caf50;
     }
     
     .panel-title {
@@ -854,7 +854,7 @@
     
     /* Стили для статистики бэкапа */
     .backup-stats {
-      background: #f8f9fa;
+      background: rgba(255,255,255,0.7);
       border-radius: 6px;
       padding: 8px 12px;
       margin-bottom: 10px;
@@ -869,12 +869,12 @@
     }
     
     .backup-stats-label {
-      color: #888;
+      color: #555;
     }
     
     .backup-stats-value {
       font-weight: 600;
-      color: #333;
+      color: #2e7d32;
     }
     
     /* Скрытый input для файла бэкапа */
@@ -940,36 +940,6 @@
   <div id="sidebar">
     <div class="drag-handle" id="drag-handle"></div>
     <div id="controls">
-      
-      <!-- ПОЛНЫЙ БЭКАП - НОВАЯ ПАНЕЛЬ -->
-      <div class="panel-block backup-panel">
-        <span class="panel-title">💾 Полный бэкап (перенос данных)</span>
-        <div class="backup-stats" id="backupStats">
-          <div class="backup-stats-row">
-            <span class="backup-stats-label">Вышек:</span>
-            <span class="backup-stats-value" id="statsSites">0</span>
-          </div>
-          <div class="backup-stats-row">
-            <span class="backup-stats-label">Зон:</span>
-            <span class="backup-stats-value" id="statsFreeZones">0</span>
-          </div>
-          <div class="backup-stats-row">
-            <span class="backup-stats-label">Точек сетки:</span>
-            <span class="backup-stats-value" id="statsGrid">0</span>
-          </div>
-          <div class="backup-stats-row">
-            <span class="backup-stats-label">Линий азимута:</span>
-            <span class="backup-stats-value" id="statsAzimuth">0</span>
-          </div>
-        </div>
-        <div class="buttons-row">
-          <button id="btnFullBackup" class="backup-btn">📦 Создать бэкап</button>
-          <button id="btnRestoreBackup" class="restore-btn">📂 Восстановить</button>
-        </div>
-        <p style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">
-          Файл .backup содержит ВСЕ данные для переноса на другой ПК
-        </p>
-      </div>
       
       <!-- Поиск по адресу -->
       <div class="panel-block">
@@ -1187,6 +1157,36 @@
           <button id="btnExportSelectedAzimuthAndZonesGpx">📦 Выбр. вместе</button>
           <button id="btnExportAllGpx">📦 Всё</button>
         </div>
+      </div>
+      
+      <!-- ПОЛНЫЙ БЭКАП - ВНИЗУ -->
+      <div class="panel-block backup-panel">
+        <span class="panel-title">💾 Полный бэкап (перенос на другой ПК)</span>
+        <div class="backup-stats" id="backupStats">
+          <div class="backup-stats-row">
+            <span class="backup-stats-label">Вышек:</span>
+            <span class="backup-stats-value" id="statsSites">0</span>
+          </div>
+          <div class="backup-stats-row">
+            <span class="backup-stats-label">Произв. зон:</span>
+            <span class="backup-stats-value" id="statsFreeZones">0</span>
+          </div>
+          <div class="backup-stats-row">
+            <span class="backup-stats-label">Точек сетки:</span>
+            <span class="backup-stats-value" id="statsGrid">0</span>
+          </div>
+          <div class="backup-stats-row">
+            <span class="backup-stats-label">Линий азимута:</span>
+            <span class="backup-stats-value" id="statsAzimuth">0</span>
+          </div>
+        </div>
+        <div class="buttons-row">
+          <button id="btnFullBackup" class="backup-btn">📦 Создать бэкап</button>
+          <button id="btnRestoreBackup" class="restore-btn">📂 Восстановить</button>
+        </div>
+        <p style="font-size: 11px; color: #2e7d32; margin-top: 8px; text-align: center;">
+          💡 Файл .backup содержит ВСЕ данные для переноса на другой компьютер
+        </p>
       </div>
       
     </div>
@@ -1835,7 +1835,6 @@ function loadFromLocalStorage() {
     const inputFieldsData = localStorage.getItem(STORAGE_KEYS.INPUT_FIELDS);
     if (inputFieldsData) {
       const fields = JSON.parse(inputFieldsData);
-      // Поля будут применены после инициализации DOM элементов
       window._savedInputFields = fields;
     }
     
@@ -1851,7 +1850,6 @@ function restoreInputFields() {
   if (!fields) return;
   
   if (addressInput && fields.addressInput) addressInput.value = fields.addressInput;
-  // Остальные поля восстанавливаются через syncUiFromSite()
   
   delete window._savedInputFields;
 }
