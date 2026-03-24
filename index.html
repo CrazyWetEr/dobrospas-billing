@@ -55,7 +55,7 @@
       justify-content: center;
       z-index: 99999;
       opacity: 1;
-      transition: opacity 1.5s ease-out;
+      transition: opacity 5s ease-out;
     }
     
     #splash-screen.hidden {
@@ -809,7 +809,7 @@
     <div class="splash-content">
       <img src="./icons/icon-192.png" alt="Logo" class="splash-logo">
       <h1 class="splash-title">БИЛЛИНГ СОТОВОГО ТЕЛЕФОНА</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ</p>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V6.6.6.</p>
       <div class="splash-loader">
         <div class="splash-spinner"></div>
       </div>
@@ -999,10 +999,10 @@
           <label for="gridStep">Шаг (м)</label>
           <select id="gridStep">
             <option value="50">50 м</option>
-            <option value="100" selected>100 м</option>
+            <option value="100">100 м</option>
             <option value="200">200 м</option>
             <option value="300">300 м</option>
-            <option value="500">500 м</option>
+            <option value="500" selected>500 м</option>
             <option value="1000">1000 м</option>
           </select>
           
@@ -1605,7 +1605,7 @@ function getInstructions(browserType) {
   const instructions = {
     'safari': { steps: [{ text: 'Нажмите <strong>📤 Поделиться</strong>' }, { text: 'Выберите <strong>На экран Домой</strong>' }, { text: 'Нажмите <strong>Добавить</strong>' }] },
     'chrome-ios': { steps: [{ text: 'Нажмите <strong>⋯ меню</strong>' }, { text: 'Выберите <strong>Поделиться</strong>' }, { text: 'Нажмите <strong>На экран Домой</strong>' }] },
-    'chrome-android': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Установить приложение</strong>' }] },
+    'chrome-android': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Добавить на главный экран</strong>' }] },
     'chrome': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Установить</strong>' }] },
     'edge': { steps: [{ text: 'Нажмите <strong>⋯ меню</strong>' }, { text: '<strong>Приложения → Установить</strong>' }] },
     'firefox': { steps: [{ text: 'Firefox не поддерживает PWA' }, { text: 'Используйте Chrome или Edge' }] },
