@@ -1553,105 +1553,133 @@ const btnExportSelectedAzimuthGpx = document.getElementById('btnExportSelectedAz
 const btnExportSelectedZonesGpx   = document.getElementById('btnExportSelectedZonesGpx');
 const btnExportSelectedAzimuthAndZonesGpx = document.getElementById('btnExportSelectedAzimuthAndZonesGpx');
 
+// ======== SPLASH SCREEN ========
+const splashScreen = document.getElementById('splash-screen');
+
+function hideSplashScreen() {
+  if (splashScreen) {
+    // Плавное скрытие
+    splashScreen.classList.add('hidden');
+    
+    // Полное удаление через 500мс
+    setTimeout(() => {
+      splashScreen.classList.add('removed');
+    }, 500);
+  }
+}
+
+// Скрыть splash screen когда всё загружено
+window.addEventListener('load', () => {
+  // Минимальное время показа splash screen - 1.5 сек
+  setTimeout(hideSplashScreen, 1500);
+});
+
+// Запасной вариант - скрыть через 5 сек в любом случае
+setTimeout(hideSplashScreen, 5000);
+
+
 // ======== PWA УСТАНОВКА ========
 let deferredPrompt;
 const pwaInstallBtn = document.getElementById('pwa-install-btn');
-const loadingIndicator = document.getElementById('loading-indicator');
 const installMessage = document.getElementById('install-message');
 
-function showInstallButton() {
-  pwaInstallBtn.classList.add('show');
-}
-
-function hideInstallButton() {
-  pwaInstallBtn.classList.remove('show');
-}
-
+// Проверка, установлено ли PWA
 function isPwaInstalled() {
   return window.matchMedia('(display-mode: standalone)').matches ||
          window.navigator.standalone === true;
 }
 
-if ('serviceWorker' in navigator) {
-  loadingIndicator.style.display = 'block';
-  loadingIndicator.innerHTML = 'Регистрация Service Worker...';
-  
-  window.addEventListener('load', async () => {
-    try {
-      const registration = await navigator.serviceWorker.register('sw.js', {
-        scope: './'
-      });
-      console.log('✅ ServiceWorker registered:', registration.scope);
-      
-      if (isPwaInstalled()) {
-        console.log('📱 Приложение запущено в режиме PWA');
-        hideInstallButton();
-      }
-      
-      loadingIndicator.style.display = 'none';
-    } catch (err) {
-      console.log('❌ ServiceWorker registration failed:', err);
-      loadingIndicator.style.display = 'none';
-    }
-  });
-  
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    console.log('📱 PWA можно установить');
-    
-    if (!isPwaInstalled()) {
-      showInstallButton();
-    }
-  });
-  
+// Проверка iOS
+function isIos() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+// Показать кнопку установки
+function showInstallButton() {
+  if (!isPwaInstalled() && pwaInstallBtn) {
+    pwaInstallBtn.classList.add('show');
+  }
+}
+
+// Скрыть кнопку установки
+function hideInstallButton() {
+  if (pwaInstallBtn) {
+    pwaInstallBtn.classList.remove('show');
+    pwaInstallBtn.classList.add('installed');
+  }
+}
+
+// Если PWA уже установлено - скрыть кнопку
+if (isPwaInstalled()) {
+  hideInstallButton();
+} else {
+  // Показать кнопку через 2 секунды после загрузки
+  setTimeout(showInstallButton, 2000);
+}
+
+// Обработка события beforeinstallprompt (Chrome/Edge/Android)
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  console.log('📱 PWA можно установить');
+  showInstallButton();
+});
+
+// Клик по кнопке установки
+if (pwaInstallBtn) {
   pwaInstallBtn.addEventListener('click', async () => {
-    if (!deferredPrompt) {
-      if (isIos()) {
+    // Для iOS показываем инструкцию
+    if (isIos()) {
+      if (installMessage) {
         installMessage.classList.add('show');
       }
       return;
     }
     
-    try {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log(`📱 Установка PWA: ${outcome}`);
-      
-      if (outcome === 'accepted') {
-        hideInstallButton();
+    // Для Android/Chrome
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`📱 Установка PWA: ${outcome}`);
+        
+        if (outcome === 'accepted') {
+          hideInstallButton();
+        }
+        
+        deferredPrompt = null;
+      } catch (err) {
+        console.error('Ошибка установки:', err);
       }
-      
-      deferredPrompt = null;
+    } else {
+      // Если deferredPrompt недоступен, показываем инструкцию
+      if (installMessage) {
+        installMessage.classList.add('show');
+      }
+    }
+  });
+}
+
+// Обработка успешной установки
+window.addEventListener('appinstalled', () => {
+  console.log('✅ PWA установлено');
+  hideInstallButton();
+  deferredPrompt = null;
+});
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('./sw.js', {
+        scope: './'
+      });
+      console.log('✅ ServiceWorker registered:', registration.scope);
     } catch (err) {
-      console.error('Ошибка установки:', err);
+      console.log('❌ ServiceWorker registration failed:', err);
     }
   });
-  
-  window.addEventListener('online', () => {
-    console.log('🌐 Соединение восстановлено');
-  });
-  
-  window.addEventListener('offline', () => {
-    console.log('📴 Нет соединения');
-    if (!isPwaInstalled()) {
-      alert('Вы оффлайн. Некоторые функции могут быть недоступны.');
-    }
-  });
-} else {
-  console.log('❌ Service Worker не поддерживается');
 }
-
-function isIos() {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-}
-
-if (isIos() && !isPwaInstalled()) {
-  setTimeout(() => {
-    installMessage.classList.add('show');
-  }, 3000);
-}
-
 // ======== МОБИЛЬНАЯ АДАПТАЦИЯ ========
 if (window.innerWidth <= 768) {
   const sidebar = document.getElementById('sidebar');
