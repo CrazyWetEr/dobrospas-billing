@@ -55,7 +55,7 @@
       justify-content: center;
       z-index: 99999;
       opacity: 1;
-      transition: opacity 1.0s ease-out;
+      transition: opacity 1.5s ease-out;
     }
     
     #splash-screen.hidden {
@@ -396,11 +396,54 @@
       height: 20px;
     }
     
-    /* ========== ИКОНКА УСТАНОВКИ PWA ========== */
+    /* ========== СТИЛЬ ДЛЯ ЛОГОТИПА - УВЕЛИЧЕННЫЙ В 2 РАЗА ========== */
+    .custom-logo-control {
+      position: absolute !important;
+      top: 20px !important;
+      right: 20px !important;
+      z-index: 1000 !important;
+      background: transparent;
+      padding: 0;
+      border-radius: 12px;
+      box-shadow: none;
+      border: none;
+      pointer-events: none;
+      max-width: 300px;
+    }
+    
+    .custom-logo-control img {
+      display: block;
+      max-width: 100%;
+      width: auto;
+      height: auto;
+      max-height: 120px;
+      opacity: 0.35;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+      transition: opacity 0.2s;
+    }
+    
+    .custom-logo-control img:hover {
+      opacity: 0.5;
+    }
+    
+    @media (max-width: 768px) {
+      .custom-logo-control {
+        top: 15px !important;
+        right: 15px !important;
+        max-width: 200px;
+      }
+      
+      .custom-logo-control img {
+        max-height: 80px;
+        opacity: 0.3;
+      }
+    }
+    
+    /* ========== ИКОНКА УСТАНОВКИ PWA - ПОД ЛОГОТИПОМ ========== */
     #pwa-install-icon {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      top: 150px;
+      right: 25px;
       z-index: 1000;
       width: 50px;
       height: 50px;
@@ -440,15 +483,15 @@
     
     @media (max-width: 768px) {
       #pwa-install-icon {
-        bottom: 80px;
-        right: 15px;
-        width: 56px;
-        height: 56px;
+        top: 105px;
+        right: 20px;
+        width: 46px;
+        height: 46px;
       }
       
       #pwa-install-icon svg {
-        width: 28px;
-        height: 28px;
+        width: 22px;
+        height: 22px;
       }
     }
     
@@ -672,49 +715,6 @@
       margin: 0 10px;
     }
     
-    /* Стиль для логотипа */
-    .custom-logo-control {
-      position: absolute !important;
-      top: 20px !important;
-      right: 20px !important;
-      z-index: 1000 !important;
-      background: transparent;
-      padding: 0;
-      border-radius: 12px;
-      box-shadow: none;
-      border: none;
-      pointer-events: none;
-      max-width: 150px;
-    }
-    
-    .custom-logo-control img {
-      display: block;
-      max-width: 100%;
-      width: auto;
-      height: auto;
-      max-height: 60px;
-      opacity: 0.35;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
-      transition: opacity 0.2s;
-    }
-    
-    .custom-logo-control img:hover {
-      opacity: 0.5;
-    }
-    
-    @media (max-width: 768px) {
-      .custom-logo-control {
-        top: 15px !important;
-        right: 15px !important;
-        max-width: 100px;
-      }
-      
-      .custom-logo-control img {
-        max-height: 40px;
-        opacity: 0.3;
-      }
-    }
-    
     /* Стили для сетки */
     .grid-point-marker {
       background: transparent;
@@ -777,12 +777,12 @@
   <div id="splash-screen">
     <div class="splash-content">
       <img src="./icons/icon-192.png" alt="Logo" class="splash-logo">
-      <h1 class="splash-title">Биллинг</h1>
-      <p class="splash-subtitle">Анализ и построение зон покрытия</p>
+      <h1 class="splash-title">БИЛЛИНГ СОТОВОГО ТЕЛЕФОНА</h1>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ</p>
       <div class="splash-loader">
         <div class="splash-spinner"></div>
       </div>
-      <p class="splash-author">Автор: позывной "Ветер" Ергер Виталий</p>
+      <p class="splash-author">Автор: Ергер Виталий, позывной "Ветер"</p>
     </div>
   </div>
   
@@ -803,7 +803,6 @@
       <h2>📲 Установка приложения</h2>
       
       <div id="install-instructions">
-        <!-- Инструкции будут вставлены через JavaScript -->
       </div>
       
       <div class="install-modal-footer">
@@ -1165,13 +1164,6 @@ let addSiteMode = false;
 let searchMarker = null;
 let userLocationMarker = null;
 
-const searchIcon = L.icon({
-  iconUrl: 'search-marker.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [0, -38]
-});
-
 const userLocationIcon = L.divIcon({
   className: 'user-location-marker',
   html: '<div style="background: #2196f3; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px #2196f3;"></div>',
@@ -1340,11 +1332,11 @@ function generateGrid() {
   }
   
   for (let r = 0; r < gridMatrix.length; r++) {
-    const row = gridMatrix[r];
-    for (let c = 0; c < row.length - 1; c++) {
+    const rowData = gridMatrix[r];
+    for (let c = 0; c < rowData.length - 1; c++) {
       const line = L.polyline([
-        [row[c].lat, row[c].lng],
-        [row[c + 1].lat, row[c + 1].lng]
+        [rowData[c].lat, rowData[c].lng],
+        [rowData[c + 1].lat, rowData[c + 1].lng]
       ], {
         color: '#3f51b5',
         weight: 1.5,
@@ -1559,7 +1551,6 @@ async function geocodeAddress(query) {
 // ======== UI-ЭЛЕМЕНТЫ ========
 const addressInput       = document.getElementById('addressInput');
 const btnSearchAddress   = document.getElementById('btnSearchAddress');
-
 const siteSelect          = document.getElementById('siteSelect');
 const btnAddSite          = document.getElementById('btnAddSite');
 const btnDeleteSite       = document.getElementById('btnDeleteSite');
@@ -1582,7 +1573,6 @@ const btnDrawAll          = document.getElementById('btnDrawAll');
 const btnClearZones       = document.getElementById('btnClearZones');
 const btnDrawAzimuthLine  = document.getElementById('btnDrawAzimuthLine');
 const btnClearAzimuthLine = document.getElementById('btnClearAzimuthLine');
-
 const freeZoneSelect      = document.getElementById('freeZoneSelect');
 const freeLatInput        = document.getElementById('freeLat');
 const freeLngInput        = document.getElementById('freeLng');
@@ -1595,15 +1585,12 @@ const btnDrawFree         = document.getElementById('btnDrawFree');
 const btnToggleFreeVisible= document.getElementById('btnToggleFreeVisible');
 const btnDeleteFree       = document.getElementById('btnDeleteFree');
 const btnClearFree        = document.getElementById('btnClearFree');
-
 const btnGenerateGrid     = document.getElementById('btnGenerateGrid');
 const btnClearGrid        = document.getElementById('btnClearGrid');
 const btnExportGridGpx    = document.getElementById('btnExportGridGpx');
-
 const btnExportJson       = document.getElementById('btnExportJson');
 const jsonFileInput       = document.getElementById('jsonFileInput');
 const btnImportJson       = document.getElementById('btnImportJson');
-
 const btnExportAzimuthGpx         = document.getElementById('btnExportAzimuthGpx');
 const btnExportZonesGpx           = document.getElementById('btnExportZonesGpx');
 const btnExportAllGpx             = document.getElementById('btnExportAllGpx');
@@ -1641,10 +1628,9 @@ function getBrowserInfo() {
   return { name: 'Браузер', icon: '🌐', type: 'other' };
 }
 
-function getInstructions(browserType, canAutoInstall) {
+function getInstructions(browserType) {
   const instructions = {
     'safari': {
-      auto: false,
       steps: [
         { text: 'Нажмите кнопку <span class="icon">📤</span> <strong>«Поделиться»</strong> внизу экрана' },
         { text: 'Прокрутите вниз и выберите <strong>«На экран Домой»</strong>' },
@@ -1652,7 +1638,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'chrome-ios': {
-      auto: false,
       steps: [
         { text: 'Нажмите <span class="icon">⋯</span> <strong>меню</strong> (три точки) справа вверху' },
         { text: 'Выберите <strong>«Поделиться...»</strong>' },
@@ -1661,7 +1646,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'firefox-ios': {
-      auto: false,
       steps: [
         { text: 'Нажмите <span class="icon">☰</span> <strong>меню</strong> внизу экрана' },
         { text: 'Выберите <strong>«Поделиться»</strong>' },
@@ -1669,7 +1653,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'chrome-android': {
-      auto: true,
       steps: [
         { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки) справа вверху' },
         { text: 'Выберите <strong>«Установить приложение»</strong> или <strong>«Добавить на главный экран»</strong>' },
@@ -1677,7 +1660,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'firefox-android': {
-      auto: false,
       steps: [
         { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки)' },
         { text: 'Выберите <strong>«Установить»</strong>' },
@@ -1685,7 +1667,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'samsung': {
-      auto: true,
       steps: [
         { text: 'Нажмите <span class="icon">☰</span> <strong>меню</strong> внизу' },
         { text: 'Выберите <strong>«Добавить на главный экран»</strong>' },
@@ -1693,7 +1674,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'chrome': {
-      auto: true,
       steps: [
         { text: 'Нажмите <span class="icon">⋮</span> <strong>меню</strong> (три точки) справа вверху' },
         { text: 'Выберите <strong>«Установить Биллинг зоны»</strong>' },
@@ -1701,7 +1681,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'edge': {
-      auto: true,
       steps: [
         { text: 'Нажмите <span class="icon">⋯</span> <strong>меню</strong> (три точки) справа вверху' },
         { text: 'Выберите <strong>«Приложения»</strong> → <strong>«Установить этот сайт как приложение»</strong>' },
@@ -1709,7 +1688,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'firefox': {
-      auto: false,
       steps: [
         { text: 'Firefox на десктопе не поддерживает установку PWA' },
         { text: 'Рекомендуем использовать <strong>Chrome</strong> или <strong>Edge</strong>' },
@@ -1717,7 +1695,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'safari-mac': {
-      auto: false,
       steps: [
         { text: 'В macOS Sonoma и новее: <strong>Файл</strong> → <strong>Добавить в Dock</strong>' },
         { text: 'Или добавьте сайт в закладки: <strong>⌘+D</strong>' },
@@ -1725,7 +1702,6 @@ function getInstructions(browserType, canAutoInstall) {
       ]
     },
     'other': {
-      auto: false,
       steps: [
         { text: 'Откройте <strong>меню браузера</strong>' },
         { text: 'Найдите опцию <strong>«Установить»</strong> или <strong>«Добавить на главный экран»</strong>' },
@@ -1740,7 +1716,7 @@ function getInstructions(browserType, canAutoInstall) {
 function showInstallModal() {
   const browser = getBrowserInfo();
   const canAutoInstall = !!deferredPrompt;
-  const instructions = getInstructions(browser.type, canAutoInstall);
+  const instructions = getInstructions(browser.type);
   
   let html = `
     <div class="browser-info">
@@ -1858,9 +1834,9 @@ if ('serviceWorker' in navigator) {
       const registration = await navigator.serviceWorker.register('./sw.js', {
         scope: './'
       });
-      console.log('✅ ServiceWorker registered:', registration.scope);
+      console.log('ServiceWorker registered:', registration.scope);
     } catch (err) {
-      console.log('❌ ServiceWorker registration failed:', err);
+      console.log('ServiceWorker registration failed:', err);
     }
   });
 }
@@ -2147,7 +2123,7 @@ function redrawFreeZones() {
   });
 }
 
-// ======== JSON: построение чистой конфигурации ========
+// ======== JSON ========
 function buildExportConfig() {
   const cleanSites = sites.map(site => ({
     id: site.id,
@@ -2181,7 +2157,6 @@ function buildExportConfig() {
   return { sites: cleanSites, freeZones: cleanFreeZones };
 }
 
-// ======== JSON ЭКСПОРТ/ИМПОРТ ========
 function exportAllToJson() {
   const data = buildExportConfig();
   let dataStr;
@@ -2192,34 +2167,15 @@ function exportAllToJson() {
     return;
   }
 
-  try {
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = 'config.json';
-
-    document.body.appendChild(a);
-    a.click();
-
-    setTimeout(() => {
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }, 500);
-
-    return;
-  } catch (e) {
-    console.error('download via link failed', e);
-  }
-
-  try {
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-  } catch (e2) {
-    alert('Не удалось сохранить JSON.');
-  }
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'config.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function importAllFromJsonFile(file) {
@@ -2276,14 +2232,13 @@ function importAllFromJsonFile(file) {
       fillFreeZoneSelect();
       redrawFreeZones();
     } catch (err) {
-      console.error(err);
       alert('Ошибка чтения JSON: ' + err.message);
     }
   };
   reader.readAsText(file, 'utf-8');
 }
 
-// ======== GPX ЭКСПОРТ ========
+// ======== GPX ========
 function exportGpxString(gpxStr, fileName) {
   const blob = new Blob([gpxStr], { type: 'application/gpx+xml' });
   const url = URL.createObjectURL(blob);
@@ -2312,12 +2267,10 @@ function buildAzimuthGpx(onlySelected = false) {
 
       const line = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
       const name = `${site.name || site.id} азимут ${sec.azimuth}°`;
-      const desc = `siteId=${site.id}; cellId=${site.cellId || '-'}; operator=${site.operator || '-'}; Az=${sec.azimuth}; Bw=${sec.beamWidth}; R=${sec.radius}`;
 
       tracks.push(
 `  <trk>
     <name>${name}</name>
-    <desc>${desc}</desc>
     <trkseg>
       <trkpt lat="${line[0][0]}" lon="${line[0][1]}"></trkpt>
       <trkpt lat="${line[1][0]}" lon="${line[1][1]}"></trkpt>
@@ -2331,16 +2284,11 @@ function buildAzimuthGpx(onlySelected = false) {
     if (onlySelected && !zone.selectedForExport) return;
 
     const line = makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius);
-    const baseName = zone.name && zone.name.trim()
-      ? zone.name.trim()
-      : `zone ${zone.id}`;
-    const name = `${baseName} азимут ${zone.azimuth}°`;
-    const desc = `id=${zone.id}; Az=${zone.azimuth}; Bw=${zone.beamWidth}; R=${zone.radius}`;
+    const baseName = zone.name && zone.name.trim() ? zone.name.trim() : `zone ${zone.id}`;
 
     tracks.push(
 `  <trk>
-    <name>${name}</name>
-    <desc>${desc}</desc>
+    <name>${baseName} азимут ${zone.azimuth}°</name>
     <trkseg>
       <trkpt lat="${line[0][0]}" lon="${line[0][1]}"></trkpt>
       <trkpt lat="${line[1][0]}" lon="${line[1][1]}"></trkpt>
@@ -2361,7 +2309,6 @@ function buildZonesGpx(onlySelected = false) {
 
       const poly = makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius, 32);
       const name = `${site.name || site.id} зона сектор ${sec.id}`;
-      const desc = `siteId=${site.id}; cellId=${site.cellId || '-'}; operator=${site.operator || '-'}; Az=${sec.azimuth}; Bw=${sec.beamWidth}; R=${sec.radius}`;
 
       let trkpts = '';
       poly.forEach(p => {
@@ -2371,7 +2318,6 @@ function buildZonesGpx(onlySelected = false) {
       tracks.push(
 `  <trk>
     <name>${name}</name>
-    <desc>${desc}</desc>
     <trkseg>${trkpts}
     </trkseg>
   </trk>`
@@ -2383,11 +2329,7 @@ function buildZonesGpx(onlySelected = false) {
     if (onlySelected && !zone.selectedForExport) return;
 
     const poly = makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius, 32);
-    const baseName = zone.name && zone.name.trim()
-      ? zone.name.trim()
-      : `zone ${zone.id}`;
-    const name = `${baseName} зона`;
-    const desc = `id=${zone.id}; Az=${zone.azimuth}; Bw=${zone.beamWidth}; R=${zone.radius}`;
+    const baseName = zone.name && zone.name.trim() ? zone.name.trim() : `zone ${zone.id}`;
 
     let trkpts = '';
     poly.forEach(p => {
@@ -2396,8 +2338,7 @@ function buildZonesGpx(onlySelected = false) {
 
     tracks.push(
 `  <trk>
-    <name>${name}</name>
-    <desc>${desc}</desc>
+    <name>${baseName} зона</name>
     <trkseg>${trkpts}
     </trkseg>
   </trk>`
@@ -2422,7 +2363,6 @@ function buildAllGpx() {
 
 function buildSelectedAzimuthAndZonesGpx() {
   const tracks = [];
-
   const azSel    = buildAzimuthGpx(true);
   const zonesSel = buildZonesGpx(true);
 
@@ -2436,7 +2376,6 @@ function buildSelectedAzimuthAndZonesGpx() {
 }
 
 // ======== СОБЫТИЯ ========
-
 btnSearchAddress.addEventListener('click', async () => {
   const query = addressInput.value.trim();
   if (!query) {
