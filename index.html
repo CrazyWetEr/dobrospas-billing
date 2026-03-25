@@ -55,7 +55,7 @@
       justify-content: center;
       z-index: 99999;
       opacity: 1;
-      transition: opacity 10s ease-out;
+      transition: opacity 10.00s ease-out;
     }
     
     #splash-screen.hidden {
@@ -936,7 +936,7 @@
     <div class="splash-content">
       <img src="./icons/icon-192.png" alt="Logo" class="splash-logo">
       <h1 class="splash-title">БИЛЛИНГ</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V6.9.0</p>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V6.9.1</p>
       <div class="splash-loader">
         <div class="splash-spinner"></div>
       </div>
@@ -1389,12 +1389,11 @@ function updateGridLinePreview() {
   const previewLine = document.getElementById('previewLine');
   if (previewLine) {
     previewLine.setAttribute('stroke', color);
-    previewLine.setAttribute('stroke-width', weight * 2); // Увеличиваем для видимости в превью
+    previewLine.setAttribute('stroke-width', weight * 2);
     previewLine.setAttribute('stroke-opacity', opacity);
     previewLine.setAttribute('stroke-dasharray', LINE_STYLES[style] || '');
   }
   
-  // Обновляем объект стиля
   gridStyle = { color, style, weight, opacity };
 }
 
@@ -1463,7 +1462,7 @@ function collectFullBackupData() {
     _signature: BACKUP_SIGNATURE,
     _version: DATA_VERSION,
     _created: new Date().toISOString(),
-    _appVersion: 'V6.9.0',
+    _appVersion: 'V6.9.1',
     
     sites: sites.map(site => ({
       id: site.id,
@@ -1591,7 +1590,6 @@ function restoreFromBackup(data) {
     gridPointsData = data.gridData;
   }
   
-  // Восстанавливаем стиль сетки
   if (data.gridStyle) {
     gridStyle = data.gridStyle;
     document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
@@ -1724,6 +1722,15 @@ function importOldFormat(data) {
     gridPointsData = data.gridData;
   }
   
+  if (data.gridStyle) {
+    gridStyle = data.gridStyle;
+    document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
+    document.getElementById('gridLineStyle').value = gridStyle.style || 'solid';
+    document.getElementById('gridLineWeight').value = gridStyle.weight || 1.5;
+    document.getElementById('gridLineOpacity').value = gridStyle.opacity || 0.5;
+    updateGridLinePreview();
+  }
+  
   fillSiteSelect();
   if (sites.length > 0) siteSelect.value = sites[0].id;
   syncUiFromSite();
@@ -1791,7 +1798,6 @@ function saveToLocalStorage(silent = false) {
     };
     localStorage.setItem(STORAGE_KEYS.GRID_PARAMS, JSON.stringify(gridParams));
     
-    // Сохраняем стиль сетки
     localStorage.setItem(STORAGE_KEYS.GRID_STYLE, JSON.stringify(gridStyle));
     
     uiState.selectedSiteId = siteSelect?.value || null;
@@ -1882,7 +1888,6 @@ function loadFromLocalStorage() {
       if (document.getElementById('gridStartY')) document.getElementById('gridStartY').value = params.startY || '1';
     }
     
-    // Загружаем стиль сетки
     const gridStyleData = localStorage.getItem(STORAGE_KEYS.GRID_STYLE);
     if (gridStyleData) {
       gridStyle = JSON.parse(gridStyleData);
@@ -1972,7 +1977,6 @@ function restoreGridOnMap() {
   let currentRow = -1;
   let rowPoints = [];
   
-  // Получаем текущие настройки стиля
   const color = gridStyle.color || '#3f51b5';
   const dashArray = LINE_STYLES[gridStyle.style] || null;
   const weight = gridStyle.weight || 1.5;
@@ -1988,7 +1992,11 @@ function restoreGridOnMap() {
       offset: [0, -10], 
       className: 'grid-point-label' 
     }).setContent(point.label)).openTooltip();
-    marker.on('click', () => alert(`Точка: ${point.label}\n${point.lat.toFixed(6)}, ${point.lng.toFixed(6)}`));
+    
+    // ИСПРАВЛЕНИЕ: используем IIFE для захвата текущего point
+    marker.on('click', ((p) => {
+      return () => alert(`Точка: ${p.label}\nШирота: ${p.lat.toFixed(6)}\nДолгота: ${p.lng.toFixed(6)}`);
+    })(point));
     
     if (point.row !== currentRow) {
       if (rowPoints.length > 0) {
@@ -2004,7 +2012,6 @@ function restoreGridOnMap() {
     gridMatrix.push(rowPoints);
   }
   
-  // Рисуем линии сетки с настройками стиля
   for (let r = 0; r < gridMatrix.length; r++) {
     for (let c = 0; c < gridMatrix[r].length - 1; c++) {
       gridLines.push(L.polyline(
@@ -2237,14 +2244,12 @@ function generateGrid() {
   const startX = document.getElementById('gridStartX').value;
   const startY = parseInt(document.getElementById('gridStartY').value);
   
-  // Получаем настройки стиля
   const color = document.getElementById('gridLineColor').value;
   const style = document.getElementById('gridLineStyle').value;
   const weight = parseFloat(document.getElementById('gridLineWeight').value);
   const opacity = parseFloat(document.getElementById('gridLineOpacity').value);
   const dashArray = LINE_STYLES[style] || null;
   
-  // Сохраняем стиль
   gridStyle = { color, style, weight, opacity };
   
   const bounds = map.getBounds();
@@ -2259,35 +2264,54 @@ function generateGrid() {
   clearGrid();
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
   const startLetterIndex = letters.indexOf(startX);
-  let lat = startLat;
+  let currentLat = startLat;
   let row = 0;
   let gridMatrix = [];
   
   gridPointsData = [];
   
-  while (lat > southEast.lat) {
+  while (currentLat > southEast.lat) {
     let rowPoints = [];
-    let lng = startLon;
+    let currentLng = startLon;
     let col = 0;
-    while (lng < southEast.lng) {
+    while (currentLng < southEast.lng) {
       const letterIndex = startLetterIndex + col;
       if (letterIndex >= letters.length) break;
-      const point = { lat, lng, label: `${letters[letterIndex]}${startY + row}`, row, col };
+      
+      // Создаём объект точки с ТЕКУЩИМИ значениями координат
+      const point = { 
+        lat: currentLat,
+        lng: currentLng,
+        label: `${letters[letterIndex]}${startY + row}`, 
+        row: row, 
+        col: col 
+      };
+      
       gridPoints.push(point);
       gridPointsData.push(point);
       rowPoints.push(point);
-      const marker = L.marker([lat, lng], { icon: gridIcon }).addTo(gridLayerGroup);
-      marker.bindTooltip(L.tooltip({ permanent: true, direction: 'top', offset: [0, -10], className: 'grid-point-label' }).setContent(point.label)).openTooltip();
-      marker.on('click', () => alert(`Точка: ${point.label}\n${lat.toFixed(6)}, ${lng.toFixed(6)}`));
-      lng += lonStep;
+      
+      const marker = L.marker([point.lat, point.lng], { icon: gridIcon }).addTo(gridLayerGroup);
+      marker.bindTooltip(L.tooltip({ 
+        permanent: true, 
+        direction: 'top', 
+        offset: [0, -10], 
+        className: 'grid-point-label' 
+      }).setContent(point.label)).openTooltip();
+      
+      // ИСПРАВЛЕНИЕ: используем IIFE для захвата текущего point
+      marker.on('click', ((p) => {
+        return () => alert(`Точка: ${p.label}\nШирота: ${p.lat.toFixed(6)}\nДолгота: ${p.lng.toFixed(6)}`);
+      })(point));
+      
+      currentLng += lonStep;
       col++;
     }
     if (rowPoints.length > 0) gridMatrix.push(rowPoints);
-    lat -= latStep;
+    currentLat -= latStep;
     row++;
   }
   
-  // Рисуем линии сетки с выбранным стилем
   for (let r = 0; r < gridMatrix.length; r++) {
     for (let c = 0; c < gridMatrix[r].length - 1; c++) {
       gridLines.push(L.polyline(
@@ -3066,7 +3090,6 @@ btnExportAllGpx.addEventListener('click', () => exportGpxString(buildAllGpx(), '
 // ======== ИНИЦИАЛИЗАЦИЯ ========
 loadFromLocalStorage();
 
-// Инициализация превью линии
 updateGridLinePreview();
 
 fillSiteSelect();
@@ -3113,7 +3136,7 @@ if (totalItems > 0) {
   }, 2000);
 }
 
-console.log('✅ Приложение инициализировано V6.9.0');
+console.log('✅ Приложение инициализировано V6.9.1');
 console.log(`📊 Загружено: ${sites.length} вышек, ${freeZones.length} зон, ${gridPointsData.length} точек сетки`);
 
 </script>
