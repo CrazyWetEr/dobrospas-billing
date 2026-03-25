@@ -55,7 +55,7 @@
       justify-content: center;
       z-index: 99999;
       opacity: 1;
-      transition: opacity 8.5s ease-out;
+      transition: opacity 10.0s ease-out;
     }
     
     #splash-screen.hidden {
@@ -931,44 +931,110 @@
       display: none;
     }
     
-    /* ========== УВЕДОМЛЕНИЕ О КОПИРОВАНИИ КООРДИНАТ ========== */
+    /* ========== ОКНО КООРДИНАТ С КНОПКОЙ ЗАКРЫТИЯ ========== */
     #coords-toast {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.8);
-      background: rgba(0, 0, 0, 0.85);
+      background: rgba(0, 0, 0, 0.92);
       color: white;
-      padding: 16px 24px;
-      border-radius: 12px;
+      padding: 20px 28px;
+      border-radius: 16px;
       font-size: 16px;
       z-index: 10001;
       opacity: 0;
       transition: all 0.3s ease;
       pointer-events: none;
       text-align: center;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      box-shadow: 0 15px 50px rgba(0,0,0,0.4);
       max-width: 90vw;
+      min-width: 280px;
     }
     
     #coords-toast.show {
       opacity: 1;
       transform: translate(-50%, -50%) scale(1);
+      pointer-events: auto;
+    }
+    
+    #coords-toast .coords-icon {
+      font-size: 40px;
+      display: block;
+      margin-bottom: 12px;
+    }
+    
+    #coords-toast .coords-title {
+      font-size: 14px;
+      opacity: 0.8;
+      margin-bottom: 8px;
     }
     
     #coords-toast .coords-value {
       font-family: 'SF Mono', Monaco, 'Courier New', monospace;
-      font-size: 18px;
-      font-weight: 600;
+      font-size: 22px;
+      font-weight: 700;
       color: #4caf50;
       display: block;
-      margin-top: 8px;
+      margin: 12px 0;
+      padding: 12px 16px;
+      background: rgba(76, 175, 80, 0.15);
+      border-radius: 10px;
+      border: 1px solid rgba(76, 175, 80, 0.3);
+      user-select: all;
+      cursor: text;
     }
     
-    #coords-toast .coords-icon {
-      font-size: 32px;
-      display: block;
-      margin-bottom: 8px;
+    #coords-toast .coords-hint {
+      font-size: 12px;
+      opacity: 0.6;
+      margin-bottom: 16px;
+    }
+    
+    #coords-toast .coords-close-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-height: 44px;
+    }
+    
+    #coords-toast .coords-close-btn:hover {
+      background: linear-gradient(135deg, #66bb6a, #388e3c);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+    }
+    
+    #coords-toast .coords-close-btn:active {
+      transform: translateY(0);
+    }
+    
+    /* Затемнение фона при открытом окне координат */
+    #coords-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    
+    #coords-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
     }
     
     /* Подсказка при длительном нажатии */
@@ -1016,7 +1082,7 @@
     <div class="splash-content">
       <img src="./icons/icon-192.png" alt="Logo" class="splash-logo">
       <h1 class="splash-title">БИЛЛИНГ</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V6.9.2</p>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V6.9.3</p>
       <div class="splash-loader">
         <div class="splash-spinner"></div>
       </div>
@@ -1024,11 +1090,18 @@
     </div>
   </div>
   
-  <!-- Уведомление о копировании координат -->
+  <!-- Затемнение фона для окна координат -->
+  <div id="coords-overlay"></div>
+  
+  <!-- Окно координат с кнопкой закрытия -->
   <div id="coords-toast">
     <span class="coords-icon">📋</span>
-    <span>Координаты скопированы</span>
+    <div class="coords-title">Координаты скопированы</div>
     <span class="coords-value"></span>
+    <div class="coords-hint">Координаты уже в буфере обмена</div>
+    <button class="coords-close-btn" onclick="closeCoordsToast()">
+      ✓ Закрыть
+    </button>
   </div>
   
   <!-- Индикатор длительного нажатия -->
@@ -1407,11 +1480,9 @@ const STORAGE_KEYS = {
   INPUT_FIELDS: 'billing_inputFields'
 };
 
-// ======== ВЕРСИЯ ДАННЫХ ========
 const DATA_VERSION = '2.1';
 const BACKUP_SIGNATURE = 'BILLING_FULL_BACKUP_V2';
 
-// ======== СТИЛИ ЛИНИЙ ========
 const LINE_STYLES = {
   'solid': null,
   'dashed': '10,10',
@@ -1420,11 +1491,11 @@ const LINE_STYLES = {
   'longdash': '20,10'
 };
 
-// ======== SPLASH SCREEN ========
 const splashScreen = document.getElementById('splash-screen');
 const saveIndicator = document.getElementById('save-indicator');
 const autosaveBadge = document.getElementById('autosave-badge');
 const coordsToast = document.getElementById('coords-toast');
+const coordsOverlay = document.getElementById('coords-overlay');
 const longPressIndicator = document.getElementById('long-press-indicator');
 
 function hideSplashScreen() {
@@ -1479,16 +1550,28 @@ function showCoordsToast(coords, source = 'карты') {
   const valueEl = coordsToast.querySelector('.coords-value');
   valueEl.textContent = coords;
   
+  coordsOverlay.classList.add('show');
   coordsToast.classList.add('show');
   
   if (navigator.vibrate) {
     navigator.vibrate(50);
   }
-  
-  setTimeout(() => {
-    coordsToast.classList.remove('show');
-  }, 2000);
 }
+
+function closeCoordsToast() {
+  coordsToast.classList.remove('show');
+  coordsOverlay.classList.remove('show');
+}
+
+// Закрытие по клику на оверлей
+coordsOverlay.addEventListener('click', closeCoordsToast);
+
+// Закрытие по Escape
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && coordsToast.classList.contains('show')) {
+    closeCoordsToast();
+  }
+});
 
 // ======== ПОКАЗАТЬ ИНДИКАТОР СОХРАНЕНИЯ ========
 function showSaveIndicator(message = '💾 Данные сохранены', isError = false) {
@@ -1530,7 +1613,6 @@ let uiState = {
   addSiteMode: false
 };
 
-// ======== ОБНОВЛЕНИЕ ПРЕВЬЮ ЛИНИИ СЕТКИ ========
 function updateGridLinePreview() {
   const color = document.getElementById('gridLineColor').value;
   const style = document.getElementById('gridLineStyle').value;
@@ -1548,7 +1630,6 @@ function updateGridLinePreview() {
   gridStyle = { color, style, weight, opacity };
 }
 
-// ======== ОБНОВЛЕНИЕ СТАТИСТИКИ БЭКАПА ========
 function updateBackupStats() {
   document.getElementById('statsSites').textContent = sites.length;
   document.getElementById('statsFreeZones').textContent = freeZones.length;
@@ -1556,7 +1637,6 @@ function updateBackupStats() {
   document.getElementById('statsAzimuth').textContent = azimuthLinesData.length;
 }
 
-// ======== СБОР ВСЕХ ДАННЫХ ДЛЯ ПОЛНОГО БЭКАПА ========
 function collectFullBackupData() {
   const inputFields = {
     addressInput: addressInput?.value || '',
@@ -1613,37 +1693,21 @@ function collectFullBackupData() {
     _signature: BACKUP_SIGNATURE,
     _version: DATA_VERSION,
     _created: new Date().toISOString(),
-    _appVersion: 'V6.9.2',
-    
+    _appVersion: 'V6.9.3',
     sites: sites.map(site => ({
-      id: site.id,
-      name: site.name || '',
-      cellId: site.cellId || '',
-      operator: site.operator || '',
-      lat: site.lat,
-      lng: site.lng,
+      id: site.id, name: site.name || '', cellId: site.cellId || '', operator: site.operator || '',
+      lat: site.lat, lng: site.lng,
       sectors: site.sectors.map(sec => ({
-        id: sec.id,
-        azimuth: sec.azimuth,
-        beamWidth: sec.beamWidth,
-        radius: sec.radius,
+        id: sec.id, azimuth: sec.azimuth, beamWidth: sec.beamWidth, radius: sec.radius,
         selectedForExport: sec.selectedForExport === true
       }))
     })),
-    
     freeZones: freeZones.map(zone => ({
-      id: zone.id,
-      name: zone.name || '',
-      lat: zone.lat,
-      lng: zone.lng,
-      azimuth: zone.azimuth,
-      beamWidth: zone.beamWidth,
-      radius: zone.radius,
-      visible: zone.visible !== false,
-      color: zone.color || null,
+      id: zone.id, name: zone.name || '', lat: zone.lat, lng: zone.lng,
+      azimuth: zone.azimuth, beamWidth: zone.beamWidth, radius: zone.radius,
+      visible: zone.visible !== false, color: zone.color || null,
       selectedForExport: zone.selectedForExport === true
     })),
-    
     gridData: gridPointsData,
     gridStyle: gridStyle,
     azimuthLines: azimuthLinesData,
@@ -1653,94 +1717,52 @@ function collectFullBackupData() {
     searchMarker: searchMarkerData,
     inputFields: inputFields,
     selectStates: selectStates,
-    
-    uiState: {
-      ...uiState,
-      selectedSiteId: siteSelect?.value || null,
-      selectedSectorId: sectorSelect?.value || null,
-      selectedFreeZoneId: freeZoneSelect?.value || null
-    }
+    uiState: { ...uiState, selectedSiteId: siteSelect?.value || null, selectedSectorId: sectorSelect?.value || null, selectedFreeZoneId: freeZoneSelect?.value || null }
   };
 }
 
-// ======== ЭКСПОРТ ПОЛНОГО БЭКАПА ========
 function exportFullBackup() {
   const backupData = collectFullBackupData();
-  
-  const blob = new Blob([JSON.stringify(backupData, null, 2)], { 
-    type: 'application/json' 
-  });
-  
+  const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
   const date = new Date();
   const dateStr = date.toISOString().slice(0, 10);
   const timeStr = date.toTimeString().slice(0, 5).replace(':', '-');
   const fileName = `billing_backup_${dateStr}_${timeStr}.backup`;
-  
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = fileName;
   a.click();
-  
   showSaveIndicator(`📦 Бэкап сохранён: ${fileName}`);
-  console.log('📦 Полный бэкап создан:', backupData);
 }
 
-// ======== ИМПОРТ ПОЛНОГО БЭКАПА ========
 function importFullBackup(file) {
   const reader = new FileReader();
-  
   reader.onload = (e) => {
     try {
       const data = JSON.parse(e.target.result);
-      
       if (data._signature !== BACKUP_SIGNATURE) {
-        if (Array.isArray(data.sites)) {
-          importOldFormat(data);
-          return;
-        }
+        if (Array.isArray(data.sites)) { importOldFormat(data); return; }
         throw new Error('Неверный формат файла бэкапа');
       }
-      
       restoreFromBackup(data);
       showSaveIndicator(`✅ Бэкап восстановлен (${data._created?.slice(0, 10) || 'дата неизвестна'})`);
-      
     } catch (err) {
       console.error('Ошибка импорта:', err);
       showSaveIndicator('❌ Ошибка: ' + err.message, true);
       alert('Ошибка при восстановлении бэкапа:\n' + err.message);
     }
   };
-  
   reader.readAsText(file);
 }
 
-// ======== ВОССТАНОВЛЕНИЕ ИЗ БЭКАПА ========
 function restoreFromBackup(data) {
-  console.log('🔄 Восстановление из бэкапа...', data);
-  
   if (Array.isArray(data.sites)) {
-    sites = data.sites.map(site => ({
-      ...site,
-      name: site.name || site.id,
-      cellId: site.cellId || '',
-      operator: site.operator || ''
-    }));
+    sites = data.sites.map(site => ({ ...site, name: site.name || site.id, cellId: site.cellId || '', operator: site.operator || '' }));
   }
-  
   if (Array.isArray(data.freeZones)) {
-    freeZones = data.freeZones.map((z, i) => ({
-      ...z,
-      id: z.id || i + 1,
-      polyLayer: null,
-      lineLayer: null,
-      color: z.color || getUniqueColor(z.id || i + 1)
-    }));
+    freeZones = data.freeZones.map((z, i) => ({ ...z, id: z.id || i + 1, polyLayer: null, lineLayer: null, color: z.color || getUniqueColor(z.id || i + 1) }));
   }
-  
-  if (Array.isArray(data.gridData)) {
-    gridPointsData = data.gridData;
-  }
-  
+  if (Array.isArray(data.gridData)) { gridPointsData = data.gridData; }
   if (data.gridStyle) {
     gridStyle = data.gridStyle;
     document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
@@ -1749,35 +1771,19 @@ function restoreFromBackup(data) {
     document.getElementById('gridLineOpacity').value = gridStyle.opacity || 0.5;
     updateGridLinePreview();
   }
-  
-  if (Array.isArray(data.azimuthLines)) {
-    azimuthLinesData = data.azimuthLines;
-  }
-  
+  if (Array.isArray(data.azimuthLines)) { azimuthLinesData = data.azimuthLines; }
   drawnZonesVisible = data.drawnZonesVisible === true;
-  
   if (data.mapLayer && mapProviders[data.mapLayer]) {
     currentMapLayer = data.mapLayer;
-    Object.keys(mapProviders).forEach(key => {
-      if (map.hasLayer(mapProviders[key])) {
-        map.removeLayer(mapProviders[key]);
-      }
-    });
+    Object.keys(mapProviders).forEach(key => { if (map.hasLayer(mapProviders[key])) map.removeLayer(mapProviders[key]); });
     mapProviders[currentMapLayer].addTo(map);
   }
-  
-  if (data.mapView) {
-    map.setView([data.mapView.lat, data.mapView.lng], data.mapView.zoom);
-  }
-  
+  if (data.mapView) { map.setView([data.mapView.lat, data.mapView.lng], data.mapView.zoom); }
   if (data.searchMarker) {
     if (searchMarker) map.removeLayer(searchMarker);
     searchMarker = L.marker([data.searchMarker.lat, data.searchMarker.lng]).addTo(map);
-    if (data.searchMarker.text) {
-      searchMarker.bindPopup(data.searchMarker.text);
-    }
+    if (data.searchMarker.text) searchMarker.bindPopup(data.searchMarker.text);
   }
-  
   if (data.inputFields) {
     const fields = data.inputFields;
     if (addressInput) addressInput.value = fields.addressInput || '';
@@ -1798,7 +1804,6 @@ function restoreFromBackup(data) {
     if (freeRInput) freeRInput.value = fields.freeRInput || '1000';
     if (freeNameInput) freeNameInput.value = fields.freeNameInput || '';
     if (freeExportCheckbox) freeExportCheckbox.checked = fields.freeExportCheckbox || false;
-    
     const gridStep = document.getElementById('gridStep');
     const gridStartX = document.getElementById('gridStartX');
     const gridStartY = document.getElementById('gridStartY');
@@ -1806,73 +1811,28 @@ function restoreFromBackup(data) {
     if (gridStartX) gridStartX.value = fields.gridStartX || 'A';
     if (gridStartY) gridStartY.value = fields.gridStartY || '1';
   }
-  
-  if (data.uiState) {
-    uiState = { ...uiState, ...data.uiState };
-    addSiteMode = uiState.addSiteMode || false;
-    btnAddSite.style.backgroundColor = addSiteMode ? '#c0ffc0' : '';
-  }
-  
+  if (data.uiState) { uiState = { ...uiState, ...data.uiState }; addSiteMode = uiState.addSiteMode || false; btnAddSite.style.backgroundColor = addSiteMode ? '#c0ffc0' : ''; }
   fillSiteSelect();
-  
-  if (data.selectStates?.siteSelect && sites.find(s => s.id === data.selectStates.siteSelect)) {
-    siteSelect.value = data.selectStates.siteSelect;
-  } else if (sites.length > 0) {
-    siteSelect.value = sites[0].id;
-  }
-  
+  if (data.selectStates?.siteSelect && sites.find(s => s.id === data.selectStates.siteSelect)) { siteSelect.value = data.selectStates.siteSelect; }
+  else if (sites.length > 0) { siteSelect.value = sites[0].id; }
   syncUiFromSite();
-  
-  if (data.selectStates?.sectorSelect) {
-    sectorSelect.value = data.selectStates.sectorSelect;
-    syncSectorInputsFromSelect();
-  }
-  
+  if (data.selectStates?.sectorSelect) { sectorSelect.value = data.selectStates.sectorSelect; syncSectorInputsFromSelect(); }
   drawSiteMarkers();
   fillFreeZoneSelect();
-  
-  if (data.selectStates?.freeZoneSelect) {
-    freeZoneSelect.value = data.selectStates.freeZoneSelect;
-    syncInputsFromFreeZone();
-  }
-  
+  if (data.selectStates?.freeZoneSelect) { freeZoneSelect.value = data.selectStates.freeZoneSelect; syncInputsFromFreeZone(); }
   redrawFreeZones();
   restoreGridOnMap();
   restoreAzimuthLines();
-  
-  if (drawnZonesVisible) {
-    drawAllZones();
-  }
-  
+  if (drawnZonesVisible) drawAllZones();
   updateBackupStats();
   saveToLocalStorage(true);
-  
-  console.log('✅ Бэкап полностью восстановлен');
 }
 
-// ======== ИМПОРТ СТАРОГО ФОРМАТА ========
 function importOldFormat(data) {
-  console.log('📁 Импорт старого формата...');
-  
   sites = data.sites || [];
-  sites.forEach(s => {
-    s.name = s.name || s.id;
-    s.cellId = s.cellId || '';
-    s.operator = s.operator || '';
-  });
-  
-  freeZones = (data.freeZones || []).map((z, i) => ({
-    ...z,
-    id: z.id || i + 1,
-    polyLayer: null,
-    lineLayer: null,
-    color: z.color || getUniqueColor(z.id || i + 1)
-  }));
-  
-  if (data.gridData) {
-    gridPointsData = data.gridData;
-  }
-  
+  sites.forEach(s => { s.name = s.name || s.id; s.cellId = s.cellId || ''; s.operator = s.operator || ''; });
+  freeZones = (data.freeZones || []).map((z, i) => ({ ...z, id: z.id || i + 1, polyLayer: null, lineLayer: null, color: z.color || getUniqueColor(z.id || i + 1) }));
+  if (data.gridData) gridPointsData = data.gridData;
   if (data.gridStyle) {
     gridStyle = data.gridStyle;
     document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
@@ -1881,7 +1841,6 @@ function importOldFormat(data) {
     document.getElementById('gridLineOpacity').value = gridStyle.opacity || 0.5;
     updateGridLinePreview();
   }
-  
   fillSiteSelect();
   if (sites.length > 0) siteSelect.value = sites[0].id;
   syncUiFromSite();
@@ -1891,578 +1850,180 @@ function importOldFormat(data) {
   restoreGridOnMap();
   updateBackupStats();
   saveToLocalStorage(true);
-  
-  showSaveIndicator('📂 Конфигурация импортирована (старый формат)');
+  showSaveIndicator('📂 Конфигурация импортирована');
 }
 
-// ======== ФУНКЦИИ СОХРАНЕНИЯ/ЗАГРУЗКИ ========
 function saveToLocalStorage(silent = false) {
   try {
-    const sitesData = sites.map(site => ({
-      id: site.id,
-      name: site.name || '',
-      cellId: site.cellId || '',
-      operator: site.operator || '',
-      lat: site.lat,
-      lng: site.lng,
-      sectors: site.sectors.map(sec => ({
-        id: sec.id,
-        azimuth: sec.azimuth,
-        beamWidth: sec.beamWidth,
-        radius: sec.radius,
-        selectedForExport: sec.selectedForExport === true
-      }))
-    }));
-    localStorage.setItem(STORAGE_KEYS.SITES, JSON.stringify(sitesData));
-    
-    const freeZonesData = freeZones.map(zone => ({
-      id: zone.id,
-      name: zone.name || '',
-      lat: zone.lat,
-      lng: zone.lng,
-      azimuth: zone.azimuth,
-      beamWidth: zone.beamWidth,
-      radius: zone.radius,
-      visible: zone.visible !== false,
-      color: zone.color || null,
-      selectedForExport: zone.selectedForExport === true
-    }));
-    localStorage.setItem(STORAGE_KEYS.FREE_ZONES, JSON.stringify(freeZonesData));
-    
-    if (map) {
-      const center = map.getCenter();
-      const zoom = map.getZoom();
-      localStorage.setItem(STORAGE_KEYS.MAP_VIEW, JSON.stringify({
-        lat: center.lat,
-        lng: center.lng,
-        zoom: zoom
-      }));
-    }
-    
+    localStorage.setItem(STORAGE_KEYS.SITES, JSON.stringify(sites.map(site => ({ id: site.id, name: site.name || '', cellId: site.cellId || '', operator: site.operator || '', lat: site.lat, lng: site.lng, sectors: site.sectors.map(sec => ({ id: sec.id, azimuth: sec.azimuth, beamWidth: sec.beamWidth, radius: sec.radius, selectedForExport: sec.selectedForExport === true })) }))));
+    localStorage.setItem(STORAGE_KEYS.FREE_ZONES, JSON.stringify(freeZones.map(zone => ({ id: zone.id, name: zone.name || '', lat: zone.lat, lng: zone.lng, azimuth: zone.azimuth, beamWidth: zone.beamWidth, radius: zone.radius, visible: zone.visible !== false, color: zone.color || null, selectedForExport: zone.selectedForExport === true }))));
+    if (map) { const center = map.getCenter(); localStorage.setItem(STORAGE_KEYS.MAP_VIEW, JSON.stringify({ lat: center.lat, lng: center.lng, zoom: map.getZoom() })); }
     localStorage.setItem(STORAGE_KEYS.MAP_LAYER, currentMapLayer);
     localStorage.setItem(STORAGE_KEYS.GRID_DATA, JSON.stringify(gridPointsData));
-    
-    const gridParams = {
-      step: document.getElementById('gridStep')?.value || '500',
-      startX: document.getElementById('gridStartX')?.value || 'A',
-      startY: document.getElementById('gridStartY')?.value || '1'
-    };
-    localStorage.setItem(STORAGE_KEYS.GRID_PARAMS, JSON.stringify(gridParams));
-    
+    localStorage.setItem(STORAGE_KEYS.GRID_PARAMS, JSON.stringify({ step: document.getElementById('gridStep')?.value || '500', startX: document.getElementById('gridStartX')?.value || 'A', startY: document.getElementById('gridStartY')?.value || '1' }));
     localStorage.setItem(STORAGE_KEYS.GRID_STYLE, JSON.stringify(gridStyle));
-    
     uiState.selectedSiteId = siteSelect?.value || null;
     uiState.selectedSectorId = sectorSelect?.value || null;
     uiState.selectedFreeZoneId = freeZoneSelect?.value || null;
     localStorage.setItem(STORAGE_KEYS.UI_STATE, JSON.stringify(uiState));
-    
     localStorage.setItem(STORAGE_KEYS.AZIMUTH_LINES, JSON.stringify(azimuthLinesData));
     localStorage.setItem(STORAGE_KEYS.DRAWN_ZONES, JSON.stringify(drawnZonesVisible));
-    
-    if (searchMarker) {
-      const pos = searchMarker.getLatLng();
-      const popup = searchMarker.getPopup();
-      localStorage.setItem(STORAGE_KEYS.SEARCH_MARKER, JSON.stringify({
-        lat: pos.lat,
-        lng: pos.lng,
-        text: popup ? popup.getContent() : ''
-      }));
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.SEARCH_MARKER);
-    }
-    
-    const inputFieldsData = {
-      addressInput: addressInput?.value || '',
-      nameInput: nameInput?.value || '',
-      cellIdInput: cellIdInput?.value || '',
-      operatorInput: operatorInput?.value || '',
-      latInput: latInput?.value || '',
-      lngInput: lngInput?.value || '',
-      sectorsCountInput: sectorsCountInput?.value || '3',
-      azInput: azInput?.value || '',
-      bwInput: bwInput?.value || '',
-      rInput: rInput?.value || '',
-      sectorExportCheckbox: sectorExportCheckbox?.checked || false,
-      freeLatInput: freeLatInput?.value || '',
-      freeLngInput: freeLngInput?.value || '',
-      freeAzInput: freeAzInput?.value || '',
-      freeBwInput: freeBwInput?.value || '60',
-      freeRInput: freeRInput?.value || '1000',
-      freeNameInput: freeNameInput?.value || '',
-      freeExportCheckbox: freeExportCheckbox?.checked || false
-    };
-    localStorage.setItem(STORAGE_KEYS.INPUT_FIELDS, JSON.stringify(inputFieldsData));
-    
+    if (searchMarker) { const pos = searchMarker.getLatLng(); const popup = searchMarker.getPopup(); localStorage.setItem(STORAGE_KEYS.SEARCH_MARKER, JSON.stringify({ lat: pos.lat, lng: pos.lng, text: popup ? popup.getContent() : '' })); }
+    else { localStorage.removeItem(STORAGE_KEYS.SEARCH_MARKER); }
+    localStorage.setItem(STORAGE_KEYS.INPUT_FIELDS, JSON.stringify({ addressInput: addressInput?.value || '', nameInput: nameInput?.value || '', cellIdInput: cellIdInput?.value || '', operatorInput: operatorInput?.value || '', latInput: latInput?.value || '', lngInput: lngInput?.value || '', sectorsCountInput: sectorsCountInput?.value || '3', azInput: azInput?.value || '', bwInput: bwInput?.value || '', rInput: rInput?.value || '', sectorExportCheckbox: sectorExportCheckbox?.checked || false, freeLatInput: freeLatInput?.value || '', freeLngInput: freeLngInput?.value || '', freeAzInput: freeAzInput?.value || '', freeBwInput: freeBwInput?.value || '60', freeRInput: freeRInput?.value || '1000', freeNameInput: freeNameInput?.value || '', freeExportCheckbox: freeExportCheckbox?.checked || false }));
     updateBackupStats();
-    
-    if (!silent) {
-      console.log('✅ Данные сохранены в localStorage');
-      showAutosaveBadge();
-    }
-  } catch (e) {
-    console.error('❌ Ошибка сохранения:', e);
-    showSaveIndicator('❌ Ошибка сохранения', true);
-  }
+    if (!silent) showAutosaveBadge();
+  } catch (e) { console.error('❌ Ошибка сохранения:', e); showSaveIndicator('❌ Ошибка сохранения', true); }
 }
 
 function loadFromLocalStorage() {
   try {
     const sitesData = localStorage.getItem(STORAGE_KEYS.SITES);
-    if (sitesData) {
-      sites = JSON.parse(sitesData);
-      console.log(`✅ Загружено ${sites.length} вышек`);
-    }
-    
+    if (sitesData) sites = JSON.parse(sitesData);
     const freeZonesData = localStorage.getItem(STORAGE_KEYS.FREE_ZONES);
-    if (freeZonesData) {
-      const parsed = JSON.parse(freeZonesData);
-      freeZones = parsed.map(z => ({
-        ...z,
-        polyLayer: null,
-        lineLayer: null,
-        color: z.color || getUniqueColor(z.id)
-      }));
-      console.log(`✅ Загружено ${freeZones.length} произвольных зон`);
-    }
-    
+    if (freeZonesData) { const parsed = JSON.parse(freeZonesData); freeZones = parsed.map(z => ({ ...z, polyLayer: null, lineLayer: null, color: z.color || getUniqueColor(z.id) })); }
     const gridData = localStorage.getItem(STORAGE_KEYS.GRID_DATA);
-    if (gridData) {
-      gridPointsData = JSON.parse(gridData);
-      console.log(`✅ Загружено ${gridPointsData.length} точек сетки`);
-    }
-    
+    if (gridData) gridPointsData = JSON.parse(gridData);
     const gridParams = localStorage.getItem(STORAGE_KEYS.GRID_PARAMS);
-    if (gridParams) {
-      const params = JSON.parse(gridParams);
-      if (document.getElementById('gridStep')) document.getElementById('gridStep').value = params.step || '500';
-      if (document.getElementById('gridStartX')) document.getElementById('gridStartX').value = params.startX || 'A';
-      if (document.getElementById('gridStartY')) document.getElementById('gridStartY').value = params.startY || '1';
-    }
-    
+    if (gridParams) { const params = JSON.parse(gridParams); if (document.getElementById('gridStep')) document.getElementById('gridStep').value = params.step || '500'; if (document.getElementById('gridStartX')) document.getElementById('gridStartX').value = params.startX || 'A'; if (document.getElementById('gridStartY')) document.getElementById('gridStartY').value = params.startY || '1'; }
     const gridStyleData = localStorage.getItem(STORAGE_KEYS.GRID_STYLE);
-    if (gridStyleData) {
-      gridStyle = JSON.parse(gridStyleData);
-      document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
-      document.getElementById('gridLineStyle').value = gridStyle.style || 'solid';
-      document.getElementById('gridLineWeight').value = gridStyle.weight || 1.5;
-      document.getElementById('gridLineOpacity').value = gridStyle.opacity || 0.5;
-    }
-    
+    if (gridStyleData) { gridStyle = JSON.parse(gridStyleData); document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5'; document.getElementById('gridLineStyle').value = gridStyle.style || 'solid'; document.getElementById('gridLineWeight').value = gridStyle.weight || 1.5; document.getElementById('gridLineOpacity').value = gridStyle.opacity || 0.5; }
     const uiStateData = localStorage.getItem(STORAGE_KEYS.UI_STATE);
-    if (uiStateData) {
-      uiState = JSON.parse(uiStateData);
-    }
-    
+    if (uiStateData) uiState = JSON.parse(uiStateData);
     const azimuthData = localStorage.getItem(STORAGE_KEYS.AZIMUTH_LINES);
-    if (azimuthData) {
-      azimuthLinesData = JSON.parse(azimuthData);
-    }
-    
+    if (azimuthData) azimuthLinesData = JSON.parse(azimuthData);
     const drawnZonesData = localStorage.getItem(STORAGE_KEYS.DRAWN_ZONES);
-    if (drawnZonesData) {
-      drawnZonesVisible = JSON.parse(drawnZonesData);
-    }
-    
+    if (drawnZonesData) drawnZonesVisible = JSON.parse(drawnZonesData);
     const inputFieldsData = localStorage.getItem(STORAGE_KEYS.INPUT_FIELDS);
-    if (inputFieldsData) {
-      const fields = JSON.parse(inputFieldsData);
-      window._savedInputFields = fields;
-    }
-    
+    if (inputFieldsData) window._savedInputFields = JSON.parse(inputFieldsData);
     return true;
-  } catch (e) {
-    console.error('❌ Ошибка загрузки:', e);
-    return false;
-  }
+  } catch (e) { console.error('❌ Ошибка загрузки:', e); return false; }
 }
 
-function restoreInputFields() {
-  const fields = window._savedInputFields;
-  if (!fields) return;
-  
-  if (addressInput && fields.addressInput) addressInput.value = fields.addressInput;
-  
-  delete window._savedInputFields;
-}
+function restoreInputFields() { const fields = window._savedInputFields; if (!fields) return; if (addressInput && fields.addressInput) addressInput.value = fields.addressInput; delete window._savedInputFields; }
 
 function restoreMapState() {
   const mapViewData = localStorage.getItem(STORAGE_KEYS.MAP_VIEW);
-  if (mapViewData) {
-    const mapView = JSON.parse(mapViewData);
-    map.setView([mapView.lat, mapView.lng], mapView.zoom);
-    console.log(`✅ Загружена позиция карты: ${mapView.lat.toFixed(4)}, ${mapView.lng.toFixed(4)}, zoom: ${mapView.zoom}`);
-  }
-  
+  if (mapViewData) { const mapView = JSON.parse(mapViewData); map.setView([mapView.lat, mapView.lng], mapView.zoom); }
   const mapLayerData = localStorage.getItem(STORAGE_KEYS.MAP_LAYER);
-  if (mapLayerData && mapProviders[mapLayerData]) {
-    currentMapLayer = mapLayerData;
-    Object.keys(mapProviders).forEach(key => {
-      if (map.hasLayer(mapProviders[key])) {
-        map.removeLayer(mapProviders[key]);
-      }
-    });
-    mapProviders[currentMapLayer].addTo(map);
-    console.log(`✅ Загружен слой карты: ${currentMapLayer}`);
-  }
-  
+  if (mapLayerData && mapProviders[mapLayerData]) { currentMapLayer = mapLayerData; Object.keys(mapProviders).forEach(key => { if (map.hasLayer(mapProviders[key])) map.removeLayer(mapProviders[key]); }); mapProviders[currentMapLayer].addTo(map); }
   const searchMarkerData = localStorage.getItem(STORAGE_KEYS.SEARCH_MARKER);
-  if (searchMarkerData) {
-    const data = JSON.parse(searchMarkerData);
-    if (searchMarker) map.removeLayer(searchMarker);
-    searchMarker = L.marker([data.lat, data.lng]).addTo(map);
-    if (data.text) {
-      searchMarker.bindPopup(data.text);
-    }
-    console.log('✅ Восстановлен маркер поиска');
-  }
+  if (searchMarkerData) { const data = JSON.parse(searchMarkerData); if (searchMarker) map.removeLayer(searchMarker); searchMarker = L.marker([data.lat, data.lng]).addTo(map); if (data.text) searchMarker.bindPopup(data.text); }
 }
 
 function restoreGridOnMap() {
   if (gridPointsData.length === 0) return;
-  
   gridLayerGroup.clearLayers();
   gridPoints = [];
   gridLines = [];
-  
   const gridMatrix = [];
   let currentRow = -1;
   let rowPoints = [];
-  
   const color = gridStyle.color || '#3f51b5';
   const dashArray = LINE_STYLES[gridStyle.style] || null;
   const weight = gridStyle.weight || 1.5;
   const opacity = gridStyle.opacity || 0.5;
-  
   gridPointsData.forEach(point => {
     gridPoints.push(point);
-    
     const marker = L.marker([point.lat, point.lng], { icon: gridIcon }).addTo(gridLayerGroup);
-    marker.bindTooltip(L.tooltip({ 
-      permanent: true, 
-      direction: 'top', 
-      offset: [0, -10], 
-      className: 'grid-point-label' 
-    }).setContent(point.label)).openTooltip();
-    
-    marker.on('click', ((p) => {
-      return () => copyCoordinates(p.lat, p.lng, `точки ${p.label}`);
-    })(point));
-    
-    if (point.row !== currentRow) {
-      if (rowPoints.length > 0) {
-        gridMatrix.push(rowPoints);
-      }
-      rowPoints = [];
-      currentRow = point.row;
-    }
+    marker.bindTooltip(L.tooltip({ permanent: true, direction: 'top', offset: [0, -10], className: 'grid-point-label' }).setContent(point.label)).openTooltip();
+    marker.on('click', ((p) => { return () => copyCoordinates(p.lat, p.lng, `точки ${p.label}`); })(point));
+    if (point.row !== currentRow) { if (rowPoints.length > 0) gridMatrix.push(rowPoints); rowPoints = []; currentRow = point.row; }
     rowPoints.push(point);
   });
-  
-  if (rowPoints.length > 0) {
-    gridMatrix.push(rowPoints);
-  }
-  
-  for (let r = 0; r < gridMatrix.length; r++) {
-    for (let c = 0; c < gridMatrix[r].length - 1; c++) {
-      gridLines.push(L.polyline(
-        [[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], 
-        { color, weight, opacity, dashArray }
-      ).addTo(gridLayerGroup));
-    }
-  }
-  
-  if (gridMatrix.length > 0) {
-    for (let c = 0; c < gridMatrix[0].length; c++) {
-      for (let r = 0; r < gridMatrix.length - 1; r++) {
-        if (gridMatrix[r][c] && gridMatrix[r+1][c]) {
-          gridLines.push(L.polyline(
-            [[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r+1][c].lat, gridMatrix[r+1][c].lng]], 
-            { color, weight, opacity, dashArray }
-          ).addTo(gridLayerGroup));
-        }
-      }
-    }
-  }
-  
-  console.log(`✅ Восстановлена сетка: ${gridPoints.length} точек`);
+  if (rowPoints.length > 0) gridMatrix.push(rowPoints);
+  for (let r = 0; r < gridMatrix.length; r++) { for (let c = 0; c < gridMatrix[r].length - 1; c++) { gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], { color, weight, opacity, dashArray }).addTo(gridLayerGroup)); } }
+  if (gridMatrix.length > 0) { for (let c = 0; c < gridMatrix[0].length; c++) { for (let r = 0; r < gridMatrix.length - 1; r++) { if (gridMatrix[r][c] && gridMatrix[r+1][c]) { gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r+1][c].lat, gridMatrix[r+1][c].lng]], { color, weight, opacity, dashArray }).addTo(gridLayerGroup)); } } } }
 }
 
 function restoreAzimuthLines() {
   if (azimuthLinesData.length === 0) return;
-  
   azimuthLayerGroup.clearLayers();
-  
-  azimuthLinesData.forEach(lineData => {
-    const line = L.polyline(lineData.coords, { 
-      color: lineData.color, 
-      weight: 2, 
-      dashArray: '5,5' 
-    }).addTo(azimuthLayerGroup);
-  });
-  
-  console.log(`✅ Восстановлены линии азимута: ${azimuthLinesData.length}`);
+  azimuthLinesData.forEach(lineData => { L.polyline(lineData.coords, { color: lineData.color, weight: 2, dashArray: '5,5' }).addTo(azimuthLayerGroup); });
 }
 
-function restoreDrawnZones() {
-  if (drawnZonesVisible) {
-    drawAllZones();
-    console.log('✅ Восстановлены построенные зоны');
-  }
-}
+function restoreDrawnZones() { if (drawnZonesVisible) drawAllZones(); }
 
 function clearAllData() {
-  if (!confirm('Удалить ВСЕ сохранённые данные? Это действие нельзя отменить!')) {
-    return;
-  }
-  
-  sites = [];
-  freeZones = [];
-  gridPointsData = [];
-  gridPoints = [];
-  gridLines = [];
-  azimuthLinesData = [];
-  drawnZonesVisible = false;
-  
-  Object.values(STORAGE_KEYS).forEach(key => {
-    localStorage.removeItem(key);
-  });
-  
-  siteMarkerGroup.clearLayers();
-  zonesLayerGroup.clearLayers();
-  azimuthLayerGroup.clearLayers();
-  freeLayerGroup.clearLayers();
-  gridLayerGroup.clearLayers();
-  
-  if (searchMarker) {
-    map.removeLayer(searchMarker);
-    searchMarker = null;
-  }
-  
-  fillSiteSelect();
-  fillFreeZoneSelect();
-  
-  nameInput.value = '';
-  cellIdInput.value = '';
-  operatorInput.value = '';
-  latInput.value = '';
-  lngInput.value = '';
-  addressInput.value = '';
-  
+  if (!confirm('Удалить ВСЕ сохранённые данные? Это действие нельзя отменить!')) return;
+  sites = []; freeZones = []; gridPointsData = []; gridPoints = []; gridLines = []; azimuthLinesData = []; drawnZonesVisible = false;
+  Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+  siteMarkerGroup.clearLayers(); zonesLayerGroup.clearLayers(); azimuthLayerGroup.clearLayers(); freeLayerGroup.clearLayers(); gridLayerGroup.clearLayers();
+  if (searchMarker) { map.removeLayer(searchMarker); searchMarker = null; }
+  fillSiteSelect(); fillFreeZoneSelect();
+  nameInput.value = ''; cellIdInput.value = ''; operatorInput.value = ''; latInput.value = ''; lngInput.value = ''; addressInput.value = '';
   map.setView([54.99, 73.37], 12);
-  
   updateBackupStats();
-  
   showSaveIndicator('🗑️ Все данные удалены');
-  console.log('🗑️ Все данные очищены');
 }
 
 let saveTimeout = null;
-function autoSave(immediate = false) {
-  if (saveTimeout) {
-    clearTimeout(saveTimeout);
-  }
-  
-  if (immediate) {
-    saveToLocalStorage();
-  } else {
-    saveTimeout = setTimeout(() => {
-      saveToLocalStorage();
-    }, 500);
-  }
-}
+function autoSave(immediate = false) { if (saveTimeout) clearTimeout(saveTimeout); if (immediate) saveToLocalStorage(); else saveTimeout = setTimeout(() => saveToLocalStorage(), 500); }
 
-window.addEventListener('beforeunload', () => {
-  saveToLocalStorage(true);
-});
+window.addEventListener('beforeunload', () => saveToLocalStorage(true));
+setInterval(() => saveToLocalStorage(true), 30000);
 
-setInterval(() => {
-  saveToLocalStorage(true);
-}, 30000);
+const map = L.map('map', { attributionControl: false }).setView([54.99, 73.37], 12);
 
-// ======== КАРТА (Омск) ========
-const map = L.map('map', {
-  attributionControl: false
-}).setView([54.99, 73.37], 12);
-
-// ======== ПРОВАЙДЕРЫ КАРТ ========
 const mapProviders = {
-  'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-  }),
-  
-  'OSM HOT': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap, Tiles: HOT'
-  }),
-  
-  'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
-  }),
-  
-  'CartoDB Тёмная': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
-  }),
-  
-  'CartoDB Voyager': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
-  }),
-  
-  'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '&copy; Esri, DigitalGlobe, GeoEye, Earthstar Geographics'
-  }),
-  
-  'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap'
-  }),
-  
-  'ESRI Улицы': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '&copy; Esri, HERE, Garmin, USGS'
-  }),
-  
-  'Топографическая': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-    maxZoom: 17,
-    attribution: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap'
-  }),
-  
-  'Stadia Smooth': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  'Stadia Тёмная': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  'Stadia Outdoors': L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Google Рельеф': L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Yandex Карта': L.tileLayer('https://core-renderer-tiles.maps.yandex.net/tiles?l=map&v=21.06.04-0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
-    maxZoom: 19,
-    attribution: '&copy; Яндекс Карты'
-  }),
-  
-  'Yandex Спутник': L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1030.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
-    maxZoom: 19,
-    attribution: '&copy; Яндекс Карты'
-  }),
-  
-  '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', {
-    maxZoom: 18,
-    attribution: '&copy; 2GIS'
-  })
+  'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
+  'OSM HOT': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { maxZoom: 19 }),
+  'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+  'CartoDB Тёмная': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+  'CartoDB Voyager': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+  'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+  'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+  'ESRI Улицы': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+  'Топографическая': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 }),
+  'Stadia Smooth': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+  'Stadia Тёмная': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+  'Stadia Outdoors': L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+  'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 }),
+  'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }),
+  'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }),
+  'Google Рельеф': L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', { maxZoom: 20 }),
+  'Yandex Карта': L.tileLayer('https://core-renderer-tiles.maps.yandex.net/tiles?l=map&v=21.06.04-0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', { maxZoom: 19 }),
+  'Yandex Спутник': L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1030.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', { maxZoom: 19 }),
+  '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', { maxZoom: 18 })
 };
 mapProviders['OSM Стандартная'].addTo(map);
 
-const layerControl = L.control.layers(mapProviders, {}, {
-  position: 'topleft',
-  collapsed: true
-}).addTo(map);
+const layerControl = L.control.layers(mapProviders, {}, { position: 'topleft', collapsed: true }).addTo(map);
 
-map.on('baselayerchange', (e) => {
-  currentMapLayer = e.name;
-  autoSave();
-});
-
+map.on('baselayerchange', (e) => { currentMapLayer = e.name; autoSave(); });
 map.on('moveend', () => autoSave());
 map.on('zoomend', () => autoSave());
 
-// ======== КОПИРОВАНИЕ КООРДИНАТ ПО ПКМ ========
-map.on('contextmenu', (e) => {
-  e.originalEvent.preventDefault();
-  copyCoordinates(e.latlng.lat, e.latlng.lng, 'карты');
-});
+map.on('contextmenu', (e) => { e.originalEvent.preventDefault(); copyCoordinates(e.latlng.lat, e.latlng.lng, 'карты'); });
 
-// ======== ДЛИТЕЛЬНОЕ НАЖАТИЕ ДЛЯ МОБИЛЬНЫХ ========
 let longPressTimer = null;
-let longPressCoords = null;
 let touchMoved = false;
 
 map.getContainer().addEventListener('touchstart', (e) => {
   if (e.touches.length !== 1) return;
-  
   touchMoved = false;
   const touch = e.touches[0];
-  
   longPressTimer = setTimeout(() => {
     if (touchMoved) return;
-    
-    const containerPoint = map.mouseEventToContainerPoint({
-      clientX: touch.clientX,
-      clientY: touch.clientY
-    });
+    const containerPoint = map.mouseEventToContainerPoint({ clientX: touch.clientX, clientY: touch.clientY });
     const latlng = map.containerPointToLatLng(containerPoint);
-    
     longPressIndicator.style.left = touch.clientX + 'px';
     longPressIndicator.style.top = touch.clientY + 'px';
     longPressIndicator.classList.add('active');
-    
-    setTimeout(() => {
-      longPressIndicator.classList.remove('active');
-    }, 600);
-    
+    setTimeout(() => longPressIndicator.classList.remove('active'), 600);
     copyCoordinates(latlng.lat, latlng.lng, 'карты');
-    
   }, 500);
-  
 }, { passive: true });
 
-map.getContainer().addEventListener('touchmove', () => {
-  touchMoved = true;
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-}, { passive: true });
+map.getContainer().addEventListener('touchmove', () => { touchMoved = true; if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }, { passive: true });
+map.getContainer().addEventListener('touchend', () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }, { passive: true });
+map.getContainer().addEventListener('touchcancel', () => { if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; } }, { passive: true });
 
-map.getContainer().addEventListener('touchend', () => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-}, { passive: true });
-
-map.getContainer().addEventListener('touchcancel', () => {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-}, { passive: true });
-
-const siteMarkerGroup   = L.layerGroup().addTo(map);
-const zonesLayerGroup   = L.layerGroup().addTo(map);
+const siteMarkerGroup = L.layerGroup().addTo(map);
+const zonesLayerGroup = L.layerGroup().addTo(map);
 const azimuthLayerGroup = L.layerGroup().addTo(map);
-const freeLayerGroup    = L.layerGroup().addTo(map);
-const gridLayerGroup    = L.layerGroup().addTo(map);
+const freeLayerGroup = L.layerGroup().addTo(map);
+const gridLayerGroup = L.layerGroup().addTo(map);
 
 let addSiteMode = false;
 let searchMarker = null;
@@ -2470,84 +2031,35 @@ let userLocationMarker = null;
 let gridPoints = [];
 let gridLines = [];
 
-const userLocationIcon = L.divIcon({
-  className: 'user-location-marker',
-  html: '<div style="background: #2196f3; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px #2196f3;"></div>',
-  iconSize: [22, 22],
-  iconAnchor: [11, 11]
-});
+const userLocationIcon = L.divIcon({ className: 'user-location-marker', html: '<div style="background: #2196f3; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px #2196f3;"></div>', iconSize: [22, 22], iconAnchor: [11, 11] });
+const gridIcon = L.divIcon({ className: 'grid-point-marker', html: '<div style="background: #3f51b5; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(63,81,181,0.5); cursor: pointer; transition: transform 0.2s;"></div>', iconSize: [12, 12], iconAnchor: [6, 6] });
 
-const gridIcon = L.divIcon({
-  className: 'grid-point-marker',
-  html: '<div style="background: #3f51b5; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(63,81,181,0.5); cursor: pointer; transition: transform 0.2s;"></div>',
-  iconSize: [12, 12],
-  iconAnchor: [6, 6]
-});
-
-// ======== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ========
 function deg2rad(d) { return d * Math.PI / 180; }
 
-function hslToHex(h, s, l) {
-  s /= 100; l /= 100;
-  const k = n => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = n => {
-    const c = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-    return Math.round(255 * c).toString(16).padStart(2, '0');
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
-}
+function hslToHex(h, s, l) { s /= 100; l /= 100; const k = n => (n + h / 30) % 12; const a = s * Math.min(l, 1 - l); const f = n => { const c = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return Math.round(255 * c).toString(16).padStart(2, '0'); }; return `#${f(0)}${f(8)}${f(4)}`; }
 
-function getUniqueColor(index) {
-  const hue = (index * 47) % 360;
-  return hslToHex(hue, 85, 50);
-}
+function getUniqueColor(index) { const hue = (index * 47) % 360; return hslToHex(hue, 85, 50); }
 
 function makeSectorPolygon(lat, lng, azimuth, beamWidth, radius, steps = 32) {
-  const coords = [];
-  const R = 6371000;
-  const start = azimuth - beamWidth / 2;
-  const end   = azimuth + beamWidth / 2;
-  const step  = beamWidth / steps;
+  const coords = []; const R = 6371000; const start = azimuth - beamWidth / 2; const end = azimuth + beamWidth / 2; const step = beamWidth / steps;
   coords.push([lat, lng]);
-  for (let a = start; a <= end; a += step) {
-    const brng = deg2rad(a);
-    const dR = radius / R;
-    const lat1 = deg2rad(lat);
-    const lon1 = deg2rad(lng);
-    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) + Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
-    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1), Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
-    coords.push([lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]);
-  }
+  for (let a = start; a <= end; a += step) { const brng = deg2rad(a); const dR = radius / R; const lat1 = deg2rad(lat); const lon1 = deg2rad(lng); const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) + Math.cos(lat1) * Math.sin(dR) * Math.cos(brng)); const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1), Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2)); coords.push([lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]); }
   coords.push([lat, lng]);
   return coords;
 }
 
-function makeAzimuthLine(lat, lng, azimuth, radius) {
-  const R = 6371000;
-  const brng = deg2rad(azimuth);
-  const dR = radius / R;
-  const lat1 = deg2rad(lat);
-  const lon1 = deg2rad(lng);
-  const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) + Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
-  const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1), Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
-  return [[lat, lng], [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]];
-}
+function makeAzimuthLine(lat, lng, azimuth, radius) { const R = 6371000; const brng = deg2rad(azimuth); const dR = radius / R; const lat1 = deg2rad(lat); const lon1 = deg2rad(lng); const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) + Math.cos(lat1) * Math.sin(dR) * Math.cos(brng)); const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1), Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2)); return [[lat, lng], [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]]; }
 
-// ======== ФУНКЦИИ ДЛЯ РАБОТЫ С СЕТКОЙ ========
 function generateGrid() {
   const step = parseInt(document.getElementById('gridStep').value);
   const startX = document.getElementById('gridStartX').value;
   const startY = parseInt(document.getElementById('gridStartY').value);
-  
   const color = document.getElementById('gridLineColor').value;
   const style = document.getElementById('gridLineStyle').value;
   const weight = parseFloat(document.getElementById('gridLineWeight').value);
   const opacity = parseFloat(document.getElementById('gridLineOpacity').value);
   const dashArray = LINE_STYLES[style] || null;
-  
   gridStyle = { color, style, weight, opacity };
-  
   const bounds = map.getBounds();
   const padding = 0.01;
   const northWest = { lat: bounds.getNorth() + padding, lng: bounds.getWest() - padding };
@@ -2563,9 +2075,7 @@ function generateGrid() {
   let currentLat = startLat;
   let row = 0;
   let gridMatrix = [];
-  
   gridPointsData = [];
-  
   while (currentLat > southEast.lat) {
     let rowPoints = [];
     let currentLng = startLon;
@@ -2573,31 +2083,13 @@ function generateGrid() {
     while (currentLng < southEast.lng) {
       const letterIndex = startLetterIndex + col;
       if (letterIndex >= letters.length) break;
-      
-      const point = { 
-        lat: currentLat,
-        lng: currentLng,
-        label: `${letters[letterIndex]}${startY + row}`, 
-        row: row, 
-        col: col 
-      };
-      
+      const point = { lat: currentLat, lng: currentLng, label: `${letters[letterIndex]}${startY + row}`, row: row, col: col };
       gridPoints.push(point);
       gridPointsData.push(point);
       rowPoints.push(point);
-      
       const marker = L.marker([point.lat, point.lng], { icon: gridIcon }).addTo(gridLayerGroup);
-      marker.bindTooltip(L.tooltip({ 
-        permanent: true, 
-        direction: 'top', 
-        offset: [0, -10], 
-        className: 'grid-point-label' 
-      }).setContent(point.label)).openTooltip();
-      
-      marker.on('click', ((p) => {
-        return () => copyCoordinates(p.lat, p.lng, `точки ${p.label}`);
-      })(point));
-      
+      marker.bindTooltip(L.tooltip({ permanent: true, direction: 'top', offset: [0, -10], className: 'grid-point-label' }).setContent(point.label)).openTooltip();
+      marker.on('click', ((p) => { return () => copyCoordinates(p.lat, p.lng, `точки ${p.label}`); })(point));
       currentLng += lonStep;
       col++;
     }
@@ -2605,82 +2097,21 @@ function generateGrid() {
     currentLat -= latStep;
     row++;
   }
-  
-  for (let r = 0; r < gridMatrix.length; r++) {
-    for (let c = 0; c < gridMatrix[r].length - 1; c++) {
-      gridLines.push(L.polyline(
-        [[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], 
-        { color, weight, opacity, dashArray }
-      ).addTo(gridLayerGroup));
-    }
-  }
-  if (gridMatrix.length > 0) {
-    for (let c = 0; c < gridMatrix[0].length; c++) {
-      for (let r = 0; r < gridMatrix.length - 1; r++) {
-        if (gridMatrix[r][c] && gridMatrix[r+1][c]) {
-          gridLines.push(L.polyline(
-            [[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r+1][c].lat, gridMatrix[r+1][c].lng]], 
-            { color, weight, opacity, dashArray }
-          ).addTo(gridLayerGroup));
-        }
-      }
-    }
-  }
-  
+  for (let r = 0; r < gridMatrix.length; r++) { for (let c = 0; c < gridMatrix[r].length - 1; c++) { gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], { color, weight, opacity, dashArray }).addTo(gridLayerGroup)); } }
+  if (gridMatrix.length > 0) { for (let c = 0; c < gridMatrix[0].length; c++) { for (let r = 0; r < gridMatrix.length - 1; r++) { if (gridMatrix[r][c] && gridMatrix[r+1][c]) { gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r+1][c].lat, gridMatrix[r+1][c].lng]], { color, weight, opacity, dashArray }).addTo(gridLayerGroup)); } } } }
   autoSave();
   updateBackupStats();
   alert(`Сгенерировано ${gridPoints.length} точек и ${gridLines.length} линий\n\n💡 Клик по точке — копировать координаты`);
 }
 
-function clearGrid() {
-  gridLayerGroup.clearLayers();
-  gridPoints = [];
-  gridLines = [];
-  gridPointsData = [];
-  autoSave();
-  updateBackupStats();
-}
+function clearGrid() { gridLayerGroup.clearLayers(); gridPoints = []; gridLines = []; gridPointsData = []; autoSave(); updateBackupStats(); }
 
-function exportGridToGpx() {
-  if (gridPoints.length === 0) { alert('Сначала сгенерируйте сетку'); return; }
-  let wpts = '';
-  gridPoints.forEach(p => { wpts += `<wpt lat="${p.lat}" lon="${p.lng}"><name>${p.label}</name></wpt>\n`; });
-  const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n${wpts}</gpx>`;
-  const blob = new Blob([gpx], { type: 'application/gpx+xml' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'grid.gpx';
-  a.click();
-}
+function exportGridToGpx() { if (gridPoints.length === 0) { alert('Сначала сгенерируйте сетку'); return; } let wpts = ''; gridPoints.forEach(p => { wpts += `<wpt lat="${p.lat}" lon="${p.lng}"><name>${p.label}</name></wpt>\n`; }); const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n${wpts}</gpx>`; const blob = new Blob([gpx], { type: 'application/gpx+xml' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'grid.gpx'; a.click(); }
 
-// ======== ГЕОЛОКАЦИЯ ========
-function getUserLocation() {
-  if (!navigator.geolocation) { alert('Геолокация не поддерживается'); return; }
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const { latitude, longitude, accuracy } = pos.coords;
-      if (userLocationMarker) map.removeLayer(userLocationMarker);
-      userLocationMarker = L.marker([latitude, longitude], { icon: userLocationIcon, zIndexOffset: 1000 })
-        .addTo(map).bindPopup(`Ваше местоположение<br>Точность: ${Math.round(accuracy)}м`).openPopup();
-      map.setView([latitude, longitude], 16);
-    },
-    (err) => { alert('Не удалось определить местоположение'); },
-    { enableHighAccuracy: true, timeout: 10000 }
-  );
-}
+function getUserLocation() { if (!navigator.geolocation) { alert('Геолокация не поддерживается'); return; } navigator.geolocation.getCurrentPosition((pos) => { const { latitude, longitude, accuracy } = pos.coords; if (userLocationMarker) map.removeLayer(userLocationMarker); userLocationMarker = L.marker([latitude, longitude], { icon: userLocationIcon, zIndexOffset: 1000 }).addTo(map).bindPopup(`Ваше местоположение<br>Точность: ${Math.round(accuracy)}м`).openPopup(); map.setView([latitude, longitude], 16); }, (err) => { alert('Не удалось определить местоположение'); }, { enableHighAccuracy: true, timeout: 10000 }); }
 
-// ======== ГЕОКОДЕР ========
-async function geocodeAddress(query) {
-  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query);
-  try {
-    const resp = await fetch(url);
-    const data = await resp.json();
-    if (!data || data.length === 0) { alert('Адрес не найден'); return null; }
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), displayName: data[0].display_name };
-  } catch (e) { alert('Ошибка геокодера'); return null; }
-}
+async function geocodeAddress(query) { const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(query); try { const resp = await fetch(url); const data = await resp.json(); if (!data || data.length === 0) { alert('Адрес не найден'); return null; } return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), displayName: data[0].display_name }; } catch (e) { alert('Ошибка геокодера'); return null; } }
 
-// ======== UI-ЭЛЕМЕНТЫ ========
 const addressInput = document.getElementById('addressInput');
 const btnSearchAddress = document.getElementById('btnSearchAddress');
 const siteSelect = document.getElementById('siteSelect');
@@ -2730,148 +2161,42 @@ const btnExportAllGpx = document.getElementById('btnExportAllGpx');
 const btnExportSelectedAzimuthGpx = document.getElementById('btnExportSelectedAzimuthGpx');
 const btnExportSelectedZonesGpx = document.getElementById('btnExportSelectedZonesGpx');
 const btnExportSelectedAzimuthAndZonesGpx = document.getElementById('btnExportSelectedAzimuthAndZonesGpx');
-
 const btnFullBackup = document.getElementById('btnFullBackup');
 const btnRestoreBackup = document.getElementById('btnRestoreBackup');
 const backupFileInput = document.getElementById('backupFileInput');
 
-// ======== СЛУШАТЕЛИ ДЛЯ НАСТРОЕК СТИЛЯ СЕТКИ ========
-['gridLineColor', 'gridLineStyle', 'gridLineWeight', 'gridLineOpacity'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) {
-    el.addEventListener('input', updateGridLinePreview);
-    el.addEventListener('change', () => {
-      updateGridLinePreview();
-      autoSave();
-    });
-  }
-});
+['gridLineColor', 'gridLineStyle', 'gridLineWeight', 'gridLineOpacity'].forEach(id => { const el = document.getElementById(id); if (el) { el.addEventListener('input', updateGridLinePreview); el.addEventListener('change', () => { updateGridLinePreview(); autoSave(); }); } });
 
-// ======== АВТОСОХРАНЕНИЕ ПРИ ИЗМЕНЕНИИ ПОЛЕЙ ВВОДА ========
-const inputsToWatch = [
-  addressInput, nameInput, cellIdInput, operatorInput, 
-  latInput, lngInput, sectorsCountInput, 
-  azInput, bwInput, rInput,
-  freeLatInput, freeLngInput, freeAzInput, freeBwInput, freeRInput, freeNameInput
-];
+const inputsToWatch = [addressInput, nameInput, cellIdInput, operatorInput, latInput, lngInput, sectorsCountInput, azInput, bwInput, rInput, freeLatInput, freeLngInput, freeAzInput, freeBwInput, freeRInput, freeNameInput];
+inputsToWatch.forEach(input => { if (input) { input.addEventListener('input', () => autoSave()); input.addEventListener('change', () => autoSave()); } });
+[siteSelect, sectorSelect, freeZoneSelect].forEach(select => { if (select) select.addEventListener('change', () => autoSave()); });
+[sectorExportCheckbox, freeExportCheckbox].forEach(checkbox => { if (checkbox) checkbox.addEventListener('change', () => autoSave()); });
+['gridStep', 'gridStartX', 'gridStartY'].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener('change', () => autoSave()); });
 
-inputsToWatch.forEach(input => {
-  if (input) {
-    input.addEventListener('input', () => autoSave());
-    input.addEventListener('change', () => autoSave());
-  }
-});
-
-[siteSelect, sectorSelect, freeZoneSelect].forEach(select => {
-  if (select) {
-    select.addEventListener('change', () => autoSave());
-  }
-});
-
-[sectorExportCheckbox, freeExportCheckbox].forEach(checkbox => {
-  if (checkbox) {
-    checkbox.addEventListener('change', () => autoSave());
-  }
-});
-
-['gridStep', 'gridStartX', 'gridStartY'].forEach(id => {
-  const el = document.getElementById(id);
-  if (el) {
-    el.addEventListener('change', () => autoSave());
-  }
-});
-
-// ======== СОБЫТИЯ БЭКАПА ========
 btnFullBackup.addEventListener('click', exportFullBackup);
+btnRestoreBackup.addEventListener('click', () => backupFileInput.click());
+backupFileInput.addEventListener('change', (e) => { const file = e.target.files[0]; if (file) { if (confirm(`Восстановить данные из файла "${file.name}"?\n\nВсе текущие данные будут заменены!`)) importFullBackup(file); backupFileInput.value = ''; } });
 
-btnRestoreBackup.addEventListener('click', () => {
-  backupFileInput.click();
-});
-
-backupFileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    if (confirm(`Восстановить данные из файла "${file.name}"?\n\nВсе текущие данные будут заменены!`)) {
-      importFullBackup(file);
-    }
-    backupFileInput.value = '';
-  }
-});
-
-// ======== PWA УСТАНОВКА ========
 let deferredPrompt = null;
 const pwaInstallIcon = document.getElementById('pwa-install-icon');
 const installModal = document.getElementById('install-modal');
 const installInstructions = document.getElementById('install-instructions');
 
-function getBrowserInfo() {
-  const ua = navigator.userAgent;
-  if (/iPad|iPhone|iPod/.test(ua)) {
-    if (/CriOS/.test(ua)) return { name: 'Chrome iOS', icon: '🌐', type: 'chrome-ios' };
-    return { name: 'Safari', icon: '🧭', type: 'safari' };
-  }
-  if (/Android/.test(ua)) {
-    if (/Chrome/.test(ua)) return { name: 'Chrome Android', icon: '🌐', type: 'chrome-android' };
-    return { name: 'Android Browser', icon: '🤖', type: 'android' };
-  }
-  if (/Edg/.test(ua)) return { name: 'Microsoft Edge', icon: '🌐', type: 'edge' };
-  if (/Chrome/.test(ua)) return { name: 'Google Chrome', icon: '🌐', type: 'chrome' };
-  if (/Firefox/.test(ua)) return { name: 'Firefox', icon: '🦊', type: 'firefox' };
-  return { name: 'Браузер', icon: '🌐', type: 'other' };
-}
+function getBrowserInfo() { const ua = navigator.userAgent; if (/iPad|iPhone|iPod/.test(ua)) { if (/CriOS/.test(ua)) return { name: 'Chrome iOS', icon: '🌐', type: 'chrome-ios' }; return { name: 'Safari', icon: '🧭', type: 'safari' }; } if (/Android/.test(ua)) { if (/Chrome/.test(ua)) return { name: 'Chrome Android', icon: '🌐', type: 'chrome-android' }; return { name: 'Android Browser', icon: '🤖', type: 'android' }; } if (/Edg/.test(ua)) return { name: 'Microsoft Edge', icon: '🌐', type: 'edge' }; if (/Chrome/.test(ua)) return { name: 'Google Chrome', icon: '🌐', type: 'chrome' }; if (/Firefox/.test(ua)) return { name: 'Firefox', icon: '🦊', type: 'firefox' }; return { name: 'Браузер', icon: '🌐', type: 'other' }; }
 
-function getInstructions(browserType) {
-  const instructions = {
-    'safari': { steps: [{ text: 'Нажмите <strong>📤 Поделиться</strong>' }, { text: 'Выберите <strong>На экран Домой</strong>' }, { text: 'Нажмите <strong>Добавить</strong>' }] },
-    'chrome-ios': { steps: [{ text: 'Нажмите <strong>⋯ меню</strong>' }, { text: 'Выберите <strong>Поделиться</strong>' }, { text: 'Нажмите <strong>На экран Домой</strong>' }] },
-    'chrome-android': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Добавить на главный экран</strong>' }] },
-    'chrome': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Установить</strong>' }] },
-    'edge': { steps: [{ text: 'Нажмите <strong>⋯ меню</strong>' }, { text: '<strong>Приложения → Установить</strong>' }] },
-    'firefox': { steps: [{ text: 'Firefox не поддерживает PWA' }, { text: 'Используйте Chrome или Edge' }] },
-    'other': { steps: [{ text: 'Откройте меню браузера' }, { text: 'Найдите "Установить" или "На главный экран"' }] }
-  };
-  return instructions[browserType] || instructions['other'];
-}
+function getInstructions(browserType) { const instructions = { 'safari': { steps: [{ text: 'Нажмите <strong>📤 Поделиться</strong>' }, { text: 'Выберите <strong>На экран Домой</strong>' }, { text: 'Нажмите <strong>Добавить</strong>' }] }, 'chrome-ios': { steps: [{ text: 'Нажмите <strong>⋯ меню</strong>' }, { text: 'Выберите <strong>Поделиться</strong>' }, { text: 'Нажмите <strong>На экран Домой</strong>' }] }, 'chrome-android': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Добавить на главный экран</strong>' }] }, 'chrome': { steps: [{ text: 'Нажмите <strong>⋮ меню</strong>' }, { text: 'Выберите <strong>Установить</strong>' }] }, 'edge': { steps: [{ text: 'Нажмите <strong>⋯ меню</strong>' }, { text: '<strong>Приложения → Установить</strong>' }] }, 'firefox': { steps: [{ text: 'Firefox не поддерживает PWA' }, { text: 'Используйте Chrome или Edge' }] }, 'other': { steps: [{ text: 'Откройте меню браузера' }, { text: 'Найдите "Установить" или "На главный экран"' }] } }; return instructions[browserType] || instructions['other']; }
 
-function showInstallModal() {
-  const browser = getBrowserInfo();
-  const instructions = getInstructions(browser.type);
-  let html = `<div class="browser-info"><div class="browser-icon">${browser.icon}</div><p class="browser-name">${browser.name}</p></div>`;
-  if (deferredPrompt) {
-    html += `<button class="auto-install-btn" onclick="autoInstall()"><span>📲</span><span>Установить сейчас</span></button><div class="divider">или вручную</div>`;
-  }
-  html += '<ol class="install-steps">';
-  instructions.steps.forEach((step, i) => { html += `<li><span class="step-number">${i+1}</span><span class="step-text">${step.text}</span></li>`; });
-  html += '</ol>';
-  installInstructions.innerHTML = html;
-  installModal.classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
+function showInstallModal() { const browser = getBrowserInfo(); const instructions = getInstructions(browser.type); let html = `<div class="browser-info"><div class="browser-icon">${browser.icon}</div><p class="browser-name">${browser.name}</p></div>`; if (deferredPrompt) { html += `<button class="auto-install-btn" onclick="autoInstall()"><span>📲</span><span>Установить сейчас</span></button><div class="divider">или вручную</div>`; } html += '<ol class="install-steps">'; instructions.steps.forEach((step, i) => { html += `<li><span class="step-number">${i+1}</span><span class="step-text">${step.text}</span></li>`; }); html += '</ol>'; installInstructions.innerHTML = html; installModal.classList.add('show'); document.body.style.overflow = 'hidden'; }
 
-function closeInstallModal() {
-  installModal.classList.remove('show');
-  document.body.style.overflow = '';
-}
+function closeInstallModal() { installModal.classList.remove('show'); document.body.style.overflow = ''; }
 
-async function autoInstall() {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  if (outcome === 'accepted') { hideInstallIcon(); closeInstallModal(); }
-  deferredPrompt = null;
-}
+async function autoInstall() { if (!deferredPrompt) return; deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') { hideInstallIcon(); closeInstallModal(); } deferredPrompt = null; }
 
-function isPwaInstalled() {
-  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-}
+function isPwaInstalled() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
 
-function showInstallIcon() {
-  if (!isPwaInstalled() && pwaInstallIcon) pwaInstallIcon.classList.add('show');
-}
+function showInstallIcon() { if (!isPwaInstalled() && pwaInstallIcon) pwaInstallIcon.classList.add('show'); }
 
-function hideInstallIcon() {
-  if (pwaInstallIcon) { pwaInstallIcon.classList.remove('show'); pwaInstallIcon.classList.add('installed'); }
-}
+function hideInstallIcon() { if (pwaInstallIcon) { pwaInstallIcon.classList.remove('show'); pwaInstallIcon.classList.add('installed'); } }
 
 if (isPwaInstalled()) { hideInstallIcon(); } else { setTimeout(showInstallIcon, 2000); }
 
@@ -2881,499 +2206,110 @@ if (installModal) installModal.addEventListener('click', (e) => { if (e.target =
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && installModal.classList.contains('show')) closeInstallModal(); });
 window.addEventListener('appinstalled', () => { hideInstallIcon(); closeInstallModal(); deferredPrompt = null; });
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-    try {
-      await navigator.serviceWorker.register('./sw.js', { scope: './' });
-    } catch (err) { console.log('SW registration failed'); }
-  });
-}
+if ('serviceWorker' in navigator) { window.addEventListener('load', async () => { try { await navigator.serviceWorker.register('./sw.js', { scope: './' }); } catch (err) { console.log('SW registration failed'); } }); }
 
-// ======== МОБИЛЬНАЯ АДАПТАЦИЯ ========
 if (window.innerWidth <= 768) {
   const sidebar = document.getElementById('sidebar');
   const menuToggle = document.getElementById('mobile-menu-toggle');
   const centerBtn = document.getElementById('mobile-center-btn');
   const dragHandle = document.getElementById('drag-handle');
   let startY = 0, isDragging = false, isInputFocused = false;
-  
-  document.querySelectorAll('input, select').forEach(el => {
-    el.addEventListener('focus', () => { isInputFocused = true; sidebar.classList.add('expanded'); });
-    el.addEventListener('blur', () => { isInputFocused = false; });
-  });
-  
+  document.querySelectorAll('input, select').forEach(el => { el.addEventListener('focus', () => { isInputFocused = true; sidebar.classList.add('expanded'); }); el.addEventListener('blur', () => { isInputFocused = false; }); });
   menuToggle.addEventListener('click', (e) => { e.stopPropagation(); sidebar.classList.toggle('expanded'); });
   dragHandle.addEventListener('click', () => { sidebar.classList.add('expanded'); });
   dragHandle.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; isDragging = true; }, { passive: true });
-  dragHandle.addEventListener('touchmove', (e) => {
-    if (!isDragging || isInputFocused) return;
-    const delta = e.touches[0].clientY - startY;
-    if (delta > 30) sidebar.classList.remove('expanded');
-    else if (delta < -30) sidebar.classList.add('expanded');
-  }, { passive: true });
+  dragHandle.addEventListener('touchmove', (e) => { if (!isDragging || isInputFocused) return; const delta = e.touches[0].clientY - startY; if (delta > 30) sidebar.classList.remove('expanded'); else if (delta < -30) sidebar.classList.add('expanded'); }, { passive: true });
   dragHandle.addEventListener('touchend', () => { isDragging = false; });
   centerBtn.addEventListener('click', (e) => { e.stopPropagation(); getUserLocation(); });
   map.on('click', () => { if (!isInputFocused) sidebar.classList.remove('expanded'); });
   sidebar.addEventListener('click', (e) => { e.stopPropagation(); });
 }
 
-// ======== ОТРИСОВКА МАРКЕРОВ ========
-function drawSiteMarkers() {
-  siteMarkerGroup.clearLayers();
-  sites.forEach(site => {
-    const m = L.marker([site.lat, site.lng]).addTo(siteMarkerGroup);
-    m.bindPopup(`${site.name} (${site.id})<br>CellID: ${site.cellId || '-'}<br>Оператор: ${site.operator || '-'}`);
-    
-    m.on('contextmenu', (e) => {
-      L.DomEvent.stopPropagation(e);
-      copyCoordinates(site.lat, site.lng, `вышки ${site.name}`);
-    });
-  });
-}
+function drawSiteMarkers() { siteMarkerGroup.clearLayers(); sites.forEach(site => { const m = L.marker([site.lat, site.lng]).addTo(siteMarkerGroup); m.bindPopup(`${site.name} (${site.id})<br>CellID: ${site.cellId || '-'}<br>Оператор: ${site.operator || '-'}`); m.on('contextmenu', (e) => { L.DomEvent.stopPropagation(e); copyCoordinates(site.lat, site.lng, `вышки ${site.name}`); }); }); }
 
-// ======== ВЫШКИ/СЕКТОРА ========
-function fillSiteSelect() {
-  siteSelect.innerHTML = '';
-  sites.forEach(site => {
-    const opt = document.createElement('option');
-    opt.value = site.id;
-    opt.textContent = `${site.name} (${site.id})`;
-    siteSelect.appendChild(opt);
-  });
-}
+function fillSiteSelect() { siteSelect.innerHTML = ''; sites.forEach(site => { const opt = document.createElement('option'); opt.value = site.id; opt.textContent = `${site.name} (${site.id})`; siteSelect.appendChild(opt); }); }
 
-function getCurrentSite() {
-  return sites.find(s => s.id === siteSelect.value);
-}
+function getCurrentSite() { return sites.find(s => s.id === siteSelect.value); }
 
-function fillSectorSelect() {
-  const site = getCurrentSite();
-  sectorSelect.innerHTML = '';
-  if (!site) return;
-  site.sectors.forEach(sec => {
-    const opt = document.createElement('option');
-    opt.value = sec.id;
-    opt.textContent = `${sec.selectedForExport ? '✓ ' : ''}Сектор ${sec.id}`;
-    sectorSelect.appendChild(opt);
-  });
-}
+function fillSectorSelect() { const site = getCurrentSite(); sectorSelect.innerHTML = ''; if (!site) return; site.sectors.forEach(sec => { const opt = document.createElement('option'); opt.value = sec.id; opt.textContent = `${sec.selectedForExport ? '✓ ' : ''}Сектор ${sec.id}`; sectorSelect.appendChild(opt); }); }
 
-function syncSectorInputsFromSelect() {
-  const site = getCurrentSite();
-  if (!site) return;
-  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
-  if (!sec) return;
-  azInput.value = sec.azimuth;
-  bwInput.value = sec.beamWidth;
-  rInput.value = sec.radius;
-  sectorExportCheckbox.checked = !!sec.selectedForExport;
-}
+function syncSectorInputsFromSelect() { const site = getCurrentSite(); if (!site) return; const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value)); if (!sec) return; azInput.value = sec.azimuth; bwInput.value = sec.beamWidth; rInput.value = sec.radius; sectorExportCheckbox.checked = !!sec.selectedForExport; }
 
-function syncUiFromSite() {
-  const site = getCurrentSite();
-  if (!site) return;
-  nameInput.value = site.name || '';
-  cellIdInput.value = site.cellId || '';
-  operatorInput.value = site.operator || '';
-  latInput.value = site.lat.toFixed(5);
-  lngInput.value = site.lng.toFixed(5);
-  sectorsCountInput.value = site.sectors.length;
-  fillSectorSelect();
-  if (site.sectors[0]) { sectorSelect.value = site.sectors[0].id; syncSectorInputsFromSelect(); }
-  freeLatInput.value = site.lat.toFixed(5);
-  freeLngInput.value = site.lng.toFixed(5);
-}
+function syncUiFromSite() { const site = getCurrentSite(); if (!site) return; nameInput.value = site.name || ''; cellIdInput.value = site.cellId || ''; operatorInput.value = site.operator || ''; latInput.value = site.lat.toFixed(5); lngInput.value = site.lng.toFixed(5); sectorsCountInput.value = site.sectors.length; fillSectorSelect(); if (site.sectors[0]) { sectorSelect.value = site.sectors[0].id; syncSectorInputsFromSelect(); } freeLatInput.value = site.lat.toFixed(5); freeLngInput.value = site.lng.toFixed(5); }
 
-function rebuildSectorsForSite(site, count) {
-  const n = Math.max(1, count);
-  const bw = 360 / n;
-  const r = (site.sectors[0] && site.sectors[0].radius) || 2000;
-  site.sectors = [];
-  for (let i = 0; i < n; i++) {
-    site.sectors.push({ id: i + 1, azimuth: i * bw, beamWidth: bw, radius: r, selectedForExport: false });
-  }
-}
+function rebuildSectorsForSite(site, count) { const n = Math.max(1, count); const bw = 360 / n; const r = (site.sectors[0] && site.sectors[0].radius) || 2000; site.sectors = []; for (let i = 0; i < n; i++) { site.sectors.push({ id: i + 1, azimuth: i * bw, beamWidth: bw, radius: r, selectedForExport: false }); } }
 
-// ======== ЗОНЫ ========
-function drawAllZones() {
-  zonesLayerGroup.clearLayers();
-  sites.forEach(site => {
-    site.sectors.forEach(sec => {
-      const color = getUniqueColor(site.id.charCodeAt(site.id.length - 1) * 100 + sec.id);
-      const poly = L.polygon(makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius), { color, fillColor: color, fillOpacity: 0.25, weight: 1 }).addTo(zonesLayerGroup);
-      poly.bindTooltip(`${site.name}\nСектор ${sec.id}\nAz ${sec.azimuth}°`);
-    });
-  });
-  drawnZonesVisible = true;
-  autoSave();
-}
+function drawAllZones() { zonesLayerGroup.clearLayers(); sites.forEach(site => { site.sectors.forEach(sec => { const color = getUniqueColor(site.id.charCodeAt(site.id.length - 1) * 100 + sec.id); const poly = L.polygon(makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius), { color, fillColor: color, fillOpacity: 0.25, weight: 1 }).addTo(zonesLayerGroup); poly.bindTooltip(`${site.name}\nСектор ${sec.id}\nAz ${sec.azimuth}°`); }); }); drawnZonesVisible = true; autoSave(); }
 
-// ======== ПРОИЗВОЛЬНЫЕ ЗОНЫ ========
-function fillFreeZoneSelect() {
-  freeZoneSelect.innerHTML = '<option value="">— новая зона —</option>';
-  freeZones.forEach(zone => {
-    const opt = document.createElement('option');
-    opt.value = zone.id;
-    opt.textContent = `${zone.selectedForExport ? '✓ ' : ''}${zone.id}: ${zone.name || 'без имени'}${zone.visible === false ? ' (скрыта)' : ''}`;
-    freeZoneSelect.appendChild(opt);
-  });
-}
+function fillFreeZoneSelect() { freeZoneSelect.innerHTML = '<option value="">— новая зона —</option>'; freeZones.forEach(zone => { const opt = document.createElement('option'); opt.value = zone.id; opt.textContent = `${zone.selectedForExport ? '✓ ' : ''}${zone.id}: ${zone.name || 'без имени'}${zone.visible === false ? ' (скрыта)' : ''}`; freeZoneSelect.appendChild(opt); }); }
 
-function syncInputsFromFreeZone() {
-  const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
-  if (!zone) { freeExportCheckbox.checked = false; return; }
-  freeLatInput.value = zone.lat;
-  freeLngInput.value = zone.lng;
-  freeAzInput.value = zone.azimuth;
-  freeBwInput.value = zone.beamWidth;
-  freeRInput.value = zone.radius;
-  freeNameInput.value = zone.name || '';
-  freeExportCheckbox.checked = !!zone.selectedForExport;
-}
+function syncInputsFromFreeZone() { const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value)); if (!zone) { freeExportCheckbox.checked = false; return; } freeLatInput.value = zone.lat; freeLngInput.value = zone.lng; freeAzInput.value = zone.azimuth; freeBwInput.value = zone.beamWidth; freeRInput.value = zone.radius; freeNameInput.value = zone.name || ''; freeExportCheckbox.checked = !!zone.selectedForExport; }
 
-function redrawFreeZones() {
-  freeLayerGroup.clearLayers();
-  freeZones.forEach(zone => {
-    zone.polyLayer = null;
-    zone.lineLayer = null;
-    if (zone.visible === false) return;
-    const color = zone.color || getUniqueColor(zone.id);
-    const poly = L.polygon(makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius), { color, fillColor: color, fillOpacity: 0.25, weight: 1 }).addTo(freeLayerGroup);
-    const line = L.polyline(makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius), { color, weight: 2, dashArray: '4,4' }).addTo(freeLayerGroup);
-    poly.bindTooltip(`${zone.name || 'zone ' + zone.id}\nAz ${zone.azimuth}°`);
-    zone.polyLayer = poly;
-    zone.lineLayer = line;
-    zone.color = color;
-  });
-}
+function redrawFreeZones() { freeLayerGroup.clearLayers(); freeZones.forEach(zone => { zone.polyLayer = null; zone.lineLayer = null; if (zone.visible === false) return; const color = zone.color || getUniqueColor(zone.id); const poly = L.polygon(makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius), { color, fillColor: color, fillOpacity: 0.25, weight: 1 }).addTo(freeLayerGroup); const line = L.polyline(makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius), { color, weight: 2, dashArray: '4,4' }).addTo(freeLayerGroup); poly.bindTooltip(`${zone.name || 'zone ' + zone.id}\nAz ${zone.azimuth}°`); zone.polyLayer = poly; zone.lineLayer = line; zone.color = color; }); }
 
-// ======== JSON ========
-function buildExportConfig() {
-  return {
-    version: DATA_VERSION,
-    exportDate: new Date().toISOString(),
-    sites: sites.map(site => ({ id: site.id, name: site.name, cellId: site.cellId, operator: site.operator, lat: site.lat, lng: site.lng, sectors: site.sectors.map(s => ({ id: s.id, azimuth: s.azimuth, beamWidth: s.beamWidth, radius: s.radius, selectedForExport: s.selectedForExport === true })) })),
-    freeZones: freeZones.map(z => ({ id: z.id, name: z.name, lat: z.lat, lng: z.lng, azimuth: z.azimuth, beamWidth: z.beamWidth, radius: z.radius, visible: z.visible !== false, color: z.color, selectedForExport: z.selectedForExport === true })),
-    gridData: gridPointsData,
-    gridStyle: gridStyle,
-    gridParams: {
-      step: document.getElementById('gridStep')?.value || '500',
-      startX: document.getElementById('gridStartX')?.value || 'A',
-      startY: document.getElementById('gridStartY')?.value || '1'
-    }
-  };
-}
+function buildExportConfig() { return { version: DATA_VERSION, exportDate: new Date().toISOString(), sites: sites.map(site => ({ id: site.id, name: site.name, cellId: site.cellId, operator: site.operator, lat: site.lat, lng: site.lng, sectors: site.sectors.map(s => ({ id: s.id, azimuth: s.azimuth, beamWidth: s.beamWidth, radius: s.radius, selectedForExport: s.selectedForExport === true })) })), freeZones: freeZones.map(z => ({ id: z.id, name: z.name, lat: z.lat, lng: z.lng, azimuth: z.azimuth, beamWidth: z.beamWidth, radius: z.radius, visible: z.visible !== false, color: z.color, selectedForExport: z.selectedForExport === true })), gridData: gridPointsData, gridStyle: gridStyle, gridParams: { step: document.getElementById('gridStep')?.value || '500', startX: document.getElementById('gridStartX')?.value || 'A', startY: document.getElementById('gridStartY')?.value || '1' } }; }
 
-function exportAllToJson() {
-  const blob = new Blob([JSON.stringify(buildExportConfig(), null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'config_' + new Date().toISOString().slice(0,10) + '.json';
-  a.click();
-}
+function exportAllToJson() { const blob = new Blob([JSON.stringify(buildExportConfig(), null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'config_' + new Date().toISOString().slice(0,10) + '.json'; a.click(); }
 
-function importAllFromJsonFile(file) {
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    try {
-      const json = JSON.parse(e.target.result);
-      importOldFormat(json);
-    } catch (err) { 
-      alert('Ошибка: ' + err.message); 
-      showSaveIndicator('❌ Ошибка импорта', true);
-    }
-  };
-  reader.readAsText(file);
-}
+function importAllFromJsonFile(file) { const reader = new FileReader(); reader.onload = (e) => { try { const json = JSON.parse(e.target.result); importOldFormat(json); } catch (err) { alert('Ошибка: ' + err.message); showSaveIndicator('❌ Ошибка импорта', true); } }; reader.readAsText(file); }
 
-// ======== GPX ========
-function exportGpxString(gpxStr, fileName) {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([gpxStr], { type: 'application/gpx+xml' }));
-  a.download = fileName;
-  a.click();
-}
+function exportGpxString(gpxStr, fileName) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([gpxStr], { type: 'application/gpx+xml' })); a.download = fileName; a.click(); }
 
-function buildGpxFromTracks(tracks) {
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n${tracks.join('\n')}\n</gpx>`;
-}
+function buildGpxFromTracks(tracks) { return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n${tracks.join('\n')}\n</gpx>`; }
 
-function buildAzimuthGpx(onlySelected = false) {
-  const tracks = [];
-  sites.forEach(site => {
-    site.sectors.forEach(sec => {
-      if (onlySelected && !sec.selectedForExport) return;
-      const line = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
-      tracks.push(`<trk><name>${site.name} Az ${sec.azimuth}°</name><trkseg><trkpt lat="${line[0][0]}" lon="${line[0][1]}"/><trkpt lat="${line[1][0]}" lon="${line[1][1]}"/></trkseg></trk>`);
-    });
-  });
-  freeZones.forEach(zone => {
-    if (onlySelected && !zone.selectedForExport) return;
-    const line = makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius);
-    tracks.push(`<trk><name>${zone.name || 'zone'} Az ${zone.azimuth}°</name><trkseg><trkpt lat="${line[0][0]}" lon="${line[0][1]}"/><trkpt lat="${line[1][0]}" lon="${line[1][1]}"/></trkseg></trk>`);
-  });
-  return buildGpxFromTracks(tracks);
-}
+function buildAzimuthGpx(onlySelected = false) { const tracks = []; sites.forEach(site => { site.sectors.forEach(sec => { if (onlySelected && !sec.selectedForExport) return; const line = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius); tracks.push(`<trk><name>${site.name} Az ${sec.azimuth}°</name><trkseg><trkpt lat="${line[0][0]}" lon="${line[0][1]}"/><trkpt lat="${line[1][0]}" lon="${line[1][1]}"/></trkseg></trk>`); }); }); freeZones.forEach(zone => { if (onlySelected && !zone.selectedForExport) return; const line = makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius); tracks.push(`<trk><name>${zone.name || 'zone'} Az ${zone.azimuth}°</name><trkseg><trkpt lat="${line[0][0]}" lon="${line[0][1]}"/><trkpt lat="${line[1][0]}" lon="${line[1][1]}"/></trkseg></trk>`); }); return buildGpxFromTracks(tracks); }
 
-function buildZonesGpx(onlySelected = false) {
-  const tracks = [];
-  sites.forEach(site => {
-    site.sectors.forEach(sec => {
-      if (onlySelected && !sec.selectedForExport) return;
-      const poly = makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius);
-      let pts = poly.map(p => `<trkpt lat="${p[0]}" lon="${p[1]}"/>`).join('');
-      tracks.push(`<trk><name>${site.name} Сектор ${sec.id}</name><trkseg>${pts}</trkseg></trk>`);
-    });
-  });
-  freeZones.forEach(zone => {
-    if (onlySelected && !zone.selectedForExport) return;
-    const poly = makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius);
-    let pts = poly.map(p => `<trkpt lat="${p[0]}" lon="${p[1]}"/>`).join('');
-    tracks.push(`<trk><name>${zone.name || 'zone'}</name><trkseg>${pts}</trkseg></trk>`);
-  });
-  return buildGpxFromTracks(tracks);
-}
+function buildZonesGpx(onlySelected = false) { const tracks = []; sites.forEach(site => { site.sectors.forEach(sec => { if (onlySelected && !sec.selectedForExport) return; const poly = makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius); let pts = poly.map(p => `<trkpt lat="${p[0]}" lon="${p[1]}"/>`).join(''); tracks.push(`<trk><name>${site.name} Сектор ${sec.id}</name><trkseg>${pts}</trkseg></trk>`); }); }); freeZones.forEach(zone => { if (onlySelected && !zone.selectedForExport) return; const poly = makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius); let pts = poly.map(p => `<trkpt lat="${p[0]}" lon="${p[1]}"/>`).join(''); tracks.push(`<trk><name>${zone.name || 'zone'}</name><trkseg>${pts}</trkseg></trk>`); }); return buildGpxFromTracks(tracks); }
 
-function buildAllGpx() {
-  const az = buildAzimuthGpx(false).match(/<trk>[\s\S]*?<\/trk>/g) || [];
-  const zones = buildZonesGpx(false).match(/<trk>[\s\S]*?<\/trk>/g) || [];
-  return buildGpxFromTracks([...az, ...zones]);
-}
+function buildAllGpx() { const az = buildAzimuthGpx(false).match(/<trk>[\s\S]*?<\/trk>/g) || []; const zones = buildZonesGpx(false).match(/<trk>[\s\S]*?<\/trk>/g) || []; return buildGpxFromTracks([...az, ...zones]); }
 
-function buildSelectedAzimuthAndZonesGpx() {
-  const az = buildAzimuthGpx(true).match(/<trk>[\s\S]*?<\/trk>/g) || [];
-  const zones = buildZonesGpx(true).match(/<trk>[\s\S]*?<\/trk>/g) || [];
-  return buildGpxFromTracks([...az, ...zones]);
-}
+function buildSelectedAzimuthAndZonesGpx() { const az = buildAzimuthGpx(true).match(/<trk>[\s\S]*?<\/trk>/g) || []; const zones = buildZonesGpx(true).match(/<trk>[\s\S]*?<\/trk>/g) || []; return buildGpxFromTracks([...az, ...zones]); }
 
-// ======== СОБЫТИЯ ========
-btnSearchAddress.addEventListener('click', async () => {
-  const res = await geocodeAddress(addressInput.value.trim());
-  if (!res) return;
-  if (searchMarker) map.removeLayer(searchMarker);
-  map.setView([res.lat, res.lng], 17);
-  searchMarker = L.marker([res.lat, res.lng]).addTo(map).bindPopup(res.displayName).openPopup();
-  freeLatInput.value = res.lat.toFixed(6);
-  freeLngInput.value = res.lng.toFixed(6);
-  autoSave();
-});
+btnSearchAddress.addEventListener('click', async () => { const res = await geocodeAddress(addressInput.value.trim()); if (!res) return; if (searchMarker) map.removeLayer(searchMarker); map.setView([res.lat, res.lng], 17); searchMarker = L.marker([res.lat, res.lng]).addTo(map).bindPopup(res.displayName).openPopup(); freeLatInput.value = res.lat.toFixed(6); freeLngInput.value = res.lng.toFixed(6); autoSave(); });
 
-siteSelect.addEventListener('change', () => {
-  syncUiFromSite();
-  const site = getCurrentSite();
-  if (site) map.setView([site.lat, site.lng], 13);
-  autoSave();
-});
+siteSelect.addEventListener('change', () => { syncUiFromSite(); const site = getCurrentSite(); if (site) map.setView([site.lat, site.lng], 13); autoSave(); });
 
-sectorSelect.addEventListener('change', () => {
-  syncSectorInputsFromSelect();
-  autoSave();
-});
+sectorSelect.addEventListener('change', () => { syncSectorInputsFromSelect(); autoSave(); });
 
-sectorExportCheckbox.addEventListener('change', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
-  if (sec) { 
-    sec.selectedForExport = sectorExportCheckbox.checked; 
-    fillSectorSelect(); 
-    sectorSelect.value = sec.id; 
-    autoSave(); 
-  }
-});
+sectorExportCheckbox.addEventListener('change', () => { const site = getCurrentSite(); if (!site) return; const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value)); if (sec) { sec.selectedForExport = sectorExportCheckbox.checked; fillSectorSelect(); sectorSelect.value = sec.id; autoSave(); } });
 
-btnSetCoords.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  site.lat = parseFloat(latInput.value);
-  site.lng = parseFloat(lngInput.value);
-  drawSiteMarkers();
-  map.setView([site.lat, site.lng], 15);
-  autoSave();
-});
+btnSetCoords.addEventListener('click', () => { const site = getCurrentSite(); if (!site) return; site.lat = parseFloat(latInput.value); site.lng = parseFloat(lngInput.value); drawSiteMarkers(); map.setView([site.lat, site.lng], 15); autoSave(); });
 
-btnApplySiteFields.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  site.name = nameInput.value || site.id;
-  site.cellId = cellIdInput.value;
-  site.operator = operatorInput.value;
-  fillSiteSelect();
-  siteSelect.value = site.id;
-  drawSiteMarkers();
-  autoSave();
-  updateBackupStats();
-  showSaveIndicator('💾 Параметры вышки сохранены');
-});
+btnApplySiteFields.addEventListener('click', () => { const site = getCurrentSite(); if (!site) return; site.name = nameInput.value || site.id; site.cellId = cellIdInput.value; site.operator = operatorInput.value; fillSiteSelect(); siteSelect.value = site.id; drawSiteMarkers(); autoSave(); updateBackupStats(); showSaveIndicator('💾 Параметры вышки сохранены'); });
 
-btnApplySector.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
-  if (!sec) return;
-  sec.azimuth = parseFloat(azInput.value);
-  sec.beamWidth = parseFloat(bwInput.value);
-  sec.radius = parseFloat(rInput.value);
-  sec.selectedForExport = sectorExportCheckbox.checked;
-  fillSectorSelect();
-  sectorSelect.value = sec.id;
-  autoSave();
-  showSaveIndicator('💾 Параметры сектора сохранены');
-});
+btnApplySector.addEventListener('click', () => { const site = getCurrentSite(); if (!site) return; const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value)); if (!sec) return; sec.azimuth = parseFloat(azInput.value); sec.beamWidth = parseFloat(bwInput.value); sec.radius = parseFloat(rInput.value); sec.selectedForExport = sectorExportCheckbox.checked; fillSectorSelect(); sectorSelect.value = sec.id; autoSave(); showSaveIndicator('💾 Параметры сектора сохранены'); });
 
-btnRebuildSectors.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  rebuildSectorsForSite(site, parseInt(sectorsCountInput.value) || 1);
-  fillSectorSelect();
-  syncSectorInputsFromSelect();
-  autoSave();
-});
+btnRebuildSectors.addEventListener('click', () => { const site = getCurrentSite(); if (!site) return; rebuildSectorsForSite(site, parseInt(sectorsCountInput.value) || 1); fillSectorSelect(); syncSectorInputsFromSelect(); autoSave(); });
 
 btnDrawAll.addEventListener('click', drawAllZones);
 
-btnClearZones.addEventListener('click', () => {
-  zonesLayerGroup.clearLayers();
-  drawnZonesVisible = false;
-  autoSave();
-});
+btnClearZones.addEventListener('click', () => { zonesLayerGroup.clearLayers(); drawnZonesVisible = false; autoSave(); });
 
-btnDrawAzimuthLine.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
-  if (!sec) return;
-  
-  const color = getUniqueColor(site.id.charCodeAt(0) * 100 + sec.id);
-  const coords = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
-  
-  const line = L.polyline(coords, { color, weight: 2, dashArray: '5,5' }).addTo(azimuthLayerGroup);
-  map.fitBounds(line.getBounds(), { maxZoom: 16 });
-  
-  azimuthLinesData.push({ coords, color, siteId: site.id, sectorId: sec.id });
-  autoSave();
-  updateBackupStats();
-});
+btnDrawAzimuthLine.addEventListener('click', () => { const site = getCurrentSite(); if (!site) return; const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value)); if (!sec) return; const color = getUniqueColor(site.id.charCodeAt(0) * 100 + sec.id); const coords = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius); const line = L.polyline(coords, { color, weight: 2, dashArray: '5,5' }).addTo(azimuthLayerGroup); map.fitBounds(line.getBounds(), { maxZoom: 16 }); azimuthLinesData.push({ coords, color, siteId: site.id, sectorId: sec.id }); autoSave(); updateBackupStats(); });
 
-btnClearAzimuthLine.addEventListener('click', () => {
-  azimuthLayerGroup.clearLayers();
-  azimuthLinesData = [];
-  autoSave();
-  updateBackupStats();
-});
+btnClearAzimuthLine.addEventListener('click', () => { azimuthLayerGroup.clearLayers(); azimuthLinesData = []; autoSave(); updateBackupStats(); });
 
-freeZoneSelect.addEventListener('change', () => {
-  syncInputsFromFreeZone();
-  autoSave();
-});
+freeZoneSelect.addEventListener('change', () => { syncInputsFromFreeZone(); autoSave(); });
 
-freeExportCheckbox.addEventListener('change', () => {
-  const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
-  if (zone) { 
-    zone.selectedForExport = freeExportCheckbox.checked; 
-    fillFreeZoneSelect(); 
-    freeZoneSelect.value = zone.id; 
-    autoSave(); 
-  }
-});
+freeExportCheckbox.addEventListener('change', () => { const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value)); if (zone) { zone.selectedForExport = freeExportCheckbox.checked; fillFreeZoneSelect(); freeZoneSelect.value = zone.id; autoSave(); } });
 
-btnDrawFree.addEventListener('click', () => {
-  const lat = parseFloat(freeLatInput.value), lng = parseFloat(freeLngInput.value), az = parseFloat(freeAzInput.value);
-  const bw = parseFloat(freeBwInput.value) || 60, r = parseFloat(freeRInput.value) || 1000, name = freeNameInput.value.trim();
-  if ([lat, lng, az].some(v => isNaN(v))) { alert('Заполните координаты и азимут'); return; }
-  
-  const existing = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
-  if (existing) {
-    Object.assign(existing, { lat, lng, azimuth: az, beamWidth: bw, radius: r, name, selectedForExport: freeExportCheckbox.checked });
-  } else {
-    const newId = freeZones.length > 0 ? Math.max(...freeZones.map(z => z.id)) + 1 : 1;
-    freeZones.push({ id: newId, name, lat, lng, azimuth: az, beamWidth: bw, radius: r, visible: true, color: getUniqueColor(newId), polyLayer: null, lineLayer: null, selectedForExport: freeExportCheckbox.checked });
-  }
-  fillFreeZoneSelect();
-  redrawFreeZones();
-  map.fitBounds(L.latLngBounds(makeSectorPolygon(lat, lng, az, bw, r)), { maxZoom: 16 });
-  autoSave();
-  updateBackupStats();
-});
+btnDrawFree.addEventListener('click', () => { const lat = parseFloat(freeLatInput.value), lng = parseFloat(freeLngInput.value), az = parseFloat(freeAzInput.value); const bw = parseFloat(freeBwInput.value) || 60, r = parseFloat(freeRInput.value) || 1000, name = freeNameInput.value.trim(); if ([lat, lng, az].some(v => isNaN(v))) { alert('Заполните координаты и азимут'); return; } const existing = freeZones.find(z => z.id === parseInt(freeZoneSelect.value)); if (existing) { Object.assign(existing, { lat, lng, azimuth: az, beamWidth: bw, radius: r, name, selectedForExport: freeExportCheckbox.checked }); } else { const newId = freeZones.length > 0 ? Math.max(...freeZones.map(z => z.id)) + 1 : 1; freeZones.push({ id: newId, name, lat, lng, azimuth: az, beamWidth: bw, radius: r, visible: true, color: getUniqueColor(newId), polyLayer: null, lineLayer: null, selectedForExport: freeExportCheckbox.checked }); } fillFreeZoneSelect(); redrawFreeZones(); map.fitBounds(L.latLngBounds(makeSectorPolygon(lat, lng, az, bw, r)), { maxZoom: 16 }); autoSave(); updateBackupStats(); });
 
-btnToggleFreeVisible.addEventListener('click', () => {
-  const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
-  if (!zone) { alert('Выберите зону'); return; }
-  zone.visible = !zone.visible;
-  fillFreeZoneSelect();
-  freeZoneSelect.value = zone.id;
-  redrawFreeZones();
-  autoSave();
-});
+btnToggleFreeVisible.addEventListener('click', () => { const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value)); if (!zone) { alert('Выберите зону'); return; } zone.visible = !zone.visible; fillFreeZoneSelect(); freeZoneSelect.value = zone.id; redrawFreeZones(); autoSave(); });
 
-btnDeleteFree.addEventListener('click', () => {
-  const id = parseInt(freeZoneSelect.value);
-  if (!id) { alert('Выберите зону'); return; }
-  freeZones = freeZones.filter(z => z.id !== id);
-  fillFreeZoneSelect();
-  redrawFreeZones();
-  autoSave();
-  updateBackupStats();
-});
+btnDeleteFree.addEventListener('click', () => { const id = parseInt(freeZoneSelect.value); if (!id) { alert('Выберите зону'); return; } freeZones = freeZones.filter(z => z.id !== id); fillFreeZoneSelect(); redrawFreeZones(); autoSave(); updateBackupStats(); });
 
-btnClearFree.addEventListener('click', () => {
-  freeZones = [];
-  freeLayerGroup.clearLayers();
-  fillFreeZoneSelect();
-  autoSave();
-  updateBackupStats();
-});
+btnClearFree.addEventListener('click', () => { freeZones = []; freeLayerGroup.clearLayers(); fillFreeZoneSelect(); autoSave(); updateBackupStats(); });
 
 btnGenerateGrid.addEventListener('click', generateGrid);
 btnClearGrid.addEventListener('click', clearGrid);
 btnExportGridGpx.addEventListener('click', exportGridToGpx);
 
-btnAddSite.addEventListener('click', () => {
-  addSiteMode = !addSiteMode;
-  uiState.addSiteMode = addSiteMode;
-  btnAddSite.style.backgroundColor = addSiteMode ? '#c0ffc0' : '';
-  autoSave();
-});
+btnAddSite.addEventListener('click', () => { addSiteMode = !addSiteMode; uiState.addSiteMode = addSiteMode; btnAddSite.style.backgroundColor = addSiteMode ? '#c0ffc0' : ''; autoSave(); });
 
-map.on('click', (e) => {
-  if (!addSiteMode) return;
-  const newId = 'SITE_' + (sites.length + 1);
-  sites.push({
-    id: newId, name: 'Вышка ' + (sites.length + 1), cellId: '', operator: '',
-    lat: e.latlng.lat, lng: e.latlng.lng,
-    sectors: [
-      { id: 1, azimuth: 0, beamWidth: 120, radius: 2000, selectedForExport: false },
-      { id: 2, azimuth: 120, beamWidth: 120, radius: 2000, selectedForExport: false },
-      { id: 3, azimuth: 240, beamWidth: 120, radius: 2000, selectedForExport: false }
-    ]
-  });
-  fillSiteSelect();
-  siteSelect.value = newId;
-  syncUiFromSite();
-  drawSiteMarkers();
-  map.setView(e.latlng, 15);
-  addSiteMode = false;
-  uiState.addSiteMode = false;
-  btnAddSite.style.backgroundColor = '';
-  autoSave();
-  updateBackupStats();
-});
+map.on('click', (e) => { if (!addSiteMode) return; const newId = 'SITE_' + (sites.length + 1); sites.push({ id: newId, name: 'Вышка ' + (sites.length + 1), cellId: '', operator: '', lat: e.latlng.lat, lng: e.latlng.lng, sectors: [ { id: 1, azimuth: 0, beamWidth: 120, radius: 2000, selectedForExport: false }, { id: 2, azimuth: 120, beamWidth: 120, radius: 2000, selectedForExport: false }, { id: 3, azimuth: 240, beamWidth: 120, radius: 2000, selectedForExport: false } ] }); fillSiteSelect(); siteSelect.value = newId; syncUiFromSite(); drawSiteMarkers(); map.setView(e.latlng, 15); addSiteMode = false; uiState.addSiteMode = false; btnAddSite.style.backgroundColor = ''; autoSave(); updateBackupStats(); });
 
-btnDeleteSite.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site || !confirm(`Удалить ${site.name}?`)) return;
-  sites = sites.filter(s => s.id !== site.id);
-  fillSiteSelect();
-  zonesLayerGroup.clearLayers();
-  azimuthLayerGroup.clearLayers();
-  azimuthLinesData = [];
-  drawnZonesVisible = false;
-  drawSiteMarkers();
-  if (sites.length > 0) { siteSelect.value = sites[0].id; syncUiFromSite(); map.setView([sites[0].lat, sites[0].lng], 12); }
-  else { nameInput.value = ''; cellIdInput.value = ''; operatorInput.value = ''; latInput.value = ''; lngInput.value = ''; map.setView([54.99, 73.37], 12); }
-  autoSave();
-  updateBackupStats();
-});
+btnDeleteSite.addEventListener('click', () => { const site = getCurrentSite(); if (!site || !confirm(`Удалить ${site.name}?`)) return; sites = sites.filter(s => s.id !== site.id); fillSiteSelect(); zonesLayerGroup.clearLayers(); azimuthLayerGroup.clearLayers(); azimuthLinesData = []; drawnZonesVisible = false; drawSiteMarkers(); if (sites.length > 0) { siteSelect.value = sites[0].id; syncUiFromSite(); map.setView([sites[0].lat, sites[0].lng], 12); } else { nameInput.value = ''; cellIdInput.value = ''; operatorInput.value = ''; latInput.value = ''; lngInput.value = ''; map.setView([54.99, 73.37], 12); } autoSave(); updateBackupStats(); });
 
 btnExportJson.addEventListener('click', exportAllToJson);
 btnImportJson.addEventListener('click', () => { const file = jsonFileInput.files[0]; if (file) importAllFromJsonFile(file); else alert('Выберите файл'); });
@@ -3388,39 +2324,16 @@ btnExportAllGpx.addEventListener('click', () => exportGpxString(buildAllGpx(), '
 
 // ======== ИНИЦИАЛИЗАЦИЯ ========
 loadFromLocalStorage();
-
 updateGridLinePreview();
-
 fillSiteSelect();
-
-if (uiState.selectedSiteId && sites.find(s => s.id === uiState.selectedSiteId)) {
-  siteSelect.value = uiState.selectedSiteId;
-} else if (sites.length > 0) {
-  siteSelect.value = sites[0].id;
-}
-
+if (uiState.selectedSiteId && sites.find(s => s.id === uiState.selectedSiteId)) { siteSelect.value = uiState.selectedSiteId; } else if (sites.length > 0) { siteSelect.value = sites[0].id; }
 syncUiFromSite();
-
-if (uiState.selectedSectorId) {
-  sectorSelect.value = uiState.selectedSectorId;
-  syncSectorInputsFromSelect();
-}
-
+if (uiState.selectedSectorId) { sectorSelect.value = uiState.selectedSectorId; syncSectorInputsFromSelect(); }
 drawSiteMarkers();
 fillFreeZoneSelect();
-
-if (uiState.selectedFreeZoneId) {
-  freeZoneSelect.value = uiState.selectedFreeZoneId;
-  syncInputsFromFreeZone();
-}
-
+if (uiState.selectedFreeZoneId) { freeZoneSelect.value = uiState.selectedFreeZoneId; syncInputsFromFreeZone(); }
 redrawFreeZones();
-
-if (uiState.addSiteMode) {
-  addSiteMode = true;
-  btnAddSite.style.backgroundColor = '#c0ffc0';
-}
-
+if (uiState.addSiteMode) { addSiteMode = true; btnAddSite.style.backgroundColor = '#c0ffc0'; }
 restoreMapState();
 restoreGridOnMap();
 restoreAzimuthLines();
@@ -3429,13 +2342,9 @@ restoreInputFields();
 updateBackupStats();
 
 const totalItems = sites.length + freeZones.length + gridPointsData.length;
-if (totalItems > 0) {
-  setTimeout(() => {
-    showSaveIndicator(`📂 Загружено: ${sites.length} вышек, ${freeZones.length} зон, ${gridPointsData.length} точек сетки`);
-  }, 2000);
-}
+if (totalItems > 0) { setTimeout(() => { showSaveIndicator(`📂 Загружено: ${sites.length} вышек, ${freeZones.length} зон, ${gridPointsData.length} точек сетки`); }, 2000); }
 
-console.log('✅ Приложение инициализировано V6.9.2');
+console.log('✅ Приложение инициализировано V6.9.3');
 console.log(`📊 Загружено: ${sites.length} вышек, ${freeZones.length} зон, ${gridPointsData.length} точек сетки`);
 
 </script>
