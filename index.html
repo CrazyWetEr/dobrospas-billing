@@ -255,6 +255,11 @@
         border-radius: 8px;
       }
       
+      input[type="color"] {
+        min-height: 48px !important;
+        padding: 4px !important;
+      }
+      
       input:focus, select:focus {
         outline: 2px solid #2196f3;
         border-color: transparent;
@@ -322,8 +327,8 @@
     }
     
     .panel-block.backup-panel {
-      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-      border-color: #2196f3;
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border-color: #4caf50;
     }
     
     .panel-title {
@@ -359,6 +364,44 @@
       border-radius: 4px;
       border: 1px solid #c0c0c8;
       font-size: 13px;
+    }
+    
+    /* Стиль для color picker */
+    .field-grid input[type="color"] {
+      width: 100%;
+      height: 36px;
+      padding: 2px;
+      cursor: pointer;
+      border: 2px solid #c0c0c8;
+      border-radius: 6px;
+      background: white;
+    }
+    
+    .field-grid input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 2px;
+    }
+    
+    .field-grid input[type="color"]::-webkit-color-swatch {
+      border-radius: 4px;
+      border: none;
+    }
+    
+    /* Превью стиля линии */
+    .line-preview {
+      height: 20px;
+      background: #f5f5f5;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    
+    .line-preview svg {
+      width: 100%;
+      height: 10px;
     }
     
     .buttons-row {
@@ -854,7 +897,7 @@
     
     /* Стили для статистики бэкапа */
     .backup-stats {
-      background: #f8f9fa;
+      background: rgba(255,255,255,0.7);
       border-radius: 6px;
       padding: 8px 12px;
       margin-bottom: 10px;
@@ -869,12 +912,12 @@
     }
     
     .backup-stats-label {
-      color: #888;
+      color: #555;
     }
     
     .backup-stats-value {
       font-weight: 600;
-      color: #333;
+      color: #2e7d32;
     }
     
     /* Скрытый input для файла бэкапа */
@@ -892,8 +935,8 @@
   <div id="splash-screen">
     <div class="splash-content">
       <img src="./icons/icon-192.png" alt="Logo" class="splash-logo">
-      <h1 class="splash-title">БИЛЛИНГ</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V6.8.0</p>
+      <h1 class="splash-title">БИЛЛИНГ СОТОВОГО ТЕЛЕФОНА</h1>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V6.9.0</p>
       <div class="splash-loader">
         <div class="splash-spinner"></div>
       </div>
@@ -940,36 +983,6 @@
   <div id="sidebar">
     <div class="drag-handle" id="drag-handle"></div>
     <div id="controls">
-      
-      <!-- ПОЛНЫЙ БЭКАП - НОВАЯ ПАНЕЛЬ -->
-      <div class="panel-block backup-panel">
-        <span class="panel-title">💾 Полный бэкап (перенос данных)</span>
-        <div class="backup-stats" id="backupStats">
-          <div class="backup-stats-row">
-            <span class="backup-stats-label">Вышек:</span>
-            <span class="backup-stats-value" id="statsSites">0</span>
-          </div>
-          <div class="backup-stats-row">
-            <span class="backup-stats-label">Зон:</span>
-            <span class="backup-stats-value" id="statsFreeZones">0</span>
-          </div>
-          <div class="backup-stats-row">
-            <span class="backup-stats-label">Точек сетки:</span>
-            <span class="backup-stats-value" id="statsGrid">0</span>
-          </div>
-          <div class="backup-stats-row">
-            <span class="backup-stats-label">Линий азимута:</span>
-            <span class="backup-stats-value" id="statsAzimuth">0</span>
-          </div>
-        </div>
-        <div class="buttons-row">
-          <button id="btnFullBackup" class="backup-btn">📦 Создать бэкап</button>
-          <button id="btnRestoreBackup" class="restore-btn">📂 Восстановить</button>
-        </div>
-        <p style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">
-          Файл .backup содержит ВСЕ данные для переноса на другой ПК
-        </p>
-      </div>
       
       <!-- Поиск по адресу -->
       <div class="panel-block">
@@ -1151,7 +1164,48 @@
             <option value="9">9</option>
             <option value="10">10</option>
           </select>
+          
+          <label for="gridLineColor">Цвет линии</label>
+          <input id="gridLineColor" type="color" value="#3f51b5">
+          
+          <label for="gridLineStyle">Вид линии</label>
+          <select id="gridLineStyle">
+            <option value="solid">Сплошная</option>
+            <option value="dashed">Пунктир</option>
+            <option value="dotted">Точки</option>
+            <option value="dashdot">Штрих-пунктир</option>
+            <option value="longdash">Длинный пунктир</option>
+          </select>
+          
+          <label for="gridLineWeight">Толщина</label>
+          <select id="gridLineWeight">
+            <option value="0.5">0.5 px</option>
+            <option value="1">1 px</option>
+            <option value="1.5" selected>1.5 px</option>
+            <option value="2">2 px</option>
+            <option value="2.5">2.5 px</option>
+            <option value="3">3 px</option>
+            <option value="4">4 px</option>
+            <option value="5">5 px</option>
+          </select>
+          
+          <label for="gridLineOpacity">Прозрачность</label>
+          <select id="gridLineOpacity">
+            <option value="0.3">30%</option>
+            <option value="0.5" selected>50%</option>
+            <option value="0.7">70%</option>
+            <option value="0.8">80%</option>
+            <option value="1">100%</option>
+          </select>
         </div>
+        
+        <!-- Превью линии -->
+        <div class="line-preview" id="gridLinePreview">
+          <svg viewBox="0 0 200 10">
+            <line x1="0" y1="5" x2="200" y2="5" id="previewLine" stroke="#3f51b5" stroke-width="2"/>
+          </svg>
+        </div>
+        
         <div class="buttons-row">
           <button id="btnGenerateGrid">🔲 Сгенерировать</button>
           <button id="btnClearGrid">🧹 Очистить</button>
@@ -1189,6 +1243,36 @@
         </div>
       </div>
       
+      <!-- ПОЛНЫЙ БЭКАП - ВНИЗУ -->
+      <div class="panel-block backup-panel">
+        <span class="panel-title">💾 Полный бэкап (перенос на другой ПК)</span>
+        <div class="backup-stats" id="backupStats">
+          <div class="backup-stats-row">
+            <span class="backup-stats-label">Вышек:</span>
+            <span class="backup-stats-value" id="statsSites">0</span>
+          </div>
+          <div class="backup-stats-row">
+            <span class="backup-stats-label">Произв. зон:</span>
+            <span class="backup-stats-value" id="statsFreeZones">0</span>
+          </div>
+          <div class="backup-stats-row">
+            <span class="backup-stats-label">Точек сетки:</span>
+            <span class="backup-stats-value" id="statsGrid">0</span>
+          </div>
+          <div class="backup-stats-row">
+            <span class="backup-stats-label">Линий азимута:</span>
+            <span class="backup-stats-value" id="statsAzimuth">0</span>
+          </div>
+        </div>
+        <div class="buttons-row">
+          <button id="btnFullBackup" class="backup-btn">📦 Создать бэкап</button>
+          <button id="btnRestoreBackup" class="restore-btn">📂 Восстановить</button>
+        </div>
+        <p style="font-size: 11px; color: #2e7d32; margin-top: 8px; text-align: center;">
+          💡 Файл .backup содержит ВСЕ данные для переноса на другой компьютер
+        </p>
+      </div>
+      
     </div>
   </div>
   
@@ -1211,6 +1295,7 @@ const STORAGE_KEYS = {
   MAP_LAYER: 'billing_mapLayer',
   GRID_DATA: 'billing_gridData',
   GRID_PARAMS: 'billing_gridParams',
+  GRID_STYLE: 'billing_gridStyle',
   UI_STATE: 'billing_uiState',
   AZIMUTH_LINES: 'billing_azimuthLines',
   DRAWN_ZONES: 'billing_drawnZones',
@@ -1220,8 +1305,17 @@ const STORAGE_KEYS = {
 };
 
 // ======== ВЕРСИЯ ДАННЫХ ========
-const DATA_VERSION = '2.0';
+const DATA_VERSION = '2.1';
 const BACKUP_SIGNATURE = 'BILLING_FULL_BACKUP_V2';
+
+// ======== СТИЛИ ЛИНИЙ ========
+const LINE_STYLES = {
+  'solid': null,
+  'dashed': '10,10',
+  'dotted': '2,6',
+  'dashdot': '10,5,2,5',
+  'longdash': '20,10'
+};
 
 // ======== SPLASH SCREEN ========
 const splashScreen = document.getElementById('splash-screen');
@@ -1269,6 +1363,14 @@ let currentMapLayer = 'OSM Стандартная';
 let drawnZonesVisible = false;
 let azimuthLinesData = [];
 
+// Настройки стиля сетки
+let gridStyle = {
+  color: '#3f51b5',
+  style: 'solid',
+  weight: 1.5,
+  opacity: 0.5
+};
+
 // Состояние UI
 let uiState = {
   selectedSiteId: null,
@@ -1276,6 +1378,25 @@ let uiState = {
   selectedFreeZoneId: null,
   addSiteMode: false
 };
+
+// ======== ОБНОВЛЕНИЕ ПРЕВЬЮ ЛИНИИ СЕТКИ ========
+function updateGridLinePreview() {
+  const color = document.getElementById('gridLineColor').value;
+  const style = document.getElementById('gridLineStyle').value;
+  const weight = parseFloat(document.getElementById('gridLineWeight').value);
+  const opacity = parseFloat(document.getElementById('gridLineOpacity').value);
+  
+  const previewLine = document.getElementById('previewLine');
+  if (previewLine) {
+    previewLine.setAttribute('stroke', color);
+    previewLine.setAttribute('stroke-width', weight * 2); // Увеличиваем для видимости в превью
+    previewLine.setAttribute('stroke-opacity', opacity);
+    previewLine.setAttribute('stroke-dasharray', LINE_STYLES[style] || '');
+  }
+  
+  // Обновляем объект стиля
+  gridStyle = { color, style, weight, opacity };
+}
 
 // ======== ОБНОВЛЕНИЕ СТАТИСТИКИ БЭКАПА ========
 function updateBackupStats() {
@@ -1287,7 +1408,6 @@ function updateBackupStats() {
 
 // ======== СБОР ВСЕХ ДАННЫХ ДЛЯ ПОЛНОГО БЭКАПА ========
 function collectFullBackupData() {
-  // Собираем все значения полей ввода
   const inputFields = {
     addressInput: addressInput?.value || '',
     nameInput: nameInput?.value || '',
@@ -1312,7 +1432,6 @@ function collectFullBackupData() {
     gridStartY: document.getElementById('gridStartY')?.value || '1'
   };
   
-  // Собираем данные маркера поиска
   let searchMarkerData = null;
   if (searchMarker) {
     const pos = searchMarker.getLatLng();
@@ -1324,7 +1443,6 @@ function collectFullBackupData() {
     };
   }
   
-  // Собираем позицию карты
   let mapViewData = null;
   if (map) {
     const center = map.getCenter();
@@ -1335,7 +1453,6 @@ function collectFullBackupData() {
     };
   }
   
-  // Собираем выбранные элементы в select
   const selectStates = {
     siteSelect: siteSelect?.value || '',
     sectorSelect: sectorSelect?.value || '',
@@ -1343,13 +1460,11 @@ function collectFullBackupData() {
   };
   
   return {
-    // Метаданные
     _signature: BACKUP_SIGNATURE,
     _version: DATA_VERSION,
     _created: new Date().toISOString(),
-    _appVersion: 'V6.8.0',
+    _appVersion: 'V6.9.0',
     
-    // Основные данные
     sites: sites.map(site => ({
       id: site.id,
       name: site.name || '',
@@ -1379,27 +1494,16 @@ function collectFullBackupData() {
       selectedForExport: zone.selectedForExport === true
     })),
     
-    // Сетка
     gridData: gridPointsData,
-    
-    // Линии азимута
+    gridStyle: gridStyle,
     azimuthLines: azimuthLinesData,
-    
-    // Состояние построенных зон
     drawnZonesVisible: drawnZonesVisible,
-    
-    // Карта
     mapView: mapViewData,
     mapLayer: currentMapLayer,
     searchMarker: searchMarkerData,
-    
-    // Все поля ввода
     inputFields: inputFields,
-    
-    // Состояния select'ов
     selectStates: selectStates,
     
-    // UI состояние
     uiState: {
       ...uiState,
       selectedSiteId: siteSelect?.value || null,
@@ -1439,9 +1543,7 @@ function importFullBackup(file) {
     try {
       const data = JSON.parse(e.target.result);
       
-      // Проверяем сигнатуру
       if (data._signature !== BACKUP_SIGNATURE) {
-        // Пробуем загрузить как старый формат
         if (Array.isArray(data.sites)) {
           importOldFormat(data);
           return;
@@ -1449,9 +1551,7 @@ function importFullBackup(file) {
         throw new Error('Неверный формат файла бэкапа');
       }
       
-      // Восстанавливаем все данные
       restoreFromBackup(data);
-      
       showSaveIndicator(`✅ Бэкап восстановлен (${data._created?.slice(0, 10) || 'дата неизвестна'})`);
       
     } catch (err) {
@@ -1468,7 +1568,6 @@ function importFullBackup(file) {
 function restoreFromBackup(data) {
   console.log('🔄 Восстановление из бэкапа...', data);
   
-  // 1. Восстанавливаем вышки
   if (Array.isArray(data.sites)) {
     sites = data.sites.map(site => ({
       ...site,
@@ -1478,7 +1577,6 @@ function restoreFromBackup(data) {
     }));
   }
   
-  // 2. Восстанавливаем произвольные зоны
   if (Array.isArray(data.freeZones)) {
     freeZones = data.freeZones.map((z, i) => ({
       ...z,
@@ -1489,20 +1587,26 @@ function restoreFromBackup(data) {
     }));
   }
   
-  // 3. Восстанавливаем сетку
   if (Array.isArray(data.gridData)) {
     gridPointsData = data.gridData;
   }
   
-  // 4. Восстанавливаем линии азимута
+  // Восстанавливаем стиль сетки
+  if (data.gridStyle) {
+    gridStyle = data.gridStyle;
+    document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
+    document.getElementById('gridLineStyle').value = gridStyle.style || 'solid';
+    document.getElementById('gridLineWeight').value = gridStyle.weight || 1.5;
+    document.getElementById('gridLineOpacity').value = gridStyle.opacity || 0.5;
+    updateGridLinePreview();
+  }
+  
   if (Array.isArray(data.azimuthLines)) {
     azimuthLinesData = data.azimuthLines;
   }
   
-  // 5. Восстанавливаем состояние построенных зон
   drawnZonesVisible = data.drawnZonesVisible === true;
   
-  // 6. Восстанавливаем слой карты
   if (data.mapLayer && mapProviders[data.mapLayer]) {
     currentMapLayer = data.mapLayer;
     Object.keys(mapProviders).forEach(key => {
@@ -1513,12 +1617,10 @@ function restoreFromBackup(data) {
     mapProviders[currentMapLayer].addTo(map);
   }
   
-  // 7. Восстанавливаем позицию карты
   if (data.mapView) {
     map.setView([data.mapView.lat, data.mapView.lng], data.mapView.zoom);
   }
   
-  // 8. Восстанавливаем маркер поиска
   if (data.searchMarker) {
     if (searchMarker) map.removeLayer(searchMarker);
     searchMarker = L.marker([data.searchMarker.lat, data.searchMarker.lng]).addTo(map);
@@ -1527,7 +1629,6 @@ function restoreFromBackup(data) {
     }
   }
   
-  // 9. Восстанавливаем поля ввода
   if (data.inputFields) {
     const fields = data.inputFields;
     if (addressInput) addressInput.value = fields.addressInput || '';
@@ -1549,7 +1650,6 @@ function restoreFromBackup(data) {
     if (freeNameInput) freeNameInput.value = fields.freeNameInput || '';
     if (freeExportCheckbox) freeExportCheckbox.checked = fields.freeExportCheckbox || false;
     
-    // Параметры сетки
     const gridStep = document.getElementById('gridStep');
     const gridStartX = document.getElementById('gridStartX');
     const gridStartY = document.getElementById('gridStartY');
@@ -1558,17 +1658,14 @@ function restoreFromBackup(data) {
     if (gridStartY) gridStartY.value = fields.gridStartY || '1';
   }
   
-  // 10. Восстанавливаем UI состояние
   if (data.uiState) {
     uiState = { ...uiState, ...data.uiState };
     addSiteMode = uiState.addSiteMode || false;
     btnAddSite.style.backgroundColor = addSiteMode ? '#c0ffc0' : '';
   }
   
-  // 11. Обновляем UI
   fillSiteSelect();
   
-  // Восстанавливаем выбранную вышку
   if (data.selectStates?.siteSelect && sites.find(s => s.id === data.selectStates.siteSelect)) {
     siteSelect.value = data.selectStates.siteSelect;
   } else if (sites.length > 0) {
@@ -1577,41 +1674,28 @@ function restoreFromBackup(data) {
   
   syncUiFromSite();
   
-  // Восстанавливаем выбранный сектор
   if (data.selectStates?.sectorSelect) {
     sectorSelect.value = data.selectStates.sectorSelect;
     syncSectorInputsFromSelect();
   }
   
-  // Маркеры вышек
   drawSiteMarkers();
-  
-  // Произвольные зоны
   fillFreeZoneSelect();
   
-  // Восстанавливаем выбранную произвольную зону
   if (data.selectStates?.freeZoneSelect) {
     freeZoneSelect.value = data.selectStates.freeZoneSelect;
     syncInputsFromFreeZone();
   }
   
   redrawFreeZones();
-  
-  // 12. Восстанавливаем сетку на карте
   restoreGridOnMap();
-  
-  // 13. Восстанавливаем линии азимута
   restoreAzimuthLines();
   
-  // 14. Восстанавливаем построенные зоны
   if (drawnZonesVisible) {
     drawAllZones();
   }
   
-  // 15. Обновляем статистику
   updateBackupStats();
-  
-  // 16. Сохраняем в localStorage
   saveToLocalStorage(true);
   
   console.log('✅ Бэкап полностью восстановлен');
@@ -1656,7 +1740,6 @@ function importOldFormat(data) {
 // ======== ФУНКЦИИ СОХРАНЕНИЯ/ЗАГРУЗКИ ========
 function saveToLocalStorage(silent = false) {
   try {
-    // Сохраняем вышки
     const sitesData = sites.map(site => ({
       id: site.id,
       name: site.name || '',
@@ -1674,7 +1757,6 @@ function saveToLocalStorage(silent = false) {
     }));
     localStorage.setItem(STORAGE_KEYS.SITES, JSON.stringify(sitesData));
     
-    // Сохраняем произвольные зоны
     const freeZonesData = freeZones.map(zone => ({
       id: zone.id,
       name: zone.name || '',
@@ -1689,7 +1771,6 @@ function saveToLocalStorage(silent = false) {
     }));
     localStorage.setItem(STORAGE_KEYS.FREE_ZONES, JSON.stringify(freeZonesData));
     
-    // Сохраняем позицию карты
     if (map) {
       const center = map.getCenter();
       const zoom = map.getZoom();
@@ -1700,13 +1781,9 @@ function saveToLocalStorage(silent = false) {
       }));
     }
     
-    // Сохраняем текущий слой карты
     localStorage.setItem(STORAGE_KEYS.MAP_LAYER, currentMapLayer);
-    
-    // Сохраняем данные сетки
     localStorage.setItem(STORAGE_KEYS.GRID_DATA, JSON.stringify(gridPointsData));
     
-    // Сохраняем параметры генерации сетки
     const gridParams = {
       step: document.getElementById('gridStep')?.value || '500',
       startX: document.getElementById('gridStartX')?.value || 'A',
@@ -1714,19 +1791,17 @@ function saveToLocalStorage(silent = false) {
     };
     localStorage.setItem(STORAGE_KEYS.GRID_PARAMS, JSON.stringify(gridParams));
     
-    // Сохраняем состояние UI
+    // Сохраняем стиль сетки
+    localStorage.setItem(STORAGE_KEYS.GRID_STYLE, JSON.stringify(gridStyle));
+    
     uiState.selectedSiteId = siteSelect?.value || null;
     uiState.selectedSectorId = sectorSelect?.value || null;
     uiState.selectedFreeZoneId = freeZoneSelect?.value || null;
     localStorage.setItem(STORAGE_KEYS.UI_STATE, JSON.stringify(uiState));
     
-    // Сохраняем данные линий азимута
     localStorage.setItem(STORAGE_KEYS.AZIMUTH_LINES, JSON.stringify(azimuthLinesData));
-    
-    // Сохраняем состояние построенных зон
     localStorage.setItem(STORAGE_KEYS.DRAWN_ZONES, JSON.stringify(drawnZonesVisible));
     
-    // Сохраняем маркер поиска
     if (searchMarker) {
       const pos = searchMarker.getLatLng();
       const popup = searchMarker.getPopup();
@@ -1739,7 +1814,6 @@ function saveToLocalStorage(silent = false) {
       localStorage.removeItem(STORAGE_KEYS.SEARCH_MARKER);
     }
     
-    // Сохраняем все поля ввода
     const inputFieldsData = {
       addressInput: addressInput?.value || '',
       nameInput: nameInput?.value || '',
@@ -1762,7 +1836,6 @@ function saveToLocalStorage(silent = false) {
     };
     localStorage.setItem(STORAGE_KEYS.INPUT_FIELDS, JSON.stringify(inputFieldsData));
     
-    // Обновляем статистику
     updateBackupStats();
     
     if (!silent) {
@@ -1777,14 +1850,12 @@ function saveToLocalStorage(silent = false) {
 
 function loadFromLocalStorage() {
   try {
-    // Загружаем вышки
     const sitesData = localStorage.getItem(STORAGE_KEYS.SITES);
     if (sitesData) {
       sites = JSON.parse(sitesData);
       console.log(`✅ Загружено ${sites.length} вышек`);
     }
     
-    // Загружаем произвольные зоны
     const freeZonesData = localStorage.getItem(STORAGE_KEYS.FREE_ZONES);
     if (freeZonesData) {
       const parsed = JSON.parse(freeZonesData);
@@ -1797,14 +1868,12 @@ function loadFromLocalStorage() {
       console.log(`✅ Загружено ${freeZones.length} произвольных зон`);
     }
     
-    // Загружаем данные сетки
     const gridData = localStorage.getItem(STORAGE_KEYS.GRID_DATA);
     if (gridData) {
       gridPointsData = JSON.parse(gridData);
       console.log(`✅ Загружено ${gridPointsData.length} точек сетки`);
     }
     
-    // Загружаем параметры сетки
     const gridParams = localStorage.getItem(STORAGE_KEYS.GRID_PARAMS);
     if (gridParams) {
       const params = JSON.parse(gridParams);
@@ -1813,29 +1882,34 @@ function loadFromLocalStorage() {
       if (document.getElementById('gridStartY')) document.getElementById('gridStartY').value = params.startY || '1';
     }
     
-    // Загружаем состояние UI
+    // Загружаем стиль сетки
+    const gridStyleData = localStorage.getItem(STORAGE_KEYS.GRID_STYLE);
+    if (gridStyleData) {
+      gridStyle = JSON.parse(gridStyleData);
+      document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
+      document.getElementById('gridLineStyle').value = gridStyle.style || 'solid';
+      document.getElementById('gridLineWeight').value = gridStyle.weight || 1.5;
+      document.getElementById('gridLineOpacity').value = gridStyle.opacity || 0.5;
+    }
+    
     const uiStateData = localStorage.getItem(STORAGE_KEYS.UI_STATE);
     if (uiStateData) {
       uiState = JSON.parse(uiStateData);
     }
     
-    // Загружаем линии азимута
     const azimuthData = localStorage.getItem(STORAGE_KEYS.AZIMUTH_LINES);
     if (azimuthData) {
       azimuthLinesData = JSON.parse(azimuthData);
     }
     
-    // Загружаем состояние построенных зон
     const drawnZonesData = localStorage.getItem(STORAGE_KEYS.DRAWN_ZONES);
     if (drawnZonesData) {
       drawnZonesVisible = JSON.parse(drawnZonesData);
     }
     
-    // Загружаем все поля ввода
     const inputFieldsData = localStorage.getItem(STORAGE_KEYS.INPUT_FIELDS);
     if (inputFieldsData) {
       const fields = JSON.parse(inputFieldsData);
-      // Поля будут применены после инициализации DOM элементов
       window._savedInputFields = fields;
     }
     
@@ -1851,13 +1925,11 @@ function restoreInputFields() {
   if (!fields) return;
   
   if (addressInput && fields.addressInput) addressInput.value = fields.addressInput;
-  // Остальные поля восстанавливаются через syncUiFromSite()
   
   delete window._savedInputFields;
 }
 
 function restoreMapState() {
-  // Загружаем позицию карты
   const mapViewData = localStorage.getItem(STORAGE_KEYS.MAP_VIEW);
   if (mapViewData) {
     const mapView = JSON.parse(mapViewData);
@@ -1865,7 +1937,6 @@ function restoreMapState() {
     console.log(`✅ Загружена позиция карты: ${mapView.lat.toFixed(4)}, ${mapView.lng.toFixed(4)}, zoom: ${mapView.zoom}`);
   }
   
-  // Загружаем слой карты
   const mapLayerData = localStorage.getItem(STORAGE_KEYS.MAP_LAYER);
   if (mapLayerData && mapProviders[mapLayerData]) {
     currentMapLayer = mapLayerData;
@@ -1878,7 +1949,6 @@ function restoreMapState() {
     console.log(`✅ Загружен слой карты: ${currentMapLayer}`);
   }
   
-  // Восстанавливаем маркер поиска
   const searchMarkerData = localStorage.getItem(STORAGE_KEYS.SEARCH_MARKER);
   if (searchMarkerData) {
     const data = JSON.parse(searchMarkerData);
@@ -1901,6 +1971,12 @@ function restoreGridOnMap() {
   const gridMatrix = [];
   let currentRow = -1;
   let rowPoints = [];
+  
+  // Получаем текущие настройки стиля
+  const color = gridStyle.color || '#3f51b5';
+  const dashArray = LINE_STYLES[gridStyle.style] || null;
+  const weight = gridStyle.weight || 1.5;
+  const opacity = gridStyle.opacity || 0.5;
   
   gridPointsData.forEach(point => {
     gridPoints.push(point);
@@ -1928,12 +2004,12 @@ function restoreGridOnMap() {
     gridMatrix.push(rowPoints);
   }
   
-  // Рисуем линии сетки
+  // Рисуем линии сетки с настройками стиля
   for (let r = 0; r < gridMatrix.length; r++) {
     for (let c = 0; c < gridMatrix[r].length - 1; c++) {
       gridLines.push(L.polyline(
         [[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], 
-        { color: '#3f51b5', weight: 1.5, opacity: 0.5 }
+        { color, weight, opacity, dashArray }
       ).addTo(gridLayerGroup));
     }
   }
@@ -1944,7 +2020,7 @@ function restoreGridOnMap() {
         if (gridMatrix[r][c] && gridMatrix[r+1][c]) {
           gridLines.push(L.polyline(
             [[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r+1][c].lat, gridMatrix[r+1][c].lng]], 
-            { color: '#3f51b5', weight: 1.5, opacity: 0.5 }
+            { color, weight, opacity, dashArray }
           ).addTo(gridLayerGroup));
         }
       }
@@ -1982,7 +2058,6 @@ function clearAllData() {
     return;
   }
   
-  // Очищаем данные
   sites = [];
   freeZones = [];
   gridPointsData = [];
@@ -1991,12 +2066,10 @@ function clearAllData() {
   azimuthLinesData = [];
   drawnZonesVisible = false;
   
-  // Очищаем localStorage
   Object.values(STORAGE_KEYS).forEach(key => {
     localStorage.removeItem(key);
   });
   
-  // Очищаем карту
   siteMarkerGroup.clearLayers();
   zonesLayerGroup.clearLayers();
   azimuthLayerGroup.clearLayers();
@@ -2008,11 +2081,9 @@ function clearAllData() {
     searchMarker = null;
   }
   
-  // Обновляем UI
   fillSiteSelect();
   fillFreeZoneSelect();
   
-  // Сбрасываем поля
   nameInput.value = '';
   cellIdInput.value = '';
   operatorInput.value = '';
@@ -2020,17 +2091,14 @@ function clearAllData() {
   lngInput.value = '';
   addressInput.value = '';
   
-  // Возвращаем карту в начальную позицию
   map.setView([54.99, 73.37], 12);
   
-  // Обновляем статистику
   updateBackupStats();
   
   showSaveIndicator('🗑️ Все данные удалены');
   console.log('🗑️ Все данные очищены');
 }
 
-// Автосохранение при изменениях (с debounce)
 let saveTimeout = null;
 function autoSave(immediate = false) {
   if (saveTimeout) {
@@ -2046,12 +2114,10 @@ function autoSave(immediate = false) {
   }
 }
 
-// Сохранение перед закрытием страницы
 window.addEventListener('beforeunload', () => {
   saveToLocalStorage(true);
 });
 
-// Периодическое автосохранение каждые 30 секунд
 setInterval(() => {
   saveToLocalStorage(true);
 }, 30000);
@@ -2063,100 +2129,16 @@ const map = L.map('map', {
 
 // ======== ПРОВАЙДЕРЫ КАРТ ========
 const mapProviders = {
-  'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-  }),
-  
-  'OSM HOT': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap, Tiles: HOT'
-  }),
-  
-  'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
-  }),
-  
-  'CartoDB Тёмная': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
-  }),
-  
-  'CartoDB Voyager': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
-  }),
-  
-  'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '&copy; Esri, DigitalGlobe, GeoEye, Earthstar Geographics'
-  }),
-  
-  'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap'
-  }),
-  
-  'ESRI Улицы': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-    maxZoom: 19,
-    attribution: '&copy; Esri, HERE, Garmin, USGS'
-  }),
-  
-  'Топографическая': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-    maxZoom: 17,
-    attribution: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap'
-  }),
-  
-  'Stadia Smooth': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  'Stadia Тёмная': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  'Stadia Outdoors': L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', {
-    maxZoom: 20,
-    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
-  }),
-  
-  'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Google Рельеф': L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
-    attribution: '&copy; Google Maps'
-  }),
-  
-  'Yandex Карта': L.tileLayer('https://core-renderer-tiles.maps.yandex.net/tiles?l=map&v=21.06.04-0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
-    maxZoom: 19,
-    attribution: '&copy; Яндекс Карты'
-  }),
-  
-  'Yandex Спутник': L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1030.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
-    maxZoom: 19,
-    attribution: '&copy; Яндекс Карты'
-  }),
-  
-  '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', {
-    maxZoom: 18,
-    attribution: '&copy; 2GIS'
-  })
+  'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
+  'OSM HOT': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { maxZoom: 19 }),
+  'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+  'CartoDB Тёмная': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
+  'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+  'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
+  'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 }),
+  'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }),
+  'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }),
+  '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', { maxZoom: 18 })
 };
 mapProviders['OSM Стандартная'].addTo(map);
 
@@ -2165,13 +2147,11 @@ const layerControl = L.control.layers(mapProviders, {}, {
   collapsed: true
 }).addTo(map);
 
-// Отслеживаем смену слоя карты
 map.on('baselayerchange', (e) => {
   currentMapLayer = e.name;
   autoSave();
 });
 
-// Сохраняем позицию карты при изменении
 map.on('moveend', () => autoSave());
 map.on('zoomend', () => autoSave());
 
@@ -2256,6 +2236,17 @@ function generateGrid() {
   const step = parseInt(document.getElementById('gridStep').value);
   const startX = document.getElementById('gridStartX').value;
   const startY = parseInt(document.getElementById('gridStartY').value);
+  
+  // Получаем настройки стиля
+  const color = document.getElementById('gridLineColor').value;
+  const style = document.getElementById('gridLineStyle').value;
+  const weight = parseFloat(document.getElementById('gridLineWeight').value);
+  const opacity = parseFloat(document.getElementById('gridLineOpacity').value);
+  const dashArray = LINE_STYLES[style] || null;
+  
+  // Сохраняем стиль
+  gridStyle = { color, style, weight, opacity };
+  
   const bounds = map.getBounds();
   const padding = 0.01;
   const northWest = { lat: bounds.getNorth() + padding, lng: bounds.getWest() - padding };
@@ -2295,16 +2286,24 @@ function generateGrid() {
     lat -= latStep;
     row++;
   }
+  
+  // Рисуем линии сетки с выбранным стилем
   for (let r = 0; r < gridMatrix.length; r++) {
     for (let c = 0; c < gridMatrix[r].length - 1; c++) {
-      gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], { color: '#3f51b5', weight: 1.5, opacity: 0.5 }).addTo(gridLayerGroup));
+      gridLines.push(L.polyline(
+        [[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], 
+        { color, weight, opacity, dashArray }
+      ).addTo(gridLayerGroup));
     }
   }
   if (gridMatrix.length > 0) {
     for (let c = 0; c < gridMatrix[0].length; c++) {
       for (let r = 0; r < gridMatrix.length - 1; r++) {
         if (gridMatrix[r][c] && gridMatrix[r+1][c]) {
-          gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r+1][c].lat, gridMatrix[r+1][c].lng]], { color: '#3f51b5', weight: 1.5, opacity: 0.5 }).addTo(gridLayerGroup));
+          gridLines.push(L.polyline(
+            [[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r+1][c].lat, gridMatrix[r+1][c].lng]], 
+            { color, weight, opacity, dashArray }
+          ).addTo(gridLayerGroup));
         }
       }
     }
@@ -2326,7 +2325,7 @@ function clearGrid() {
 
 function exportGridToGpx() {
   if (gridPoints.length === 0) { alert('Сначала сгенерируйте сетку'); return; }
-  let wpts = '', trks = '';
+  let wpts = '';
   gridPoints.forEach(p => { wpts += `<wpt lat="${p.lat}" lon="${p.lng}"><name>${p.label}</name></wpt>\n`; });
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1">\n${wpts}</gpx>`;
   const blob = new Blob([gpx], { type: 'application/gpx+xml' });
@@ -2414,10 +2413,21 @@ const btnExportSelectedAzimuthGpx = document.getElementById('btnExportSelectedAz
 const btnExportSelectedZonesGpx = document.getElementById('btnExportSelectedZonesGpx');
 const btnExportSelectedAzimuthAndZonesGpx = document.getElementById('btnExportSelectedAzimuthAndZonesGpx');
 
-// Кнопки бэкапа
 const btnFullBackup = document.getElementById('btnFullBackup');
 const btnRestoreBackup = document.getElementById('btnRestoreBackup');
 const backupFileInput = document.getElementById('backupFileInput');
+
+// ======== СЛУШАТЕЛИ ДЛЯ НАСТРОЕК СТИЛЯ СЕТКИ ========
+['gridLineColor', 'gridLineStyle', 'gridLineWeight', 'gridLineOpacity'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('input', updateGridLinePreview);
+    el.addEventListener('change', () => {
+      updateGridLinePreview();
+      autoSave();
+    });
+  }
+});
 
 // ======== АВТОСОХРАНЕНИЕ ПРИ ИЗМЕНЕНИИ ПОЛЕЙ ВВОДА ========
 const inputsToWatch = [
@@ -2722,6 +2732,7 @@ function buildExportConfig() {
     sites: sites.map(site => ({ id: site.id, name: site.name, cellId: site.cellId, operator: site.operator, lat: site.lat, lng: site.lng, sectors: site.sectors.map(s => ({ id: s.id, azimuth: s.azimuth, beamWidth: s.beamWidth, radius: s.radius, selectedForExport: s.selectedForExport === true })) })),
     freeZones: freeZones.map(z => ({ id: z.id, name: z.name, lat: z.lat, lng: z.lng, azimuth: z.azimuth, beamWidth: z.beamWidth, radius: z.radius, visible: z.visible !== false, color: z.color, selectedForExport: z.selectedForExport === true })),
     gridData: gridPointsData,
+    gridStyle: gridStyle,
     gridParams: {
       step: document.getElementById('gridStep')?.value || '500',
       startX: document.getElementById('gridStartX')?.value || 'A',
@@ -3055,6 +3066,9 @@ btnExportAllGpx.addEventListener('click', () => exportGpxString(buildAllGpx(), '
 // ======== ИНИЦИАЛИЗАЦИЯ ========
 loadFromLocalStorage();
 
+// Инициализация превью линии
+updateGridLinePreview();
+
 fillSiteSelect();
 
 if (uiState.selectedSiteId && sites.find(s => s.id === uiState.selectedSiteId)) {
@@ -3099,7 +3113,7 @@ if (totalItems > 0) {
   }, 2000);
 }
 
-console.log('✅ Приложение инициализировано с полным бэкапом');
+console.log('✅ Приложение инициализировано V6.9.0');
 console.log(`📊 Загружено: ${sites.length} вышек, ${freeZones.length} зон, ${gridPointsData.length} точек сетки`);
 
 </script>
