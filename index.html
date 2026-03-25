@@ -2136,16 +2136,100 @@ const map = L.map('map', {
 
 // ======== ПРОВАЙДЕРЫ КАРТ ========
 const mapProviders = {
-  'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
-  'OSM HOT': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', { maxZoom: 19 }),
-  'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
-  'CartoDB Тёмная': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
-  'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
-  'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
-  'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 }),
-  'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }),
-  'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }),
-  '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', { maxZoom: 18 })
+  'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+  }),
+  
+  'OSM HOT': L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap, Tiles: HOT'
+  }),
+  
+  'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+  }),
+  
+  'CartoDB Тёмная': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+  }),
+  
+  'CartoDB Voyager': L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap, &copy; CartoDB'
+  }),
+  
+  'ESRI Спутник': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri, DigitalGlobe, GeoEye, Earthstar Geographics'
+  }),
+  
+  'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri, HERE, Garmin, OpenStreetMap'
+  }),
+  
+  'ESRI Улицы': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 19,
+    attribution: '&copy; Esri, HERE, Garmin, USGS'
+  }),
+  
+  'Топографическая': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    maxZoom: 17,
+    attribution: '&copy; OpenStreetMap, SRTM | &copy; OpenTopoMap'
+  }),
+  
+  'Stadia Smooth': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
+  }),
+  
+  'Stadia Тёмная': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
+  }),
+  
+  'Stadia Outdoors': L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', {
+    maxZoom: 20,
+    attribution: '&copy; Stadia Maps, &copy; OpenStreetMap'
+  }),
+  
+  'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }),
+  
+  'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }),
+  
+  'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }),
+  
+  'Google Рельеф': L.tileLayer('https://mt1.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    attribution: '&copy; Google Maps'
+  }),
+  
+  'Yandex Карта': L.tileLayer('https://core-renderer-tiles.maps.yandex.net/tiles?l=map&v=21.06.04-0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+    maxZoom: 19,
+    attribution: '&copy; Яндекс Карты'
+  }),
+  
+  'Yandex Спутник': L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1030.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', {
+    maxZoom: 19,
+    attribution: '&copy; Яндекс Карты'
+  }),
+  
+  '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', {
+    maxZoom: 18,
+    attribution: '&copy; 2GIS'
+  })
 };
 mapProviders['OSM Стандартная'].addTo(map);
 
