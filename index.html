@@ -5,6 +5,10 @@
   <title>Анализ биллинга и построение зон — Автор: Ергер Виталий, позывной "Ветер"</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
+  <!-- Иконка вкладки браузера (Favicon) -->
+  <link rel="icon" type="image/jpeg" href="./logo.jpg">
+  <link rel="shortcut icon" href="./logo.jpg">
+  
   <!-- PWA мета-теги -->
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#2196f3">
@@ -32,24 +36,23 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 14px;
       color: #222;
-      background: transparent;
+      background: #111;
     }
     
     #app {
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-      width: 100vw;
-      overflow: hidden;
       position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
     }
 
+    /* Карта всегда подложка на весь экран */
     #map-container {
       position: absolute;
       top: 0;
       left: 0;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
       z-index: 1;
     }
     
@@ -59,14 +62,14 @@
       background: #ddd;
     }
     
-    /* ========== SPLASH SCREEN ========== */
+    /* ========== ЗАСТАВКА (SPLASH SCREEN) ========== */
     #splash-screen {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      background: linear-gradient(135deg, #101426 0%, #16213e 50%, #0f3460 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -91,13 +94,15 @@
     }
     
     .splash-logo {
-      width: 120px;
-      height: 120px;
-      margin-bottom: 20px;
+      width: 130px;
+      height: 130px;
+      margin-bottom: 18px;
       animation: splash-pulse 2s ease-in-out infinite;
       border-radius: 50%;
-      box-shadow: 0 10px 40px rgba(33, 150, 243, 0.4);
+      border: 2px solid rgba(33, 150, 243, 0.7);
+      box-shadow: 0 10px 40px rgba(33, 150, 243, 0.5);
       object-fit: cover;
+      background: #000;
     }
     
     @keyframes splash-pulse {
@@ -108,20 +113,21 @@
     .splash-title {
       font-size: 26px;
       font-weight: 700;
+      letter-spacing: 1px;
       margin: 0 0 8px 0;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.4);
+      text-shadow: 0 2px 12px rgba(0,0,0,0.5);
     }
     
     .splash-subtitle {
       font-size: 13px;
       opacity: 0.85;
-      margin: 0 0 25px 0;
+      margin: 0 0 24px 0;
     }
     
     .splash-loader {
       display: flex;
       justify-content: center;
-      margin-bottom: 25px;
+      margin-bottom: 24px;
     }
     
     .splash-spinner {
@@ -143,7 +149,7 @@
       margin: 0;
     }
     
-    /* Мобильная панель инструментов */
+    /* Мобильная панель быстрых кнопок */
     #mobile-toolbar {
       display: none;
       position: fixed;
@@ -180,50 +186,39 @@
       transform: scale(0.92);
     }
     
-    /* ========== САЙДБАР: ПОЛУПРОЗРАЧНОСТЬ ========== */
+    /* ========== ПОЛУПРОЗРАЧНЫЙ САЙДБАР ========== */
     #sidebar {
-      position: relative;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 410px;
+      min-width: 340px;
+      max-width: 450px;
       z-index: 900;
-      background: rgba(245, 245, 247, 0.55) !important;
-      backdrop-filter: blur(14px) !important;
-      -webkit-backdrop-filter: blur(14px) !important;
-      border-right: 1px solid rgba(255, 255, 255, 0.4);
-      box-shadow: 2px 0 20px rgba(0, 0, 0, 0.08);
+      background: rgba(245, 245, 248, 0.58) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
       overflow-y: auto;
-      padding: 10px;
+      padding: 12px;
       transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-    
-    @media (min-width: 769px) {
-      #app {
-        flex-direction: row;
-      }
-      #sidebar {
-        width: 410px;
-        min-width: 340px;
-        max-width: 450px;
-        height: 100vh;
-      }
-      #map-container {
-        position: relative;
-        flex: 1;
-        width: auto;
-      }
     }
     
     @media (max-width: 768px) {
       #sidebar {
-        position: fixed;
+        top: auto;
         bottom: 0;
         left: 0;
         right: 0;
         width: 100%;
         max-width: 100%;
-        height: 72vh;
+        height: 74vh;
         border-right: none;
         border-top: 2px solid rgba(33, 150, 243, 0.8);
         border-radius: 22px 22px 0 0;
-        box-shadow: 0 -8px 25px rgba(0,0,0,0.2);
+        box-shadow: 0 -8px 25px rgba(0,0,0,0.25);
         transform: translateY(calc(100% - 68px));
         padding-bottom: 90px;
         touch-action: pan-y;
@@ -243,7 +238,7 @@
         align-items: center;
         background: transparent;
         z-index: 10;
-        margin-top: -10px;
+        margin-top: -12px;
         cursor: grab;
       }
       
@@ -270,28 +265,28 @@
       }
     }
     
-    /* ========== ПОЛУПРОЗРАЧНЫЕ ПАНЕЛИ И ПОЛЯ ВВОДА ========== */
+    /* ========== СТИЛИ ПОЛУПРОЗРАЧНЫХ ПАНЕЛЕЙ И ПОЛЕЙ ========== */
     .panel-block {
       border-radius: 12px;
       padding: 12px;
-      background: rgba(255, 255, 255, 0.45) !important;
-      backdrop-filter: blur(10px) !important;
-      -webkit-backdrop-filter: blur(10px) !important;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.04);
-      border: 1px solid rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.48) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+      border: 1px solid rgba(255, 255, 255, 0.65);
       margin-bottom: 10px;
     }
     
     .panel-block.backup-panel {
-      background: linear-gradient(135deg, rgba(232, 245, 233, 0.55) 0%, rgba(200, 230, 201, 0.55) 100%) !important;
-      border-color: rgba(76, 175, 80, 0.4);
+      background: linear-gradient(135deg, rgba(232, 245, 233, 0.6) 0%, rgba(200, 230, 201, 0.6) 100%) !important;
+      border-color: rgba(76, 175, 80, 0.45);
     }
     
     .panel-title {
       font-weight: 700;
       margin-bottom: 10px;
       font-size: 13.5px;
-      color: #1a1a2e;
+      color: #111;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -309,7 +304,7 @@
       text-align: right;
       padding-right: 6px;
       white-space: nowrap;
-      color: #333;
+      color: #222;
       font-size: 12.5px;
       font-weight: 600;
     }
@@ -320,20 +315,20 @@
       width: 100%;
       padding: 6px 10px;
       border-radius: 7px;
-      border: 1px solid rgba(0, 0, 0, 0.16);
-      background: rgba(255, 255, 255, 0.5) !important;
+      border: 1px solid rgba(0, 0, 0, 0.18);
+      background: rgba(255, 255, 255, 0.52) !important;
       backdrop-filter: blur(6px) !important;
       -webkit-backdrop-filter: blur(6px) !important;
       font-size: 13px;
       color: #111;
-      font-weight: 500;
+      font-weight: 600;
       transition: all 0.2s;
     }
     
     .field-grid input:focus,
     .field-grid select:focus {
       outline: none;
-      background: rgba(255, 255, 255, 0.85) !important;
+      background: rgba(255, 255, 255, 0.9) !important;
       border-color: #2196f3;
       box-shadow: 0 0 8px rgba(33, 150, 243, 0.3);
     }
@@ -342,7 +337,7 @@
       height: 38px;
       padding: 2px;
       cursor: pointer;
-      background: rgba(255, 255, 255, 0.5) !important;
+      background: rgba(255, 255, 255, 0.52) !important;
     }
     
     .line-preview {
@@ -354,7 +349,7 @@
       justify-content: center;
       padding: 0 10px;
       margin-top: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.55);
     }
     
     .line-preview svg {
@@ -372,19 +367,19 @@
     button {
       padding: 7px 12px;
       border-radius: 7px;
-      border: 1px solid rgba(0, 0, 0, 0.12);
+      border: 1px solid rgba(0, 0, 0, 0.14);
       background: rgba(255, 255, 255, 0.65);
       backdrop-filter: blur(6px);
       -webkit-backdrop-filter: blur(6px);
       font-size: 13px;
       font-weight: 600;
-      color: #222;
+      color: #111;
       cursor: pointer;
       transition: all 0.2s;
     }
     
     button:hover {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.92);
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
     
@@ -405,7 +400,7 @@
     }
     
     button.active-toggle {
-      background: rgba(255, 64, 129, 0.85);
+      background: rgba(233, 30, 99, 0.88);
       color: white;
       border-color: transparent;
     }
@@ -422,17 +417,17 @@
       height: 18px;
     }
     
-    /* ========== ВЫПАДАЮЩИЙ СПИСОК ПРОВАЙДЕРОВ КАРТ ========== */
+    /* ========== ВЫПАДАЮЩИЙ СПИСОК ПРОВАЙДЕРОВ КАРТ (ПОЛУПРОЗРАЧНЫЙ) ========== */
     .leaflet-touch .leaflet-control-layers,
     .leaflet-control-layers,
     .leaflet-control-layers-expanded,
     .leaflet-control-layers-base,
     .leaflet-control-layers-overlays {
-      background: rgba(255, 255, 255, 0.45) !important;
+      background: rgba(255, 255, 255, 0.5) !important;
       backdrop-filter: blur(14px) !important;
       -webkit-backdrop-filter: blur(14px) !important;
       border-radius: 12px !important;
-      border: 1px solid rgba(255, 255, 255, 0.6) !important;
+      border: 1px solid rgba(255, 255, 255, 0.65) !important;
       box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
       color: #111 !important;
     }
@@ -478,10 +473,10 @@
       .custom-logo-control {
         top: 12px !important;
         right: 12px !important;
-        max-width: 280px;
+        max-width: 260px;
       }
       .custom-logo-control img {
-        max-height: 120px;
+        max-height: 110px;
       }
     }
     
@@ -533,7 +528,7 @@
     }
     
     .app-modal-content {
-      background: rgba(255, 255, 255, 0.88);
+      background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-radius: 16px;
@@ -555,7 +550,7 @@
       padding: 10px 12px;
       border-radius: 8px;
       border: 1px solid rgba(0, 0, 0, 0.2);
-      background: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.75);
       margin-bottom: 16px;
       font-size: 14px;
     }
@@ -703,7 +698,7 @@
       color: #111;
       font-weight: bold;
       font-size: 11px;
-      background: rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.8);
       backdrop-filter: blur(2px);
       padding: 1px 4px;
       border-radius: 3px;
@@ -715,12 +710,12 @@
 
 <div id="app">
   
-  <!-- Заставка с реальным логотипом -->
+  <!-- Заставка с логотипом -->
   <div id="splash-screen">
     <div class="splash-content">
-      <img src="./logo.jpg" alt="Доброспас-Омск" class="splash-logo">
+      <img src="./logo.jpg" alt="Доброспас-Омск" class="splash-logo" onerror="this.src='logo.png'">
       <h1 class="splash-title">БИЛЛИНГ</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.1</p>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.2</p>
       <div class="splash-loader"><div class="splash-spinner"></div></div>
       <p class="splash-author">АВТОР: ЕРГЕР ВИТАЛИЙ, ПОЗЫВНОЙ "ВЕТЕР"</p>
     </div>
@@ -774,6 +769,14 @@
   </div>
   
   <input type="file" id="backupFileInput" accept=".backup,.json" style="display:none;">
+  
+  <!-- Карта -->
+  <div id="map-container">
+    <div id="map"></div>
+    <div class="custom-logo-control">
+      <img src="./logo.jpg" alt="Логотип Доброспас" onerror="this.src='logo.png'">
+    </div>
+  </div>
   
   <!-- Сайдбар -->
   <div id="sidebar">
@@ -864,8 +867,9 @@
           </div>
         </div>
         <div class="buttons-row">
-          <button id="btnRebuildSectors">🔄 Пересчитать</button>
+          <button id="btnDrawCurrentSiteSectors">📐 Построить секторы</button>
           <button id="btnApplySector">💾 Сохранить</button>
+          <button id="btnRebuildSectors">🔄 Пересчитать</button>
         </div>
       </div>
       
@@ -1032,7 +1036,7 @@
           <button id="btnDeletePolygon">🗑️ Удалить</button>
           <button id="btnExportPolygonGpx">📥 GPX</button>
         </div>
-        <p id="polygonStatusHint" style="font-size: 11px; color: #555; margin-top: 6px; text-align: center;">
+        <p id="polygonStatusHint" style="font-size: 11px; color: #444; margin-top: 6px; text-align: center;">
           Кликайте по карте для установки вершин
         </p>
       </div>
@@ -1081,13 +1085,6 @@
       
     </div>
   </div>
-  
-  <div id="map-container">
-    <div id="map"></div>
-    <div class="custom-logo-control">
-      <img src="logo.jpg" alt="Логотип Доброспас">
-    </div>
-  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
@@ -1110,7 +1107,7 @@ const STORAGE_KEYS = {
   INPUT_FIELDS: 'billing_inputFields'
 };
 
-const DATA_VERSION = '2.3';
+const DATA_VERSION = '2.4';
 const BACKUP_SIGNATURE = 'BILLING_FULL_BACKUP_V2';
 
 const LINE_STYLES = {
@@ -1138,8 +1135,8 @@ function hideSplashScreen() {
     setTimeout(() => splashScreen.classList.add('removed'), 500);
   }
 }
-window.addEventListener('load', () => setTimeout(hideSplashScreen, 900));
-setTimeout(hideSplashScreen, 3000);
+window.addEventListener('load', () => setTimeout(hideSplashScreen, 800));
+setTimeout(hideSplashScreen, 2500);
 
 function formatCoords(lat, lng) {
   return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -1159,7 +1156,6 @@ async function copyCoordinates(lat, lng) {
       textArea.style.position = 'fixed';
       textArea.style.left = '-9999px';
       document.body.appendChild(textArea);
-      textArea.focus();
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
@@ -1213,7 +1209,7 @@ function showAutosaveBadge() {
   setTimeout(() => autosaveBadge.classList.remove('show'), 800);
 }
 
-// ======== ДИАЛОГ ЗАПРОСА ИМЕНИ ФАЙЛА GPX ========
+// ======== ДИАЛОГ GPX ИМЕНИ ========
 let pendingExportAction = null;
 const filenameModal = document.getElementById('filename-modal');
 const filenameInput = document.getElementById('filenameInput');
@@ -1256,7 +1252,7 @@ function exportGpxString(gpxStr, defaultFileName) {
   });
 }
 
-// ======== СОСТОЯНИЕ ДАННЫХ ========
+// ======== ДАННЫЕ И СОСТОЯНИЕ ========
 let sites = [];
 let freeZones = [];
 let customPolygons = [];
@@ -1307,7 +1303,7 @@ function updateBackupStats() {
   document.getElementById('statsGrid').textContent = gridPointsData.length;
 }
 
-// Инициализация карты Leaflet
+// Карта Leaflet
 const map = L.map('map', { attributionControl: false }).setView([54.99, 73.37], 12);
 
 const mapProviders = {
@@ -1368,7 +1364,8 @@ function hslToHex(h, s, l) {
 }
 
 function getUniqueColor(index) {
-  const hue = (index * 47) % 360;
+  const num = Math.abs(Number(index) || 1);
+  const hue = (num * 47) % 360;
   return hslToHex(hue, 85, 50);
 }
 
@@ -1392,6 +1389,33 @@ function makeAzimuthLine(lat, lng, azimuth, radius) {
   const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) + Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
   const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1), Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
   return [[lat, lng], [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]];
+}
+
+// ======== ПОСТРОЕНИЕ ЗОН И СЕКТОРОВ ========
+function drawSectorsForSite(site) {
+  if (!site || !site.sectors || !site.lat || !site.lng) return;
+  // Сначала убираем старые слои этой вышки, если были
+  const siteSeed = typeof site.id === 'string' ? site.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) : Number(site.id) || 1;
+  
+  site.sectors.forEach(sec => {
+    const color = getUniqueColor(siteSeed * 10 + Number(sec.id));
+    const polyCoords = makeSectorPolygon(Number(site.lat), Number(site.lng), Number(sec.azimuth), Number(sec.beamWidth), Number(sec.radius));
+    const poly = L.polygon(polyCoords, {
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.28,
+      weight: 1.5
+    }).addTo(zonesLayerGroup);
+    poly.bindTooltip(`${site.name}\nСектор ${sec.id}\nAz ${sec.azimuth}°`);
+  });
+}
+
+function drawAllZones() {
+  zonesLayerGroup.clearLayers();
+  sites.forEach(site => drawSectorsForSite(site));
+  drawnZonesVisible = true;
+  autoSave();
+  showSaveIndicator('🗺️ Все секторы построены');
 }
 
 // ======== ГЕНЕРАЦИЯ СЕТКИ ========
@@ -1618,7 +1642,7 @@ function cancelDrawingPolygon() {
   btnToggleDrawPolygon.textContent = '✏️ Начать рисование';
   btnToggleDrawPolygon.classList.remove('active-toggle');
   polygonStatusHint.textContent = 'Кликайте по карте для установки вершин';
-  polygonStatusHint.style.color = '#555';
+  polygonStatusHint.style.color = '#444';
 }
 
 btnFinishPolygon.addEventListener('click', () => {
@@ -1798,6 +1822,7 @@ map.on('click', (e) => {
     addSiteMode = false;
     uiState.addSiteMode = false;
     btnAddSite.style.backgroundColor = '';
+    drawSectorsForSite(getCurrentSite());
     autoSave();
     updateBackupStats();
   }
@@ -1824,6 +1849,7 @@ const bwInput = document.getElementById('bwInput');
 const rInput = document.getElementById('rInput');
 const sectorExportCheckbox = document.getElementById('sectorExportCheckbox');
 const btnApplySector = document.getElementById('btnApplySector');
+const btnDrawCurrentSiteSectors = document.getElementById('btnDrawCurrentSiteSectors');
 const btnDrawAll = document.getElementById('btnDrawAll');
 const btnClearZones = document.getElementById('btnClearZones');
 const btnDrawAzimuthLine = document.getElementById('btnDrawAzimuthLine');
@@ -1959,18 +1985,71 @@ function rebuildSectorsForSite(site, count) {
   }
 }
 
-function drawAllZones() {
-  zonesLayerGroup.clearLayers();
-  sites.forEach(site => {
-    site.sectors.forEach(sec => {
-      const color = getUniqueColor(site.id.charCodeAt(site.id.length - 1) * 100 + sec.id);
-      const poly = L.polygon(makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius), { color, fillColor: color, fillOpacity: 0.25, weight: 1 }).addTo(zonesLayerGroup);
-      poly.bindTooltip(`${site.name}\nСектор ${sec.id}\nAz ${sec.azimuth}°`);
-    });
-  });
-  drawnZonesVisible = true;
+// Кнопка быстрого построения секторов текущей вышки
+btnDrawCurrentSiteSectors.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) {
+    alert('Выберите или добавьте вышку');
+    return;
+  }
+  drawAllZones();
+  map.setView([site.lat, site.lng], 14);
+});
+
+btnApplySector.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
+  if (!sec) return;
+  sec.azimuth = parseFloat(azInput.value);
+  sec.beamWidth = parseFloat(bwInput.value);
+  sec.radius = parseFloat(rInput.value);
+  sec.selectedForExport = sectorExportCheckbox.checked;
+  fillSectorSelect();
+  sectorSelect.value = sec.id;
+  drawAllZones();
   autoSave();
-}
+  showSaveIndicator('💾 Сектор сохранен и построен');
+});
+
+btnRebuildSectors.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  rebuildSectorsForSite(site, parseInt(sectorsCountInput.value) || 1);
+  fillSectorSelect();
+  syncSectorInputsFromSelect();
+  drawAllZones();
+  autoSave();
+  showSaveIndicator('🔄 Секторы пересчитаны');
+});
+
+btnDrawAll.addEventListener('click', drawAllZones);
+btnClearZones.addEventListener('click', () => {
+  zonesLayerGroup.clearLayers();
+  drawnZonesVisible = false;
+  autoSave();
+});
+
+btnDrawAzimuthLine.addEventListener('click', () => {
+  const site = getCurrentSite();
+  if (!site) return;
+  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
+  if (!sec) return;
+  const siteSeed = typeof site.id === 'string' ? site.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) : Number(site.id) || 1;
+  const color = getUniqueColor(siteSeed * 10 + sec.id);
+  const coords = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
+  const line = L.polyline(coords, { color, weight: 2, dashArray: '5,5' }).addTo(azimuthLayerGroup);
+  azimuthLinesData.push({ coords, color, siteId: site.id, sectorId: sec.id });
+  autoSave();
+  updateBackupStats();
+});
+
+btnClearAzimuthLine.addEventListener('click', () => {
+  azimuthLayerGroup.clearLayers();
+  azimuthLinesData = [];
+  autoSave();
+  updateBackupStats();
+});
 
 function fillFreeZoneSelect() {
   freeZoneSelect.innerHTML = '<option value="">— новая зона —</option>';
@@ -2004,7 +2083,7 @@ function redrawFreeZones() {
     zone.lineLayer = null;
     if (zone.visible === false) return;
     const color = zone.color || getUniqueColor(zone.id);
-    const poly = L.polygon(makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius), { color, fillColor: color, fillOpacity: 0.25, weight: 1 }).addTo(freeLayerGroup);
+    const poly = L.polygon(makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius), { color, fillColor: color, fillOpacity: 0.28, weight: 1.5 }).addTo(freeLayerGroup);
     const line = L.polyline(makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius), { color, weight: 2, dashArray: '4,4' }).addTo(freeLayerGroup);
     poly.bindTooltip(`${zone.name || 'zone ' + zone.id}\nAz ${zone.azimuth}°`);
     zone.polyLayer = poly;
@@ -2012,6 +2091,55 @@ function redrawFreeZones() {
     zone.color = color;
   });
 }
+
+btnDrawFree.addEventListener('click', () => {
+  const lat = parseFloat(freeLatInput.value), lng = parseFloat(freeLngInput.value), az = parseFloat(freeAzInput.value);
+  const bw = parseFloat(freeBwInput.value) || 60, r = parseFloat(freeRInput.value) || 1000, name = freeNameInput.value.trim();
+  if ([lat, lng, az].some(v => isNaN(v))) { alert('Заполните координаты и азимут'); return; }
+  const existing = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
+  if (existing) {
+    Object.assign(existing, { lat, lng, azimuth: az, beamWidth: bw, radius: r, name, selectedForExport: freeExportCheckbox.checked });
+  } else {
+    const newId = freeZones.length > 0 ? Math.max(...freeZones.map(z => z.id)) + 1 : 1;
+    freeZones.push({ id: newId, name, lat, lng, azimuth: az, beamWidth: bw, radius: r, visible: true, color: getUniqueColor(newId), polyLayer: null, lineLayer: null, selectedForExport: freeExportCheckbox.checked });
+  }
+  fillFreeZoneSelect();
+  redrawFreeZones();
+  autoSave();
+  updateBackupStats();
+});
+
+btnToggleFreeVisible.addEventListener('click', () => {
+  const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
+  if (!zone) return;
+  zone.visible = !zone.visible;
+  fillFreeZoneSelect();
+  freeZoneSelect.value = zone.id;
+  redrawFreeZones();
+  autoSave();
+});
+
+btnDeleteFree.addEventListener('click', () => {
+  const id = parseInt(freeZoneSelect.value);
+  if (!id) return;
+  freeZones = freeZones.filter(z => z.id !== id);
+  fillFreeZoneSelect();
+  redrawFreeZones();
+  autoSave();
+  updateBackupStats();
+});
+
+btnClearFree.addEventListener('click', () => {
+  freeZones = [];
+  freeLayerGroup.clearLayers();
+  fillFreeZoneSelect();
+  autoSave();
+  updateBackupStats();
+});
+
+btnGenerateGrid.addEventListener('click', generateGrid);
+btnClearGrid.addEventListener('click', clearGrid);
+btnExportGridGpx.addEventListener('click', exportGridToGpx);
 
 function restoreGridOnMap() {
   if (gridPointsData.length === 0) return;
@@ -2205,6 +2333,7 @@ btnSetCoords.addEventListener('click', () => {
   site.lng = parseFloat(lngInput.value);
   drawSiteMarkers();
   map.setView([site.lat, site.lng], 15);
+  drawAllZones();
   autoSave();
 });
 
@@ -2217,109 +2346,10 @@ btnApplySiteFields.addEventListener('click', () => {
   fillSiteSelect();
   siteSelect.value = site.id;
   drawSiteMarkers();
+  drawAllZones();
   autoSave();
   showSaveIndicator('💾 Параметры вышки сохранены');
 });
-
-btnApplySector.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
-  if (!sec) return;
-  sec.azimuth = parseFloat(azInput.value);
-  sec.beamWidth = parseFloat(bwInput.value);
-  sec.radius = parseFloat(rInput.value);
-  sec.selectedForExport = sectorExportCheckbox.checked;
-  fillSectorSelect();
-  sectorSelect.value = sec.id;
-  autoSave();
-  showSaveIndicator('💾 Сектор сохранен');
-});
-
-btnRebuildSectors.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  rebuildSectorsForSite(site, parseInt(sectorsCountInput.value) || 1);
-  fillSectorSelect();
-  syncSectorInputsFromSelect();
-  autoSave();
-});
-
-btnDrawAll.addEventListener('click', drawAllZones);
-btnClearZones.addEventListener('click', () => {
-  zonesLayerGroup.clearLayers();
-  drawnZonesVisible = false;
-  autoSave();
-});
-
-btnDrawAzimuthLine.addEventListener('click', () => {
-  const site = getCurrentSite();
-  if (!site) return;
-  const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
-  if (!sec) return;
-  const color = getUniqueColor(site.id.charCodeAt(0) * 100 + sec.id);
-  const coords = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
-  const line = L.polyline(coords, { color, weight: 2, dashArray: '5,5' }).addTo(azimuthLayerGroup);
-  azimuthLinesData.push({ coords, color, siteId: site.id, sectorId: sec.id });
-  autoSave();
-  updateBackupStats();
-});
-
-btnClearAzimuthLine.addEventListener('click', () => {
-  azimuthLayerGroup.clearLayers();
-  azimuthLinesData = [];
-  autoSave();
-  updateBackupStats();
-});
-
-btnDrawFree.addEventListener('click', () => {
-  const lat = parseFloat(freeLatInput.value), lng = parseFloat(freeLngInput.value), az = parseFloat(freeAzInput.value);
-  const bw = parseFloat(freeBwInput.value) || 60, r = parseFloat(freeRInput.value) || 1000, name = freeNameInput.value.trim();
-  if ([lat, lng, az].some(v => isNaN(v))) { alert('Заполните координаты и азимут'); return; }
-  const existing = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
-  if (existing) {
-    Object.assign(existing, { lat, lng, azimuth: az, beamWidth: bw, radius: r, name, selectedForExport: freeExportCheckbox.checked });
-  } else {
-    const newId = freeZones.length > 0 ? Math.max(...freeZones.map(z => z.id)) + 1 : 1;
-    freeZones.push({ id: newId, name, lat, lng, azimuth: az, beamWidth: bw, radius: r, visible: true, color: getUniqueColor(newId), polyLayer: null, lineLayer: null, selectedForExport: freeExportCheckbox.checked });
-  }
-  fillFreeZoneSelect();
-  redrawFreeZones();
-  autoSave();
-  updateBackupStats();
-});
-
-btnToggleFreeVisible.addEventListener('click', () => {
-  const zone = freeZones.find(z => z.id === parseInt(freeZoneSelect.value));
-  if (!zone) return;
-  zone.visible = !zone.visible;
-  fillFreeZoneSelect();
-  freeZoneSelect.value = zone.id;
-  redrawFreeZones();
-  autoSave();
-});
-
-btnDeleteFree.addEventListener('click', () => {
-  const id = parseInt(freeZoneSelect.value);
-  if (!id) return;
-  freeZones = freeZones.filter(z => z.id !== id);
-  fillFreeZoneSelect();
-  redrawFreeZones();
-  autoSave();
-  updateBackupStats();
-});
-
-btnClearFree.addEventListener('click', () => {
-  freeZones = [];
-  freeLayerGroup.clearLayers();
-  fillFreeZoneSelect();
-  autoSave();
-  updateBackupStats();
-});
-
-btnGenerateGrid.addEventListener('click', generateGrid);
-btnClearGrid.addEventListener('click', clearGrid);
-btnExportGridGpx.addEventListener('click', exportGridToGpx);
 
 btnExportAzimuthGpx.addEventListener('click', () => exportGpxString(buildAzimuthGpx(false), 'azimuths_all.gpx'));
 btnExportZonesGpx.addEventListener('click', () => exportGpxString(buildZonesGpx(false), 'zones_all.gpx'));
@@ -2397,6 +2427,7 @@ backupFileInput.addEventListener('change', (e) => {
       redrawFreeZones();
       redrawCustomPolygons();
       restoreGridOnMap();
+      drawAllZones();
       autoSave(true);
       showSaveIndicator('✅ Бэкап успешно восстановлен');
     } catch (err) {
@@ -2406,7 +2437,7 @@ backupFileInput.addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-// ======== PWA УСТАНОВКА (CHROME ANDROID) ========
+// ======== PWA УСТАНОВКА ========
 let deferredPrompt = null;
 const pwaInstallIcon = document.getElementById('pwa-install-icon');
 
@@ -2440,7 +2471,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// ======== МОБИЛЬНОЕ МЕНЮ: КЛИК И СВАЙП ДЛЯ ШТОРКИ ========
+// ======== МОБИЛЬНАЯ ШТОРКА (КЛИК + СВАЙП) ========
 const sidebar = document.getElementById('sidebar');
 const menuToggle = document.getElementById('mobile-menu-toggle');
 const centerBtn = document.getElementById('mobile-center-btn');
