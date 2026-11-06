@@ -5,14 +5,15 @@
   <title>Анализ биллинга и построение зон — Автор: Ергер Виталий, позывной "Ветер"</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
-  <!-- Иконка вкладки браузера (Favicon) с резервными путями -->
-  <link rel="icon" type="image/jpeg" href="logo.jpg">
-  <link rel="icon" type="image/png" href="logo.png">
-  <link rel="shortcut icon" href="logo.jpg">
-  <link rel="apple-touch-icon" href="logo.jpg">
+  <!-- Иконка вкладки браузера (Favicon) в формате PNG и JPEG -->
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" href="./logo.png">
+  <link rel="icon" type="image/jpeg" href="./logo.jpg">
+  <link rel="shortcut icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
   
   <!-- PWA мета-теги -->
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#2196f3">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -36,7 +37,7 @@
       position: fixed;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 14px;
-      color: #222;
+      color: #111;
       background: #111;
     }
     
@@ -47,6 +48,7 @@
       overflow: hidden;
     }
 
+    /* Карта подложка */
     #map-container {
       position: absolute;
       top: 0;
@@ -62,7 +64,7 @@
       background: #ddd;
     }
     
-    /* ========== ЗАСТАВКА (КРУПНЫЙ ЛОГОТИП) ========== */
+    /* ========== ЗАСТАВКА (ЧИСТЫЙ КРУГЛЫЙ ЛОГОТИП БЕЗ РАМОК И КВАДРАТОВ) ========== */
     #splash-screen {
       position: fixed;
       top: 0;
@@ -90,26 +92,30 @@
     .splash-content {
       text-align: center;
       color: white;
-      padding: 24px;
+      padding: 20px;
       max-width: 90vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     
+    /* Только чистый круглый логотип, никаких рамок, никакого черного квадрата */
     .splash-logo {
-      width: 200px;
-      height: 200px;
-      margin-bottom: 20px;
+      width: 220px;
+      height: 220px;
+      margin-bottom: 24px;
       animation: splash-pulse 2.2s ease-in-out infinite;
-      border-radius: 16px;
-      border: 3px solid rgba(33, 150, 243, 0.8);
-      box-shadow: 0 12px 50px rgba(33, 150, 243, 0.6);
-      object-fit: contain;
-      background: #000;
-      display: inline-block;
+      border-radius: 50% !important;
+      border: none !important;
+      background: transparent !important;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6) !important;
+      object-fit: cover;
+      display: block;
     }
     
     @keyframes splash-pulse {
       0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.04); opacity: 0.92; }
+      50% { transform: scale(1.04); opacity: 0.95; }
     }
     
     .splash-title {
@@ -167,11 +173,11 @@
       width: 54px;
       height: 54px;
       border-radius: 50%;
-      background: rgba(33, 150, 243, 0.92);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
+      background: rgba(33, 150, 243, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       color: white;
-      border: 1px solid rgba(255,255,255,0.4);
+      border: 1px solid rgba(255,255,255,0.5);
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       font-size: 22px;
       display: flex;
@@ -183,14 +189,14 @@
     }
     
     .mobile-btn.secondary {
-      background: rgba(76, 175, 80, 0.92);
+      background: rgba(76, 175, 80, 0.85);
     }
     
     .mobile-btn:active {
       transform: scale(0.92);
     }
     
-    /* ========== ПОЛУПРОЗРАЧНЫЙ САЙДБАР ========== */
+    /* ========== НАСТОЯЩАЯ ПРОЗРАЧНОСТЬ САЙДБАРА (СТЕКЛО) ========== */
     #sidebar {
       position: absolute;
       top: 0;
@@ -200,11 +206,11 @@
       min-width: 340px;
       max-width: 450px;
       z-index: 900;
-      background: rgba(245, 245, 248, 0.58) !important;
-      backdrop-filter: blur(16px) !important;
-      -webkit-backdrop-filter: blur(16px) !important;
+      background: rgba(240, 243, 246, 0.35) !important;
+      backdrop-filter: blur(16px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
       border-right: 1px solid rgba(255, 255, 255, 0.5);
-      box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+      box-shadow: 4px 0 25px rgba(0, 0, 0, 0.12);
       overflow-y: auto;
       padding: 12px;
       transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -212,8 +218,8 @@
     
     @media (max-width: 768px) {
       .splash-logo {
-        width: 160px;
-        height: 160px;
+        width: 180px;
+        height: 180px;
       }
       
       #sidebar {
@@ -227,10 +233,11 @@
         border-right: none;
         border-top: 2px solid rgba(33, 150, 243, 0.85);
         border-radius: 22px 22px 0 0;
-        box-shadow: 0 -8px 25px rgba(0,0,0,0.25);
+        box-shadow: 0 -8px 30px rgba(0,0,0,0.3);
         transform: translateY(calc(100% - 68px));
         padding-bottom: 90px;
         touch-action: pan-y;
+        background: rgba(240, 243, 246, 0.42) !important;
       }
       
       #sidebar.expanded {
@@ -255,7 +262,7 @@
         content: '';
         width: 64px;
         height: 6px;
-        background: rgba(0, 0, 0, 0.35);
+        background: rgba(0, 0, 0, 0.4);
         border-radius: 10px;
       }
       
@@ -274,31 +281,32 @@
       }
     }
     
-    /* ========== СТИЛИ ПОЛУПРОЗРАЧНЫХ ПАНЕЛЕЙ И ПОЛЕЙ ========== */
+    /* ========== СВЕРХПРОЗРАЧНЫЕ ПАНЕЛИ И ПОЛЯ (КАРТА ПРОСВЕЧИВАЕТ) ========== */
     .panel-block {
-      border-radius: 12px;
+      border-radius: 14px;
       padding: 12px;
-      background: rgba(255, 255, 255, 0.48) !important;
+      background: rgba(255, 255, 255, 0.28) !important;
       backdrop-filter: blur(12px) !important;
       -webkit-backdrop-filter: blur(12px) !important;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
-      border: 1px solid rgba(255, 255, 255, 0.65);
-      margin-bottom: 10px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      margin-bottom: 12px;
     }
     
     .panel-block.backup-panel {
-      background: linear-gradient(135deg, rgba(232, 245, 233, 0.6) 0%, rgba(200, 230, 201, 0.6) 100%) !important;
-      border-color: rgba(76, 175, 80, 0.45);
+      background: linear-gradient(135deg, rgba(200, 230, 201, 0.35) 0%, rgba(165, 214, 167, 0.4) 100%) !important;
+      border-color: rgba(76, 175, 80, 0.5);
     }
     
     .panel-title {
       font-weight: 700;
       margin-bottom: 10px;
       font-size: 13.5px;
-      color: #111;
+      color: #0b132b;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.8);
     }
     
     .field-grid {
@@ -313,45 +321,47 @@
       text-align: right;
       padding-right: 6px;
       white-space: nowrap;
-      color: #222;
+      color: #111;
       font-size: 12.5px;
-      font-weight: 600;
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(255,255,255,0.8);
     }
     
+    /* Полупрозрачные поля ввода */
     .field-grid input,
     .field-grid select,
     #jsonFileInput {
       width: 100%;
       padding: 6px 10px;
-      border-radius: 7px;
-      border: 1px solid rgba(0, 0, 0, 0.18);
-      background: rgba(255, 255, 255, 0.52) !important;
-      backdrop-filter: blur(6px) !important;
-      -webkit-backdrop-filter: blur(6px) !important;
-      font-size: 13px;
-      color: #111;
-      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.22);
+      background: rgba(255, 255, 255, 0.32) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      font-size: 13.5px;
+      color: #000;
+      font-weight: 700;
       transition: all 0.2s;
     }
     
     .field-grid input:focus,
     .field-grid select:focus {
       outline: none;
-      background: rgba(255, 255, 255, 0.9) !important;
+      background: rgba(255, 255, 255, 0.75) !important;
       border-color: #2196f3;
-      box-shadow: 0 0 8px rgba(33, 150, 243, 0.3);
+      box-shadow: 0 0 8px rgba(33, 150, 243, 0.4);
     }
     
     .field-grid input[type="color"] {
       height: 38px;
       padding: 2px;
       cursor: pointer;
-      background: rgba(255, 255, 255, 0.52) !important;
+      background: rgba(255, 255, 255, 0.32) !important;
     }
     
     .line-preview {
       height: 22px;
-      background: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.25);
       border-radius: 6px;
       display: flex;
       align-items: center;
@@ -375,21 +385,21 @@
     
     button {
       padding: 7px 12px;
-      border-radius: 7px;
-      border: 1px solid rgba(0, 0, 0, 0.14);
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
+      border-radius: 8px;
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       color: #111;
       cursor: pointer;
       transition: all 0.2s;
     }
     
     button:hover {
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      background: rgba(255, 255, 255, 0.85);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
     
     button:active {
@@ -397,13 +407,13 @@
     }
     
     button.backup-btn {
-      background: linear-gradient(135deg, rgba(76, 175, 80, 0.9), rgba(46, 125, 50, 0.9));
+      background: linear-gradient(135deg, rgba(76, 175, 80, 0.85), rgba(46, 125, 50, 0.85));
       color: white;
       border: none;
     }
     
     button.restore-btn {
-      background: linear-gradient(135deg, rgba(33, 150, 243, 0.9), rgba(21, 101, 192, 0.9));
+      background: linear-gradient(135deg, rgba(33, 150, 243, 0.85), rgba(21, 101, 192, 0.85));
       color: white;
       border: none;
     }
@@ -418,7 +428,8 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-weight: 600;
+      font-weight: 700;
+      color: #111;
     }
     
     .inline-checkbox input[type="checkbox"] {
@@ -426,19 +437,19 @@
       height: 18px;
     }
     
-    /* ========== ВЫПАДАЮЩИЙ СПИСОК ПРОВАЙДЕРОВ КАРТ ========== */
+    /* ========== ВЫПАДАЮЩИЙ СПИСОК СЛОЁВ КАРТ (ПОЛУПРОЗРАЧНЫЙ) ========== */
     .leaflet-touch .leaflet-control-layers,
     .leaflet-control-layers,
     .leaflet-control-layers-expanded,
     .leaflet-control-layers-base,
     .leaflet-control-layers-overlays {
-      background: rgba(255, 255, 255, 0.5) !important;
-      backdrop-filter: blur(14px) !important;
-      -webkit-backdrop-filter: blur(14px) !important;
+      background: rgba(255, 255, 255, 0.35) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
       border-radius: 12px !important;
-      border: 1px solid rgba(255, 255, 255, 0.65) !important;
+      border: 1px solid rgba(255, 255, 255, 0.6) !important;
       box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
-      color: #111 !important;
+      color: #000 !important;
     }
     
     .leaflet-control-layers-expanded {
@@ -446,10 +457,10 @@
     }
     
     .leaflet-control-layers-base label {
-      font-weight: 600;
+      font-weight: 700;
       font-size: 12.5px;
       padding: 3px 0;
-      color: #111;
+      color: #000;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -537,7 +548,7 @@
     }
     
     .app-modal-content {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.85);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border-radius: 16px;
@@ -559,7 +570,7 @@
       padding: 10px 12px;
       border-radius: 8px;
       border: 1px solid rgba(0, 0, 0, 0.2);
-      background: rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.65);
       margin-bottom: 16px;
       font-size: 14px;
     }
@@ -719,12 +730,12 @@
 
 <div id="app">
   
-  <!-- Заставка с крупным логотипом -->
+  <!-- Заставка с чистым круглым логотипом (без рамок и квадратов) -->
   <div id="splash-screen">
     <div class="splash-content">
-      <img src="logo.jpg" alt="Доброспас-Омск" class="splash-logo" onerror="this.src='logo.png'">
+      <img src="./icons/icon-192.png" alt="Доброспас-Омск" class="splash-logo" onerror="this.onerror=null; this.src='./logo.jpg';">
       <h1 class="splash-title">БИЛЛИНГ</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.3</p>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.4</p>
       <div class="splash-loader"><div class="splash-spinner"></div></div>
       <p class="splash-author">АВТОР: ЕРГЕР ВИТАЛИЙ, ПОЗЫВНОЙ "ВЕТЕР"</p>
     </div>
@@ -783,7 +794,7 @@
   <div id="map-container">
     <div id="map"></div>
     <div class="custom-logo-control">
-      <img src="logo.jpg" alt="Логотип Доброспас" onerror="this.src='logo.png'">
+      <img src="./icons/icon-192.png" alt="Логотип Доброспас" onerror="this.onerror=null; this.src='./logo.jpg';">
     </div>
   </div>
   
@@ -1045,7 +1056,7 @@
           <button id="btnDeletePolygon">🗑️ Удалить</button>
           <button id="btnExportPolygonGpx">📥 GPX</button>
         </div>
-        <p id="polygonStatusHint" style="font-size: 11px; color: #444; margin-top: 6px; text-align: center;">
+        <p id="polygonStatusHint" style="font-size: 11px; color: #111; margin-top: 6px; text-align: center; font-weight: 600;">
           Кликайте по карте для установки вершин
         </p>
       </div>
@@ -1083,7 +1094,7 @@
       <!-- Полный бэкап -->
       <div class="panel-block backup-panel">
         <span class="panel-title">💾 Полный бэкап</span>
-        <div style="font-size:12px; margin-bottom:8px; line-height: 1.4; color:#1b5e20;">
+        <div style="font-size:12px; margin-bottom:8px; line-height: 1.4; color:#1b5e20; font-weight: 700;">
           Вышек: <b id="statsSites">0</b> | Зон: <b id="statsFreeZones">0</b> | Полигонов: <b id="statsPolygons">0</b> | Сетка: <b id="statsGrid">0</b>
         </div>
         <div class="buttons-row">
@@ -1116,7 +1127,7 @@ const STORAGE_KEYS = {
   INPUT_FIELDS: 'billing_inputFields'
 };
 
-const DATA_VERSION = '2.5';
+const DATA_VERSION = '2.6';
 const BACKUP_SIGNATURE = 'BILLING_FULL_BACKUP_V2';
 
 const LINE_STYLES = {
@@ -1650,7 +1661,7 @@ function cancelDrawingPolygon() {
   btnToggleDrawPolygon.textContent = '✏️ Начать рисование';
   btnToggleDrawPolygon.classList.remove('active-toggle');
   polygonStatusHint.textContent = 'Кликайте по карте для установки вершин';
-  polygonStatusHint.style.color = '#444';
+  polygonStatusHint.style.color = '#111';
 }
 
 btnFinishPolygon.addEventListener('click', () => {
@@ -2463,7 +2474,7 @@ pwaInstallIcon.addEventListener('click', async () => {
     }
     deferredPrompt = null;
   } else {
-    alert('Чтобы установить: нажмите в меню браузера (⋮) → «Установить приложение» или «Добавить на главный экран».');
+    alert('Чтобы установить: нажмите в меню браузера (⋮) → «Установить приложение».');
   }
 });
 
