@@ -194,7 +194,6 @@
       transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     
-    /* Десктопная версия сайдбара */
     @media (min-width: 769px) {
       #app {
         flex-direction: row;
@@ -212,7 +211,6 @@
       }
     }
     
-    /* Мобильная версия сайдбара */
     @media (max-width: 768px) {
       #sidebar {
         position: fixed;
@@ -316,7 +314,6 @@
       font-weight: 600;
     }
     
-    /* Полупрозрачные поля ввода */
     .field-grid input,
     .field-grid select,
     #jsonFileInput {
@@ -425,7 +422,7 @@
       height: 18px;
     }
     
-    /* ========== ВЫПАДАЮЩИЙ СПИСОК ПРОВАЙДЕРОВ КАРТ (ПОЛУПРОЗРАЧНЫЙ) ========== */
+    /* ========== ВЫПАДАЮЩИЙ СПИСОК ПРОВАЙДЕРОВ КАРТ ========== */
     .leaflet-touch .leaflet-control-layers,
     .leaflet-control-layers,
     .leaflet-control-layers-expanded,
@@ -488,7 +485,6 @@
       }
     }
     
-    /* Кнопка установки PWA */
     #pwa-install-icon {
       position: fixed;
       top: 260px;
@@ -516,7 +512,6 @@
       display: none !important;
     }
     
-    /* Модальное окно запроса имени файла */
     .app-modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -577,7 +572,6 @@
       border: none;
     }
     
-    /* Тост координат */
     #coords-toast {
       position: fixed;
       top: 50%;
@@ -721,9 +715,10 @@
 
 <div id="app">
   
+  <!-- Заставка с реальным логотипом -->
   <div id="splash-screen">
     <div class="splash-content">
-      <img src="./logo.jpg" alt="Logo" class="splash-logo">
+      <img src="./logo.jpg" alt="Доброспас-Омск" class="splash-logo">
       <h1 class="splash-title">БИЛЛИНГ</h1>
       <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.1</p>
       <div class="splash-loader"><div class="splash-spinner"></div></div>
@@ -989,7 +984,6 @@
             <option value="longdash">Длинный пунктир</option>
           </select>
           
-          <!-- Ручной ввод толщины линии сетки -->
           <label for="gridLineWeight">Толщина (px)</label>
           <input id="gridLineWeight" type="number" step="0.1" min="0.5" max="20" value="1.5">
           
@@ -1029,7 +1023,6 @@
           <label for="polygonColorInput">Цвет</label>
           <input id="polygonColorInput" type="color" value="#e91e63">
           
-          <!-- Ручной ввод толщины линии полигона -->
           <label for="polygonWeightInput">Толщина (px)</label>
           <input id="polygonWeightInput" type="number" step="0.1" min="0.5" max="20" value="2.0">
         </div>
@@ -1166,6 +1159,7 @@ async function copyCoordinates(lat, lng) {
       textArea.style.position = 'fixed';
       textArea.style.left = '-9999px';
       document.body.appendChild(textArea);
+      textArea.focus();
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
@@ -1265,7 +1259,7 @@ function exportGpxString(gpxStr, defaultFileName) {
 // ======== СОСТОЯНИЕ ДАННЫХ ========
 let sites = [];
 let freeZones = [];
-let customPolygons = []; // [{ id, name, color, weight, coords: [[lat, lng], ...] }]
+let customPolygons = [];
 let gridPointsData = [];
 let currentMapLayer = 'OSM Стандартная';
 let drawnZonesVisible = false;
@@ -1530,7 +1524,6 @@ function clearGrid() {
   updateBackupStats();
 }
 
-// Экспорт сетки в GPX (Точки + Отрезки треков)
 function exportGridToGpx() {
   if (gridPoints.length === 0) {
     alert('Сначала сгенерируйте сетку');
@@ -1558,7 +1551,7 @@ function exportGridToGpx() {
   exportGpxString(gpx, 'grid.gpx');
 }
 
-// ======== РИСОВАНИЕ ПОЛИГОНОВ С ТОЛЩИНОЙ ЛИНИИ ========
+// ======== РИСОВАНИЕ ПОЛИГОНОВ ========
 const polygonSelect = document.getElementById('polygonSelect');
 const polygonNameInput = document.getElementById('polygonNameInput');
 const polygonColorInput = document.getElementById('polygonColorInput');
@@ -2457,22 +2450,18 @@ let touchStartY = 0;
 let touchCurrentY = 0;
 let isSwipingSidebar = false;
 
-// Клик по бургеру
 menuToggle.addEventListener('click', (e) => {
   e.stopPropagation();
   sidebar.classList.toggle('expanded');
 });
 
-// Клик по ручке шторки
 dragHandle.addEventListener('click', (e) => {
   e.stopPropagation();
   sidebar.classList.toggle('expanded');
 });
 
-// Свайп по ручке и верхней части шторки
 sidebar.addEventListener('touchstart', (e) => {
   if (window.innerWidth > 768) return;
-  // Свайп разрешаем от ручки или когда сайдбар свернут
   const isHandle = e.target.closest('#drag-handle');
   const isCollapsed = !sidebar.classList.contains('expanded');
   
@@ -2488,13 +2477,10 @@ sidebar.addEventListener('touchmove', (e) => {
   touchCurrentY = e.touches[0].clientY;
   const deltaY = touchCurrentY - touchStartY;
   
-  // Если тянем вниз открытый сайдбар
   if (sidebar.classList.contains('expanded') && deltaY > 35) {
     sidebar.classList.remove('expanded');
     isSwipingSidebar = false;
-  }
-  // Если тянем вверх закрытый сайдбар
-  else if (!sidebar.classList.contains('expanded') && deltaY < -35) {
+  } else if (!sidebar.classList.contains('expanded') && deltaY < -35) {
     sidebar.classList.add('expanded');
     isSwipingSidebar = false;
   }
@@ -2502,7 +2488,7 @@ sidebar.addEventListener('touchmove', (e) => {
 
 sidebar.addEventListener('touchend', () => {
   isSwipingSidebar = false;
-}, { passive: true });
+});
 
 centerBtn.addEventListener('click', (e) => {
   e.stopPropagation();
