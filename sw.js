@@ -1,6 +1,5 @@
-const CACHE_NAME = 'billing-zones-v2.0';
+const CACHE_NAME = 'billing-zones-v2.6';
 
-// Файлы для обязательного кэширования при установке
 const STATIC_CACHE = [
   './',
   './index.html',
@@ -8,13 +7,11 @@ const STATIC_CACHE = [
   './logo.jpg'
 ];
 
-// Внешние библиотеки Leaflet
 const EXTERNAL_CACHE = [
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 ];
 
-// Установка Service Worker
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -23,7 +20,7 @@ self.addEventListener('install', (event) => {
           try {
             await cache.add(url);
           } catch (err) {
-            console.warn(`[SW] Пропуск кэширования: ${url}`, err);
+            console.warn(`[SW] Пропуск ресурса: ${url}`, err);
           }
         }
         for (const url of EXTERNAL_CACHE) {
@@ -39,7 +36,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Активация Service Worker и удаление устаревших кэшей
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -51,12 +47,10 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Обработка запросов
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
-  // Обработка тайлов карты (сначала сеть, затем кэш)
   if (url.hostname.includes('tile') || 
       url.hostname.includes('openstreetmap') ||
       url.hostname.includes('arcgisonline') ||
@@ -80,7 +74,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Для статических ресурсов приложения
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const fetchPromise = fetch(event.request).then((networkResponse) => {
