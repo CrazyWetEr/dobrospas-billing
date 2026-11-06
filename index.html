@@ -5,18 +5,19 @@
   <title>Анализ биллинга и построение зон — Автор: Ергер Виталий, позывной "Ветер"</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   
-  <!-- Иконка вкладки браузера (Favicon) -->
-  <link rel="icon" type="image/jpeg" href="./logo.jpg">
-  <link rel="shortcut icon" href="./logo.jpg">
+  <!-- Иконка вкладки браузера (Favicon) с резервными путями -->
+  <link rel="icon" type="image/jpeg" href="logo.jpg">
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="shortcut icon" href="logo.jpg">
+  <link rel="apple-touch-icon" href="logo.jpg">
   
   <!-- PWA мета-теги -->
-  <link rel="manifest" href="./manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#2196f3">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Биллинг">
-  <link rel="apple-touch-icon" href="./logo.jpg">
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
@@ -46,7 +47,6 @@
       overflow: hidden;
     }
 
-    /* Карта всегда подложка на весь экран */
     #map-container {
       position: absolute;
       top: 0;
@@ -62,14 +62,14 @@
       background: #ddd;
     }
     
-    /* ========== ЗАСТАВКА (SPLASH SCREEN) ========== */
+    /* ========== ЗАСТАВКА (КРУПНЫЙ ЛОГОТИП) ========== */
     #splash-screen {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(135deg, #101426 0%, #16213e 50%, #0f3460 100%);
+      background: linear-gradient(135deg, #0d111e 0%, #16213e 50%, #0a2647 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -90,38 +90,41 @@
     .splash-content {
       text-align: center;
       color: white;
-      padding: 20px;
+      padding: 24px;
+      max-width: 90vw;
     }
     
     .splash-logo {
-      width: 130px;
-      height: 130px;
-      margin-bottom: 18px;
-      animation: splash-pulse 2s ease-in-out infinite;
-      border-radius: 50%;
-      border: 2px solid rgba(33, 150, 243, 0.7);
-      box-shadow: 0 10px 40px rgba(33, 150, 243, 0.5);
-      object-fit: cover;
+      width: 200px;
+      height: 200px;
+      margin-bottom: 20px;
+      animation: splash-pulse 2.2s ease-in-out infinite;
+      border-radius: 16px;
+      border: 3px solid rgba(33, 150, 243, 0.8);
+      box-shadow: 0 12px 50px rgba(33, 150, 243, 0.6);
+      object-fit: contain;
       background: #000;
+      display: inline-block;
     }
     
     @keyframes splash-pulse {
       0%, 100% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.05); opacity: 0.9; }
+      50% { transform: scale(1.04); opacity: 0.92; }
     }
     
     .splash-title {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: 1px;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
       margin: 0 0 8px 0;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+      text-shadow: 0 2px 14px rgba(0,0,0,0.6);
     }
     
     .splash-subtitle {
-      font-size: 13px;
-      opacity: 0.85;
+      font-size: 13.5px;
+      opacity: 0.9;
       margin: 0 0 24px 0;
+      letter-spacing: 0.5px;
     }
     
     .splash-loader {
@@ -131,8 +134,8 @@
     }
     
     .splash-spinner {
-      width: 36px;
-      height: 36px;
+      width: 40px;
+      height: 40px;
       border: 3px solid rgba(255,255,255,0.2);
       border-top-color: #2196f3;
       border-radius: 50%;
@@ -144,9 +147,10 @@
     }
     
     .splash-author {
-      font-size: 12px;
-      opacity: 0.6;
+      font-size: 12.5px;
+      opacity: 0.7;
       margin: 0;
+      font-weight: 500;
     }
     
     /* Мобильная панель быстрых кнопок */
@@ -163,7 +167,7 @@
       width: 54px;
       height: 54px;
       border-radius: 50%;
-      background: rgba(33, 150, 243, 0.9);
+      background: rgba(33, 150, 243, 0.92);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       color: white;
@@ -179,7 +183,7 @@
     }
     
     .mobile-btn.secondary {
-      background: rgba(76, 175, 80, 0.9);
+      background: rgba(76, 175, 80, 0.92);
     }
     
     .mobile-btn:active {
@@ -207,6 +211,11 @@
     }
     
     @media (max-width: 768px) {
+      .splash-logo {
+        width: 160px;
+        height: 160px;
+      }
+      
       #sidebar {
         top: auto;
         bottom: 0;
@@ -216,7 +225,7 @@
         max-width: 100%;
         height: 74vh;
         border-right: none;
-        border-top: 2px solid rgba(33, 150, 243, 0.8);
+        border-top: 2px solid rgba(33, 150, 243, 0.85);
         border-radius: 22px 22px 0 0;
         box-shadow: 0 -8px 25px rgba(0,0,0,0.25);
         transform: translateY(calc(100% - 68px));
@@ -417,7 +426,7 @@
       height: 18px;
     }
     
-    /* ========== ВЫПАДАЮЩИЙ СПИСОК ПРОВАЙДЕРОВ КАРТ (ПОЛУПРОЗРАЧНЫЙ) ========== */
+    /* ========== ВЫПАДАЮЩИЙ СПИСОК ПРОВАЙДЕРОВ КАРТ ========== */
     .leaflet-touch .leaflet-control-layers,
     .leaflet-control-layers,
     .leaflet-control-layers-expanded,
@@ -710,12 +719,12 @@
 
 <div id="app">
   
-  <!-- Заставка с логотипом -->
+  <!-- Заставка с крупным логотипом -->
   <div id="splash-screen">
     <div class="splash-content">
-      <img src="./logo.jpg" alt="Доброспас-Омск" class="splash-logo" onerror="this.src='logo.png'">
+      <img src="logo.jpg" alt="Доброспас-Омск" class="splash-logo" onerror="this.src='logo.png'">
       <h1 class="splash-title">БИЛЛИНГ</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.2</p>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.3</p>
       <div class="splash-loader"><div class="splash-spinner"></div></div>
       <p class="splash-author">АВТОР: ЕРГЕР ВИТАЛИЙ, ПОЗЫВНОЙ "ВЕТЕР"</p>
     </div>
@@ -774,7 +783,7 @@
   <div id="map-container">
     <div id="map"></div>
     <div class="custom-logo-control">
-      <img src="./logo.jpg" alt="Логотип Доброспас" onerror="this.src='logo.png'">
+      <img src="logo.jpg" alt="Логотип Доброспас" onerror="this.src='logo.png'">
     </div>
   </div>
   
@@ -1107,7 +1116,7 @@ const STORAGE_KEYS = {
   INPUT_FIELDS: 'billing_inputFields'
 };
 
-const DATA_VERSION = '2.4';
+const DATA_VERSION = '2.5';
 const BACKUP_SIGNATURE = 'BILLING_FULL_BACKUP_V2';
 
 const LINE_STYLES = {
@@ -1391,10 +1400,9 @@ function makeAzimuthLine(lat, lng, azimuth, radius) {
   return [[lat, lng], [lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]];
 }
 
-// ======== ПОСТРОЕНИЕ ЗОН И СЕКТОРОВ ========
+// ======== ПОСТРОЕНИЕ СЕКТОРОВ ========
 function drawSectorsForSite(site) {
   if (!site || !site.sectors || !site.lat || !site.lng) return;
-  // Сначала убираем старые слои этой вышки, если были
   const siteSeed = typeof site.id === 'string' ? site.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) : Number(site.id) || 1;
   
   site.sectors.forEach(sec => {
@@ -1985,7 +1993,6 @@ function rebuildSectorsForSite(site, count) {
   }
 }
 
-// Кнопка быстрого построения секторов текущей вышки
 btnDrawCurrentSiteSectors.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site) {
