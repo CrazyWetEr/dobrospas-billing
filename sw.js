@@ -1,10 +1,13 @@
-const CACHE_NAME = 'billing-zones-v3.5';
+const CACHE_NAME = 'billing-zones-v4.0';
 
 const STATIC_CACHE = [
   './',
   './index.html',
   './manifest.json',
-  './logo.jpg'
+  './logo.jpg',
+  './logo.png',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 const EXTERNAL_CACHE = [
@@ -20,7 +23,7 @@ self.addEventListener('install', (event) => {
           try {
             await cache.add(url);
           } catch (err) {
-            console.warn(`[SW] Пропуск ресурса: ${url}`, err);
+            console.warn(`[SW] Пропуск ресурса: ${url}`);
           }
         }
         for (const url of EXTERNAL_CACHE) {
@@ -28,7 +31,7 @@ self.addEventListener('install', (event) => {
             const resp = await fetch(url, { mode: 'cors' });
             if (resp.ok) await cache.put(url, resp);
           } catch (err) {
-            console.warn(`[SW] Внешний ресурс недоступен: ${url}`, err);
+            console.warn(`[SW] Внешний ресурс недоступен: ${url}`);
           }
         }
       })
