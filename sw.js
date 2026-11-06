@@ -1,4 +1,4 @@
-const CACHE_NAME = 'billing-zones-v2.6';
+const CACHE_NAME = 'billing-zones-v3.0';
 
 const STATIC_CACHE = [
   './',
