@@ -7,12 +7,12 @@
   
   <!-- PWA мета-теги -->
   <link rel="manifest" href="./manifest.json">
-  <meta name="theme-color" content="#222831">
+  <meta name="theme-color" content="#2196f3">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Биллинг">
-  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./logo.jpg">
   
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
@@ -32,6 +32,7 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 14px;
       color: #222;
+      background: transparent;
     }
     
     #app {
@@ -41,6 +42,21 @@
       width: 100vw;
       overflow: hidden;
       position: relative;
+    }
+
+    #map-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #ddd;
     }
     
     /* ========== SPLASH SCREEN ========== */
@@ -79,8 +95,9 @@
       height: 120px;
       margin-bottom: 20px;
       animation: splash-pulse 2s ease-in-out infinite;
-      border-radius: 24px;
+      border-radius: 50%;
       box-shadow: 0 10px 40px rgba(33, 150, 243, 0.4);
+      object-fit: cover;
     }
     
     @keyframes splash-pulse {
@@ -89,27 +106,27 @@
     }
     
     .splash-title {
-      font-size: 28px;
+      font-size: 26px;
       font-weight: 700;
-      margin: 0 0 10px 0;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      margin: 0 0 8px 0;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.4);
     }
     
     .splash-subtitle {
-      font-size: 14px;
-      opacity: 0.8;
-      margin: 0 0 30px 0;
+      font-size: 13px;
+      opacity: 0.85;
+      margin: 0 0 25px 0;
     }
     
     .splash-loader {
       display: flex;
       justify-content: center;
-      margin-bottom: 30px;
+      margin-bottom: 25px;
     }
     
     .splash-spinner {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border: 3px solid rgba(255,255,255,0.2);
       border-top-color: #2196f3;
       border-radius: 50%;
@@ -122,7 +139,7 @@
     
     .splash-author {
       font-size: 12px;
-      opacity: 0.5;
+      opacity: 0.6;
       margin: 0;
     }
     
@@ -130,21 +147,23 @@
     #mobile-toolbar {
       display: none;
       position: fixed;
-      bottom: 20px;
+      bottom: 24px;
       right: 20px;
       z-index: 1000;
-      gap: 10px;
+      gap: 12px;
     }
     
     .mobile-btn {
-      width: 56px;
-      height: 56px;
+      width: 54px;
+      height: 54px;
       border-radius: 50%;
-      background: #2196f3;
+      background: rgba(33, 150, 243, 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       color: white;
-      border: none;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      font-size: 24px;
+      border: 1px solid rgba(255,255,255,0.4);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      font-size: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -154,49 +173,62 @@
     }
     
     .mobile-btn.secondary {
-      background: #4caf50;
+      background: rgba(76, 175, 80, 0.9);
     }
     
     .mobile-btn:active {
-      transform: scale(0.95);
+      transform: scale(0.92);
     }
     
-    /* Сайдбар - адаптивный */
+    /* ========== САЙДБАР: ПОЛУПРОЗРАЧНОСТЬ ========== */
     #sidebar {
-      width: 100%;
-      max-width: 430px;
-      background: rgba(245, 245, 247, 0.88);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-right: 1px solid rgba(208, 208, 213, 0.7);
+      position: relative;
+      z-index: 900;
+      background: rgba(245, 245, 247, 0.55) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 2px 0 20px rgba(0, 0, 0, 0.08);
       overflow-y: auto;
       padding: 10px;
-      transition: transform 0.3s ease;
-      z-index: 900;
+      transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     
-    /* Мобильная версия */
-    @media (max-width: 768px) {
+    /* Десктопная версия сайдбара */
+    @media (min-width: 769px) {
       #app {
-        flex-direction: column;
+        flex-direction: row;
       }
-      
+      #sidebar {
+        width: 410px;
+        min-width: 340px;
+        max-width: 450px;
+        height: 100vh;
+      }
+      #map-container {
+        position: relative;
+        flex: 1;
+        width: auto;
+      }
+    }
+    
+    /* Мобильная версия сайдбара */
+    @media (max-width: 768px) {
       #sidebar {
         position: fixed;
         bottom: 0;
         left: 0;
         right: 0;
+        width: 100%;
         max-width: 100%;
-        height: 65vh;
+        height: 72vh;
         border-right: none;
-        border-top: 2px solid #2196f3;
-        border-radius: 20px 20px 0 0;
-        box-shadow: 0 -5px 20px rgba(0,0,0,0.15);
-        transform: translateY(calc(100% - 70px));
-        transition: transform 0.3s ease;
-        padding-bottom: 80px;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+        border-top: 2px solid rgba(33, 150, 243, 0.8);
+        border-radius: 22px 22px 0 0;
+        box-shadow: 0 -8px 25px rgba(0,0,0,0.2);
+        transform: translateY(calc(100% - 68px));
+        padding-bottom: 90px;
+        touch-action: pan-y;
       }
       
       #sidebar.expanded {
@@ -207,34 +239,22 @@
         position: sticky;
         top: 0;
         width: 100%;
-        height: 30px;
+        height: 36px;
         display: flex;
         justify-content: center;
         align-items: center;
-        background: rgba(245, 245, 247, 0.95);
-        border-radius: 20px 20px 0 0;
+        background: transparent;
         z-index: 10;
         margin-top: -10px;
-        padding-top: 5px;
-        cursor: pointer;
+        cursor: grab;
       }
       
       #sidebar .drag-handle::before {
         content: '';
-        width: 60px;
-        height: 5px;
-        background: #bbb;
+        width: 64px;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.35);
         border-radius: 10px;
-      }
-      
-      #map-container {
-        height: 100vh;
-        width: 100vw;
-      }
-      
-      #map {
-        height: 100%;
-        width: 100%;
       }
       
       #mobile-toolbar {
@@ -243,75 +263,37 @@
       }
       
       .field-grid {
-        grid-template-columns: 85px 1fr;
-        font-size: 13px;
+        grid-template-columns: 85px 1fr !important;
       }
       
       input, select, button {
+        min-height: 42px;
         font-size: 15px !important;
-        padding: 10px !important;
-        min-height: 44px;
-        border-radius: 8px;
-      }
-      
-      input[type="color"] {
-        min-height: 44px !important;
-        padding: 4px !important;
-      }
-      
-      .buttons-row button {
-        flex: 1 1 calc(50% - 4px);
-        min-width: 120px;
       }
     }
     
-    /* Десктопная версия */
-    @media (min-width: 769px) {
-      #app {
-        flex-direction: row;
-      }
-      
-      #sidebar {
-        width: 400px;
-        min-width: 340px;
-        max-width: 440px;
-        height: 100vh;
-      }
-      
-      #map-container {
-        flex: 1;
-        height: 100vh;
-      }
-    }
-    
-    #map {
-      width: 100%;
-      height: 100%;
-      background: #ddd;
-    }
-    
-    /* Полупрозрачные панели и контролы ввода */
+    /* ========== ПОЛУПРОЗРАЧНЫЕ ПАНЕЛИ И ПОЛЯ ВВОДА ========== */
     .panel-block {
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 12px;
-      background: rgba(255, 255, 255, 0.72);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      border: 1px solid rgba(220, 220, 230, 0.7);
-      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      margin-bottom: 10px;
     }
     
     .panel-block.backup-panel {
-      background: linear-gradient(135deg, rgba(232, 245, 233, 0.85) 0%, rgba(200, 230, 201, 0.85) 100%);
-      border-color: rgba(76, 175, 80, 0.6);
+      background: linear-gradient(135deg, rgba(232, 245, 233, 0.55) 0%, rgba(200, 230, 201, 0.55) 100%) !important;
+      border-color: rgba(76, 175, 80, 0.4);
     }
     
     .panel-title {
-      font-weight: 600;
+      font-weight: 700;
       margin-bottom: 10px;
-      font-size: 14px;
-      color: #222;
+      font-size: 13.5px;
+      color: #1a1a2e;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -319,61 +301,63 @@
     
     .field-grid {
       display: grid;
-      grid-template-columns: 90px 1fr;
-      gap: 8px;
+      grid-template-columns: 95px 1fr;
+      gap: 7px;
       align-items: center;
       margin-bottom: 8px;
     }
     
     .field-grid label {
       text-align: right;
-      padding-right: 8px;
+      padding-right: 6px;
       white-space: nowrap;
-      color: #444;
-      font-size: 13px;
+      color: #333;
+      font-size: 12.5px;
+      font-weight: 600;
     }
     
+    /* Полупрозрачные поля ввода */
     .field-grid input,
     .field-grid select,
     #jsonFileInput {
       width: 100%;
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1px solid rgba(160, 160, 175, 0.5);
-      background: rgba(255, 255, 255, 0.65);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      padding: 6px 10px;
+      border-radius: 7px;
+      border: 1px solid rgba(0, 0, 0, 0.16);
+      background: rgba(255, 255, 255, 0.5) !important;
+      backdrop-filter: blur(6px) !important;
+      -webkit-backdrop-filter: blur(6px) !important;
       font-size: 13px;
-      color: #222;
+      color: #111;
+      font-weight: 500;
       transition: all 0.2s;
     }
     
     .field-grid input:focus,
     .field-grid select:focus {
       outline: none;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.85) !important;
       border-color: #2196f3;
-      box-shadow: 0 0 6px rgba(33, 150, 243, 0.35);
+      box-shadow: 0 0 8px rgba(33, 150, 243, 0.3);
     }
     
     .field-grid input[type="color"] {
-      height: 36px;
+      height: 38px;
       padding: 2px;
       cursor: pointer;
-      background: rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.5) !important;
     }
     
     .line-preview {
-      height: 20px;
-      background: rgba(245, 245, 245, 0.65);
-      border-radius: 4px;
+      height: 22px;
+      background: rgba(255, 255, 255, 0.4);
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
       padding: 0 10px;
       margin-top: 8px;
-      overflow: hidden;
-      border: 1px solid rgba(200, 200, 200, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.5);
     }
     
     .line-preview svg {
@@ -384,58 +368,56 @@
     .buttons-row {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 7px;
       margin-top: 8px;
     }
     
     button {
-      padding: 7px 11px;
-      border-radius: 6px;
-      border: 1px solid rgba(176, 176, 192, 0.7);
-      background: rgba(240, 240, 247, 0.8);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
+      padding: 7px 12px;
+      border-radius: 7px;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
+      color: #222;
       cursor: pointer;
       transition: all 0.2s;
     }
     
     button:hover {
-      background: rgba(226, 226, 240, 0.95);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
     
     button:active {
-      transform: scale(0.98);
+      transform: scale(0.97);
     }
     
     button.backup-btn {
-      background: linear-gradient(135deg, #4caf50, #2e7d32);
+      background: linear-gradient(135deg, rgba(76, 175, 80, 0.9), rgba(46, 125, 50, 0.9));
       color: white;
       border: none;
-      font-weight: 600;
     }
     
     button.restore-btn {
-      background: linear-gradient(135deg, #2196f3, #1565c0);
+      background: linear-gradient(135deg, rgba(33, 150, 243, 0.9), rgba(21, 101, 192, 0.9));
       color: white;
       border: none;
-      font-weight: 600;
     }
     
     button.active-toggle {
-      background: #c8e6c9;
-      border-color: #4caf50;
-      color: #1b5e20;
-      font-weight: 600;
+      background: rgba(255, 64, 129, 0.85);
+      color: white;
+      border-color: transparent;
     }
     
     .inline-checkbox {
       display: flex;
       align-items: center;
       gap: 8px;
-      justify-content: flex-start;
+      font-weight: 600;
     }
     
     .inline-checkbox input[type="checkbox"] {
@@ -443,26 +425,33 @@
       height: 18px;
     }
     
-    /* Полупрозрачный список провайдеров карт */
-    .leaflet-control-layers {
-      border-radius: 10px !important;
-      background: rgba(255, 255, 255, 0.65) !important;
-      backdrop-filter: blur(10px) !important;
-      -webkit-backdrop-filter: blur(10px) !important;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+    /* ========== ВЫПАДАЮЩИЙ СПИСОК ПРОВАЙДЕРОВ КАРТ (ПОЛУПРОЗРАЧНЫЙ) ========== */
+    .leaflet-touch .leaflet-control-layers,
+    .leaflet-control-layers,
+    .leaflet-control-layers-expanded,
+    .leaflet-control-layers-base,
+    .leaflet-control-layers-overlays {
+      background: rgba(255, 255, 255, 0.45) !important;
+      backdrop-filter: blur(14px) !important;
+      -webkit-backdrop-filter: blur(14px) !important;
+      border-radius: 12px !important;
       border: 1px solid rgba(255, 255, 255, 0.6) !important;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15) !important;
+      color: #111 !important;
     }
     
     .leaflet-control-layers-expanded {
       padding: 10px 14px !important;
-      background: rgba(255, 255, 255, 0.72) !important;
     }
     
     .leaflet-control-layers-base label {
-      padding: 4px 0;
-      font-size: 13px;
+      font-weight: 600;
+      font-size: 12.5px;
+      padding: 3px 0;
       color: #111;
-      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
     
     .leaflet-control-attribution {
@@ -471,41 +460,42 @@
     
     .custom-logo-control {
       position: absolute !important;
-      top: 20px !important;
-      right: 20px !important;
+      top: 15px !important;
+      right: 15px !important;
       z-index: 1000 !important;
       background: transparent;
       pointer-events: none;
-      max-width: 600px;
+      max-width: 500px;
     }
     
     .custom-logo-control img {
       display: block;
       max-width: 100%;
       height: auto;
-      max-height: 240px;
+      max-height: 220px;
       opacity: 0.35;
-      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.2));
     }
     
     @media (max-width: 768px) {
       .custom-logo-control {
-        top: 15px !important;
-        right: 15px !important;
-        max-width: 320px;
+        top: 12px !important;
+        right: 12px !important;
+        max-width: 280px;
       }
       .custom-logo-control img {
-        max-height: 140px;
+        max-height: 120px;
       }
     }
     
+    /* Кнопка установки PWA */
     #pwa-install-icon {
       position: fixed;
-      top: 270px;
-      right: 25px;
+      top: 260px;
+      right: 20px;
       z-index: 1000;
-      width: 50px;
-      height: 50px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       background: linear-gradient(135deg, #2196f3, #1976d2);
       color: white;
@@ -526,13 +516,13 @@
       display: none !important;
     }
     
-    /* Общие модальные окна */
+    /* Модальное окно запроса имени файла */
     .app-modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(5px);
-      -webkit-backdrop-filter: blur(5px);
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       z-index: 10005;
       display: none;
       align-items: center;
@@ -548,29 +538,31 @@
     }
     
     .app-modal-content {
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(12px);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       border-radius: 16px;
-      max-width: 420px;
+      max-width: 380px;
       width: 100%;
       padding: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      position: relative;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.7);
     }
     
     .app-modal-content h3 {
       margin-bottom: 12px;
-      font-size: 18px;
-      color: #222;
+      font-size: 17px;
+      color: #111;
     }
     
     .app-modal-content input[type="text"] {
       width: 100%;
       padding: 10px 12px;
       border-radius: 8px;
-      border: 1px solid #bbb;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      background: rgba(255, 255, 255, 0.7);
       margin-bottom: 16px;
-      font-size: 15px;
+      font-size: 14px;
     }
     
     .app-modal-buttons {
@@ -579,30 +571,24 @@
       gap: 10px;
     }
     
-    .app-modal-buttons button {
-      min-width: 90px;
-      padding: 8px 16px;
-    }
-    
     .btn-primary {
       background: #2196f3;
       color: white;
       border: none;
     }
-    .btn-primary:hover { background: #1976d2; }
     
-    /* Окно координат */
+    /* Тост координат */
     #coords-toast {
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%) scale(0.85);
-      background: rgba(18, 22, 33, 0.92);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: rgba(20, 24, 38, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       color: white;
-      padding: 22px 26px;
-      border-radius: 16px;
+      padding: 22px 24px;
+      border-radius: 18px;
       font-size: 15px;
       z-index: 10001;
       opacity: 0;
@@ -610,7 +596,7 @@
       pointer-events: none;
       text-align: center;
       box-shadow: 0 15px 50px rgba(0,0,0,0.5);
-      max-width: 92vw;
+      max-width: 90vw;
       min-width: 290px;
     }
     
@@ -622,7 +608,7 @@
     
     #coords-toast .coords-value {
       font-family: monospace;
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
       color: #4caf50;
       display: block;
@@ -643,7 +629,7 @@
     
     .coords-btn {
       width: 100%;
-      padding: 10px 16px;
+      padding: 10px 14px;
       border-radius: 8px;
       border: none;
       font-weight: 600;
@@ -654,7 +640,6 @@
       background: #2196f3;
       color: white;
     }
-    .btn-grid-start:hover { background: #1976d2; }
     
     #coords-overlay {
       position: fixed;
@@ -681,16 +666,16 @@
     }
     #long-press-indicator.active {
       opacity: 1;
-      transform: translate(-50%, -50%) scale(1.4);
+      transform: translate(-50%, -50%) scale(1.35);
     }
     
     #save-indicator {
       position: fixed;
       bottom: 20px;
       left: 20px;
-      background: rgba(76, 175, 80, 0.95);
+      background: rgba(76, 175, 80, 0.92);
       color: white;
-      padding: 10px 18px;
+      padding: 9px 16px;
       border-radius: 8px;
       font-size: 13px;
       z-index: 1000;
@@ -700,14 +685,14 @@
       pointer-events: none;
     }
     #save-indicator.show { opacity: 1; transform: translateY(0); }
-    #save-indicator.error { background: rgba(244, 67, 54, 0.95); }
+    #save-indicator.error { background: rgba(244, 67, 54, 0.92); }
     
     .autosave-badge {
       position: fixed;
       top: 10px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(33, 150, 243, 0.9);
+      background: rgba(33, 150, 243, 0.88);
       color: white;
       padding: 4px 14px;
       border-radius: 20px;
@@ -721,10 +706,10 @@
     
     .grid-point-marker { background: transparent; cursor: pointer !important; }
     .grid-point-label {
-      color: #222;
+      color: #111;
       font-weight: bold;
       font-size: 11px;
-      background: rgba(255,255,255,0.78);
+      background: rgba(255,255,255,0.75);
       backdrop-filter: blur(2px);
       padding: 1px 4px;
       border-radius: 3px;
@@ -736,12 +721,11 @@
 
 <div id="app">
   
-  <!-- SPLASH SCREEN -->
   <div id="splash-screen">
     <div class="splash-content">
-      <img src="./icons/icon-192.png" alt="Logo" class="splash-logo">
+      <img src="./logo.jpg" alt="Logo" class="splash-logo">
       <h1 class="splash-title">БИЛЛИНГ</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.0</p>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.1</p>
       <div class="splash-loader"><div class="splash-spinner"></div></div>
       <p class="splash-author">АВТОР: ЕРГЕР ВИТАЛИЙ, ПОЗЫВНОЙ "ВЕТЕР"</p>
     </div>
@@ -751,8 +735,8 @@
   
   <!-- Окно координат -->
   <div id="coords-toast">
-    <span style="font-size:36px; display:block; margin-bottom:6px;">📋</span>
-    <div style="font-size:13px; opacity:0.8;">Координаты скопированы</div>
+    <span style="font-size:36px; display:block; margin-bottom:4px;">📋</span>
+    <div style="font-size:13px; opacity:0.85;">Координаты скопированы</div>
     <span class="coords-value" id="toastCoordsValue"></span>
     <div class="coords-actions">
       <button class="coords-btn btn-grid-start" id="btnToastSetAsGridStart">
@@ -764,11 +748,11 @@
     </div>
   </div>
   
-  <!-- Модальное окно запроса имени файла GPX -->
+  <!-- Запрос имени GPX файла -->
   <div id="filename-modal" class="app-modal">
     <div class="app-modal-content">
-      <h3 id="filenameModalTitle">Имя GPX файла</h3>
-      <input type="text" id="filenameInput" placeholder="Введите имя файла (без .gpx)">
+      <h3 id="filenameModalTitle">Сохранение GPX</h3>
+      <input type="text" id="filenameInput" placeholder="Имя файла (без .gpx)">
       <div class="app-modal-buttons">
         <button onclick="closeFilenameModal()">Отмена</button>
         <button class="btn-primary" id="btnConfirmExportGpx">Скачать</button>
@@ -788,7 +772,7 @@
     </svg>
   </button>
   
-  <!-- Мобильная панель инструментов -->
+  <!-- Мобильные кнопки -->
   <div id="mobile-toolbar">
     <button class="mobile-btn" id="mobile-center-btn" title="Моё местоположение">📍</button>
     <button class="mobile-btn secondary" id="mobile-menu-toggle" title="Меню">☰</button>
@@ -796,8 +780,9 @@
   
   <input type="file" id="backupFileInput" accept=".backup,.json" style="display:none;">
   
+  <!-- Сайдбар -->
   <div id="sidebar">
-    <div class="drag-handle" id="drag-handle"></div>
+    <div class="drag-handle" id="drag-handle" title="Потяните или нажмите"></div>
     <div id="controls">
       
       <!-- Поиск по адресу -->
@@ -948,7 +933,7 @@
           <label for="gridModeSelect">Режим</label>
           <select id="gridModeSelect">
             <option value="screen">Активный экран</option>
-            <option value="custom">Указать координаты начала</option>
+            <option value="custom">Координаты начала</option>
           </select>
         </div>
         
@@ -960,10 +945,10 @@
           <input id="gridStartLng" type="number" step="0.00001" placeholder="73.37000">
           
           <label for="gridColsCount">Кол-во X</label>
-          <input id="gridColsCount" type="number" value="10" min="2" max="50">
+          <input id="gridColsCount" type="number" value="10" min="2" max="60">
           
           <label for="gridRowsCount">Кол-во Y</label>
-          <input id="gridRowsCount" type="number" value="10" min="2" max="50">
+          <input id="gridRowsCount" type="number" value="10" min="2" max="60">
         </div>
         
         <div class="field-grid">
@@ -1004,15 +989,9 @@
             <option value="longdash">Длинный пунктир</option>
           </select>
           
-          <label for="gridLineWeight">Толщина</label>
-          <select id="gridLineWeight">
-            <option value="0.5">0.5 px</option>
-            <option value="1">1 px</option>
-            <option value="1.5" selected>1.5 px</option>
-            <option value="2">2 px</option>
-            <option value="2.5">2.5 px</option>
-            <option value="3">3 px</option>
-          </select>
+          <!-- Ручной ввод толщины линии сетки -->
+          <label for="gridLineWeight">Толщина (px)</label>
+          <input id="gridLineWeight" type="number" step="0.1" min="0.5" max="20" value="1.5">
           
           <label for="gridLineOpacity">Прозрачн.</label>
           <select id="gridLineOpacity">
@@ -1035,9 +1014,6 @@
           <button id="btnClearGrid">🧹 Очистить</button>
           <button id="btnExportGridGpx">📥 GPX</button>
         </div>
-        <p style="font-size: 11px; color: #555; margin-top: 8px; text-align: center;">
-          💡 Клик по точке карты позволяет задать её началом сетки
-        </p>
       </div>
       
       <!-- Рисование полигонов -->
@@ -1048,19 +1024,23 @@
           <select id="polygonSelect"></select>
           
           <label for="polygonNameInput">Название</label>
-          <input id="polygonNameInput" type="text" placeholder="Название зоны/поиска">
+          <input id="polygonNameInput" type="text" placeholder="Зона поиска">
           
           <label for="polygonColorInput">Цвет</label>
           <input id="polygonColorInput" type="color" value="#e91e63">
+          
+          <!-- Ручной ввод толщины линии полигона -->
+          <label for="polygonWeightInput">Толщина (px)</label>
+          <input id="polygonWeightInput" type="number" step="0.1" min="0.5" max="20" value="2.0">
         </div>
         <div class="buttons-row">
           <button id="btnToggleDrawPolygon">✏️ Начать рисование</button>
           <button id="btnFinishPolygon">💾 Завершить</button>
           <button id="btnDeletePolygon">🗑️ Удалить</button>
-          <button id="btnExportPolygonGpx">📥 Экспорт GPX</button>
+          <button id="btnExportPolygonGpx">📥 GPX</button>
         </div>
-        <p id="polygonStatusHint" style="font-size: 11px; color: #666; margin-top: 6px; text-align: center;">
-          Кликайте по карте для добавления вершин
+        <p id="polygonStatusHint" style="font-size: 11px; color: #555; margin-top: 6px; text-align: center;">
+          Кликайте по карте для установки вершин
         </p>
       </div>
       
@@ -1073,11 +1053,11 @@
           <button id="btnClearAll">🗑️ Очистить всё</button>
         </div>
         <div style="margin-top: 8px;">
-          <input id="jsonFileInput" type="file" accept=".json" style="width: 100%;">
+          <input id="jsonFileInput" type="file" accept=".json">
         </div>
       </div>
       
-      <!-- GPX Экспорт зон и азимутов -->
+      <!-- Экспорт GPX -->
       <div class="panel-block">
         <span class="panel-title">🎯 Экспорт GPX</span>
         <div class="buttons-row">
@@ -1097,8 +1077,8 @@
       <!-- Полный бэкап -->
       <div class="panel-block backup-panel">
         <span class="panel-title">💾 Полный бэкап</span>
-        <div style="font-size:12px; margin-bottom:8px; line-height: 1.4;">
-          Вышек: <b id="statsSites">0</b> | Зон: <b id="statsFreeZones">0</b> | Полигонов: <b id="statsPolygons">0</b> | Точек сетки: <b id="statsGrid">0</b>
+        <div style="font-size:12px; margin-bottom:8px; line-height: 1.4; color:#1b5e20;">
+          Вышек: <b id="statsSites">0</b> | Зон: <b id="statsFreeZones">0</b> | Полигонов: <b id="statsPolygons">0</b> | Сетка: <b id="statsGrid">0</b>
         </div>
         <div class="buttons-row">
           <button id="btnFullBackup" class="backup-btn">📦 Создать бэкап</button>
@@ -1112,7 +1092,7 @@
   <div id="map-container">
     <div id="map"></div>
     <div class="custom-logo-control">
-      <img src="logo.jpg" alt="Логотип Доброспас" onerror="this.src='logo.png';">
+      <img src="logo.jpg" alt="Логотип Доброспас">
     </div>
   </div>
 </div>
@@ -1120,7 +1100,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
 
 <script>
-// ======== ХРАНИЛИЩЕ ========
+// ======== ХРАНИЛИЩЕ И КОНСТАНТЫ ========
 const STORAGE_KEYS = {
   SITES: 'billing_sites',
   FREE_ZONES: 'billing_freeZones',
@@ -1134,11 +1114,10 @@ const STORAGE_KEYS = {
   AZIMUTH_LINES: 'billing_azimuthLines',
   DRAWN_ZONES: 'billing_drawnZones',
   SEARCH_MARKER: 'billing_searchMarker',
-  ADDRESS_INPUT: 'billing_addressInput',
   INPUT_FIELDS: 'billing_inputFields'
 };
 
-const DATA_VERSION = '2.2';
+const DATA_VERSION = '2.3';
 const BACKUP_SIGNATURE = 'BILLING_FULL_BACKUP_V2';
 
 const LINE_STYLES = {
@@ -1166,14 +1145,14 @@ function hideSplashScreen() {
     setTimeout(() => splashScreen.classList.add('removed'), 500);
   }
 }
-window.addEventListener('load', () => setTimeout(hideSplashScreen, 1000));
+window.addEventListener('load', () => setTimeout(hideSplashScreen, 900));
 setTimeout(hideSplashScreen, 3000);
 
 function formatCoords(lat, lng) {
   return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 }
 
-async function copyCoordinates(lat, lng, source = 'карты') {
+async function copyCoordinates(lat, lng) {
   const coordsString = formatCoords(lat, lng);
   lastCopiedLat = lat;
   lastCopiedLng = lng;
@@ -1191,19 +1170,16 @@ async function copyCoordinates(lat, lng, source = 'карты') {
       document.execCommand('copy');
       document.body.removeChild(textArea);
     }
-    showCoordsToast(coordsString);
-    return true;
-  } catch (err) {
-    showCoordsToast(coordsString);
-    return false;
-  }
+  } catch (err) {}
+  
+  showCoordsToast(coordsString);
 }
 
 function showCoordsToast(coords) {
   toastCoordsValue.textContent = coords;
   coordsOverlay.classList.add('show');
   coordsToast.classList.add('show');
-  if (navigator.vibrate) navigator.vibrate(50);
+  if (navigator.vibrate) navigator.vibrate(40);
 }
 
 function closeCoordsToast() {
@@ -1243,7 +1219,7 @@ function showAutosaveBadge() {
   setTimeout(() => autosaveBadge.classList.remove('show'), 800);
 }
 
-// ======== ДИАЛОГ ВВОДА ИМЕНИ GPX ФАЙЛА ========
+// ======== ДИАЛОГ ЗАПРОСА ИМЕНИ ФАЙЛА GPX ========
 let pendingExportAction = null;
 const filenameModal = document.getElementById('filename-modal');
 const filenameInput = document.getElementById('filenameInput');
@@ -1273,9 +1249,7 @@ btnConfirmExportGpx.addEventListener('click', () => {
 });
 
 filenameInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    btnConfirmExportGpx.click();
-  }
+  if (e.key === 'Enter') btnConfirmExportGpx.click();
 });
 
 function exportGpxString(gpxStr, defaultFileName) {
@@ -1284,14 +1258,14 @@ function exportGpxString(gpxStr, defaultFileName) {
     a.href = URL.createObjectURL(new Blob([gpxStr], { type: 'application/gpx+xml;charset=utf-8' }));
     a.download = finalName;
     a.click();
-    showSaveIndicator(`📥 Файл ${finalName} скачан`);
+    showSaveIndicator(`📥 Файл ${finalName} сохранён`);
   });
 }
 
-// ======== СОСТОЯНИЕ И ДАННЫЕ ========
+// ======== СОСТОЯНИЕ ДАННЫХ ========
 let sites = [];
 let freeZones = [];
-let customPolygons = []; // [{ id, name, color, coords: [[lat, lng], ...], layer, tooltip }]
+let customPolygons = []; // [{ id, name, color, weight, coords: [[lat, lng], ...] }]
 let gridPointsData = [];
 let currentMapLayer = 'OSM Стандартная';
 let drawnZonesVisible = false;
@@ -1316,11 +1290,10 @@ let uiState = {
   addSiteMode: false
 };
 
-// Превью стиля линии
 function updateGridLinePreview() {
   const color = document.getElementById('gridLineColor').value;
   const style = document.getElementById('gridLineStyle').value;
-  const weight = parseFloat(document.getElementById('gridLineWeight').value);
+  const weight = parseFloat(document.getElementById('gridLineWeight').value) || 1.5;
   const opacity = parseFloat(document.getElementById('gridLineOpacity').value);
   
   const previewLine = document.getElementById('previewLine');
@@ -1340,7 +1313,7 @@ function updateBackupStats() {
   document.getElementById('statsGrid').textContent = gridPointsData.length;
 }
 
-// Инициализация карты
+// Инициализация карты Leaflet
 const map = L.map('map', { attributionControl: false }).setView([54.99, 73.37], 12);
 
 const mapProviders = {
@@ -1385,7 +1358,7 @@ let gridPoints = [];
 let gridLines = [];
 
 const userLocationIcon = L.divIcon({ className: 'user-location-marker', html: '<div style="background: #2196f3; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px #2196f3;"></div>', iconSize: [22, 22], iconAnchor: [11, 11] });
-const gridIcon = L.divIcon({ className: 'grid-point-marker', html: '<div style="background: #3f51b5; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(63,81,181,0.5); cursor: pointer; transition: transform 0.2s;"></div>', iconSize: [12, 12], iconAnchor: [6, 6] });
+const gridIcon = L.divIcon({ className: 'grid-point-marker', html: '<div style="background: #3f51b5; width: 8px; height: 8px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 4px rgba(63,81,181,0.5); cursor: pointer;"></div>', iconSize: [12, 12], iconAnchor: [6, 6] });
 
 function deg2rad(d) { return d * Math.PI / 180; }
 
@@ -1441,7 +1414,7 @@ function generateGrid() {
   const startY = parseInt(document.getElementById('gridStartY').value);
   const color = document.getElementById('gridLineColor').value;
   const style = document.getElementById('gridLineStyle').value;
-  const weight = parseFloat(document.getElementById('gridLineWeight').value);
+  const weight = parseFloat(document.getElementById('gridLineWeight').value) || 1.5;
   const opacity = parseFloat(document.getElementById('gridLineOpacity').value);
   const dashArray = LINE_STYLES[style] || null;
   gridStyle = { color, style, weight, opacity };
@@ -1461,7 +1434,7 @@ function generateGrid() {
     const rows = parseInt(document.getElementById('gridRowsCount').value) || 10;
     
     if (isNaN(sLat) || isNaN(sLng)) {
-      alert('Пожалуйста, введите корректные координаты начала сетки');
+      alert('Заполните корректные координаты начала сетки');
       return;
     }
     
@@ -1488,7 +1461,7 @@ function generateGrid() {
         
         const marker = L.marker([point.lat, point.lng], { icon: gridIcon }).addTo(gridLayerGroup);
         marker.bindTooltip(L.tooltip({ permanent: true, direction: 'top', offset: [0, -10], className: 'grid-point-label' }).setContent(point.label)).openTooltip();
-        marker.on('click', ((p) => () => copyCoordinates(p.lat, p.lng, `точки ${p.label}`))(point));
+        marker.on('click', ((p) => () => copyCoordinates(p.lat, p.lng))(point));
       }
       if (rowPoints.length > 0) gridMatrix.push(rowPoints);
     }
@@ -1518,7 +1491,7 @@ function generateGrid() {
         rowPoints.push(point);
         const marker = L.marker([point.lat, point.lng], { icon: gridIcon }).addTo(gridLayerGroup);
         marker.bindTooltip(L.tooltip({ permanent: true, direction: 'top', offset: [0, -10], className: 'grid-point-label' }).setContent(point.label)).openTooltip();
-        marker.on('click', ((p) => () => copyCoordinates(p.lat, p.lng, `точки ${p.label}`))(point));
+        marker.on('click', ((p) => () => copyCoordinates(p.lat, p.lng))(point));
         currentLng += lonStep;
         col++;
       }
@@ -1528,7 +1501,6 @@ function generateGrid() {
     }
   }
   
-  // Рисуем линии сетки
   for (let r = 0; r < gridMatrix.length; r++) {
     for (let c = 0; c < gridMatrix[r].length - 1; c++) {
       gridLines.push(L.polyline([[gridMatrix[r][c].lat, gridMatrix[r][c].lng], [gridMatrix[r][c+1].lat, gridMatrix[r][c+1].lng]], { color, weight, opacity, dashArray }).addTo(gridLayerGroup));
@@ -1558,7 +1530,7 @@ function clearGrid() {
   updateBackupStats();
 }
 
-// Экспорт сетки в GPX (Точки + Линии)
+// Экспорт сетки в GPX (Точки + Отрезки треков)
 function exportGridToGpx() {
   if (gridPoints.length === 0) {
     alert('Сначала сгенерируйте сетку');
@@ -1586,10 +1558,11 @@ function exportGridToGpx() {
   exportGpxString(gpx, 'grid.gpx');
 }
 
-// ======== РИСОВАНИЕ ПОЛИГОНОВ ========
+// ======== РИСОВАНИЕ ПОЛИГОНОВ С ТОЛЩИНОЙ ЛИНИИ ========
 const polygonSelect = document.getElementById('polygonSelect');
 const polygonNameInput = document.getElementById('polygonNameInput');
 const polygonColorInput = document.getElementById('polygonColorInput');
+const polygonWeightInput = document.getElementById('polygonWeightInput');
 const btnToggleDrawPolygon = document.getElementById('btnToggleDrawPolygon');
 const btnFinishPolygon = document.getElementById('btnFinishPolygon');
 const btnDeletePolygon = document.getElementById('btnDeletePolygon');
@@ -1610,11 +1583,12 @@ function redrawCustomPolygons() {
   polygonLayerGroup.clearLayers();
   customPolygons.forEach(poly => {
     if (!poly.coords || poly.coords.length < 3) return;
+    const weight = poly.weight || 2.0;
     const leafletPoly = L.polygon(poly.coords, {
       color: poly.color || '#e91e63',
       fillColor: poly.color || '#e91e63',
       fillOpacity: 0.25,
-      weight: 2
+      weight: weight
     }).addTo(polygonLayerGroup);
     
     leafletPoly.bindTooltip(poly.name || `Полигон ${poly.id}`, { permanent: true, direction: 'center' });
@@ -1622,6 +1596,7 @@ function redrawCustomPolygons() {
       polygonSelect.value = poly.id;
       polygonNameInput.value = poly.name || '';
       polygonColorInput.value = poly.color || '#e91e63';
+      polygonWeightInput.value = poly.weight || 2.0;
     });
     poly.layer = leafletPoly;
   });
@@ -1635,7 +1610,7 @@ btnToggleDrawPolygon.addEventListener('click', () => {
     currentDrawingCoords = [];
     btnToggleDrawPolygon.textContent = '❌ Отменить';
     btnToggleDrawPolygon.classList.add('active-toggle');
-    polygonStatusHint.textContent = 'Режим рисования активен: нажимайте на карту';
+    polygonStatusHint.textContent = 'Кликайте по карте для добавления вершин';
     polygonStatusHint.style.color = '#e91e63';
   }
 });
@@ -1649,18 +1624,18 @@ function cancelDrawingPolygon() {
   currentDrawingCoords = [];
   btnToggleDrawPolygon.textContent = '✏️ Начать рисование';
   btnToggleDrawPolygon.classList.remove('active-toggle');
-  polygonStatusHint.textContent = 'Кликайте по карте для добавления вершин';
-  polygonStatusHint.style.color = '#666';
+  polygonStatusHint.textContent = 'Кликайте по карте для установки вершин';
+  polygonStatusHint.style.color = '#555';
 }
 
 btnFinishPolygon.addEventListener('click', () => {
   if (!isDrawingPolygon) {
-    // Сохранение изменений в выбранном полигоне
     const id = parseInt(polygonSelect.value);
     const existing = customPolygons.find(p => p.id === id);
     if (existing) {
       existing.name = polygonNameInput.value.trim() || `Полигон ${existing.id}`;
       existing.color = polygonColorInput.value;
+      existing.weight = parseFloat(polygonWeightInput.value) || 2.0;
       redrawCustomPolygons();
       fillPolygonSelect();
       polygonSelect.value = existing.id;
@@ -1678,11 +1653,13 @@ btnFinishPolygon.addEventListener('click', () => {
   const newId = customPolygons.length > 0 ? Math.max(...customPolygons.map(p => p.id)) + 1 : 1;
   const name = polygonNameInput.value.trim() || `Полигон ${newId}`;
   const color = polygonColorInput.value || '#e91e63';
+  const weight = parseFloat(polygonWeightInput.value) || 2.0;
   
   customPolygons.push({
     id: newId,
     name: name,
     color: color,
+    weight: weight,
     coords: [...currentDrawingCoords]
   });
   
@@ -1716,9 +1693,8 @@ polygonSelect.addEventListener('change', () => {
   if (found) {
     polygonNameInput.value = found.name;
     polygonColorInput.value = found.color;
-    if (found.layer) {
-      map.fitBounds(found.layer.getBounds(), { maxZoom: 16 });
-    }
+    polygonWeightInput.value = found.weight || 2.0;
+    if (found.layer) map.fitBounds(found.layer.getBounds(), { maxZoom: 16 });
   }
   autoSave();
 });
@@ -1746,7 +1722,6 @@ btnExportPolygonGpx.addEventListener('click', () => {
     poly.coords.forEach(pt => {
       trks += `      <trkpt lat="${pt[0].toFixed(6)}" lon="${pt[1].toFixed(6)}"/>\n`;
     });
-    // Замыкание контура
     if (poly.coords.length > 0) {
       trks += `      <trkpt lat="${poly.coords[0][0].toFixed(6)}" lon="${poly.coords[0][1].toFixed(6)}"/>\n`;
     }
@@ -1757,10 +1732,10 @@ btnExportPolygonGpx.addEventListener('click', () => {
   exportGpxString(gpx, filename);
 });
 
-// Карта клики и жесты
+// События карты
 map.on('contextmenu', (e) => {
   e.originalEvent.preventDefault();
-  copyCoordinates(e.latlng.lat, e.latlng.lng, 'карты');
+  copyCoordinates(e.latlng.lat, e.latlng.lng);
 });
 
 let longPressTimer = null;
@@ -1778,7 +1753,7 @@ map.getContainer().addEventListener('touchstart', (e) => {
     longPressIndicator.style.top = touch.clientY + 'px';
     longPressIndicator.classList.add('active');
     setTimeout(() => longPressIndicator.classList.remove('active'), 500);
-    copyCoordinates(latlng.lat, latlng.lng, 'карты');
+    copyCoordinates(latlng.lat, latlng.lng);
   }, 500);
 }, { passive: true });
 
@@ -1796,12 +1771,14 @@ map.getContainer().addEventListener('touchcancel', () => {
 map.on('click', (e) => {
   if (isDrawingPolygon) {
     currentDrawingCoords.push([e.latlng.lat, e.latlng.lng]);
+    const weight = parseFloat(polygonWeightInput.value) || 2.0;
     if (currentDrawingPolyline) {
       currentDrawingPolyline.setLatLngs(currentDrawingCoords);
+      currentDrawingPolyline.setStyle({ weight: weight, color: polygonColorInput.value });
     } else {
-      currentDrawingPolyline = L.polyline(currentDrawingCoords, { color: polygonColorInput.value, weight: 3, dashArray: '4,4' }).addTo(map);
+      currentDrawingPolyline = L.polyline(currentDrawingCoords, { color: polygonColorInput.value, weight: weight, dashArray: '4,4' }).addTo(map);
     }
-    polygonStatusHint.textContent = `Точек добавлено: ${currentDrawingCoords.length}. Нажмите «Завершить» для сохранения.`;
+    polygonStatusHint.textContent = `Точек: ${currentDrawingCoords.length}. Нажмите «Завершить» для сохранения.`;
     return;
   }
   
@@ -1833,7 +1810,7 @@ map.on('click', (e) => {
   }
 });
 
-// UI элементы и логика форм
+// UI Элементы
 const addressInput = document.getElementById('addressInput');
 const btnSearchAddress = document.getElementById('btnSearchAddress');
 const siteSelect = document.getElementById('siteSelect');
@@ -1892,7 +1869,7 @@ let addSiteMode = false;
 btnAddSite.addEventListener('click', () => {
   addSiteMode = !addSiteMode;
   uiState.addSiteMode = addSiteMode;
-  btnAddSite.style.backgroundColor = addSiteMode ? '#c8e6c9' : '';
+  btnAddSite.style.backgroundColor = addSiteMode ? 'rgba(76, 175, 80, 0.4)' : '';
   autoSave();
 });
 
@@ -1921,7 +1898,7 @@ function drawSiteMarkers() {
     m.bindPopup(`${site.name} (${site.id})<br>CellID: ${site.cellId || '-'}<br>Оператор: ${site.operator || '-'}`);
     m.on('contextmenu', (e) => {
       L.DomEvent.stopPropagation(e);
-      copyCoordinates(site.lat, site.lng, `вышки ${site.name}`);
+      copyCoordinates(site.lat, site.lng);
     });
   });
 }
@@ -2060,7 +2037,7 @@ function restoreGridOnMap() {
     gridPoints.push(point);
     const marker = L.marker([point.lat, point.lng], { icon: gridIcon }).addTo(gridLayerGroup);
     marker.bindTooltip(L.tooltip({ permanent: true, direction: 'top', offset: [0, -10], className: 'grid-point-label' }).setContent(point.label)).openTooltip();
-    marker.on('click', ((p) => () => copyCoordinates(p.lat, p.lng, `точки ${p.label}`))(point));
+    marker.on('click', ((p) => () => copyCoordinates(p.lat, p.lng))(point));
     if (point.row !== currentRow) {
       if (rowPoints.length > 0) gridMatrix.push(rowPoints);
       rowPoints = [];
@@ -2104,7 +2081,7 @@ function saveToLocalStorage(silent = false) {
       id: z.id, name: z.name || '', lat: z.lat, lng: z.lng, azimuth: z.azimuth, beamWidth: z.beamWidth, radius: z.radius, visible: z.visible !== false, color: z.color || null, selectedForExport: z.selectedForExport === true
     }))));
     localStorage.setItem(STORAGE_KEYS.POLYGONS, JSON.stringify(customPolygons.map(p => ({
-      id: p.id, name: p.name, color: p.color, coords: p.coords
+      id: p.id, name: p.name, color: p.color, weight: p.weight || 2.0, coords: p.coords
     }))));
     if (map) {
       const c = map.getCenter();
@@ -2157,7 +2134,6 @@ function autoSave(immediate = false) {
   else saveTimeout = setTimeout(() => saveToLocalStorage(), 400);
 }
 
-// Построение GPX треков для азимутов и секторов
 function buildGpxFromTracks(tracks) {
   return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DobroSpas-Billing">\n${tracks.join('\n')}\n</gpx>`;
 }
@@ -2210,7 +2186,6 @@ function buildSelectedAzimuthAndZonesGpx() {
   return buildGpxFromTracks([...az, ...zones]);
 }
 
-// Назначение обработчиков клика
 btnSearchAddress.addEventListener('click', async () => {
   const q = addressInput.value.trim();
   if (!q) return;
@@ -2368,6 +2343,9 @@ btnExportAllGpx.addEventListener('click', () => exportGpxString(buildAllGpx(), '
   }
 });
 
+polygonWeightInput.addEventListener('input', () => autoSave());
+polygonColorInput.addEventListener('input', () => autoSave());
+
 function clearAllData() {
   if (!confirm('Удалить ВСЕ сохранённые данные?')) return;
   sites = []; freeZones = []; customPolygons = []; gridPointsData = []; gridPoints = []; gridLines = []; azimuthLinesData = []; drawnZonesVisible = false;
@@ -2375,7 +2353,7 @@ function clearAllData() {
   siteMarkerGroup.clearLayers(); zonesLayerGroup.clearLayers(); azimuthLayerGroup.clearLayers(); freeLayerGroup.clearLayers(); gridLayerGroup.clearLayers(); polygonLayerGroup.clearLayers();
   fillSiteSelect(); fillFreeZoneSelect(); fillPolygonSelect();
   updateBackupStats();
-  showSaveIndicator('🗑️ Данные очищены');
+  showSaveIndicator('🗑️ Все данные очищены');
 }
 
 btnClearAll.addEventListener('click', clearAllData);
@@ -2414,7 +2392,11 @@ backupFileInput.addEventListener('change', (e) => {
       if (Array.isArray(data.freeZones)) freeZones = data.freeZones;
       if (Array.isArray(data.customPolygons)) customPolygons = data.customPolygons;
       if (Array.isArray(data.gridPointsData)) gridPointsData = data.gridPointsData;
-      if (data.gridStyle) gridStyle = data.gridStyle;
+      if (data.gridStyle) {
+        gridStyle = data.gridStyle;
+        document.getElementById('gridLineWeight').value = gridStyle.weight || 1.5;
+        document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
+      }
       fillSiteSelect();
       fillFreeZoneSelect();
       fillPolygonSelect();
@@ -2423,15 +2405,15 @@ backupFileInput.addEventListener('change', (e) => {
       redrawCustomPolygons();
       restoreGridOnMap();
       autoSave(true);
-      showSaveIndicator('✅ Бэкап восстановлен');
+      showSaveIndicator('✅ Бэкап успешно восстановлен');
     } catch (err) {
-      alert('Ошибка восстановления: ' + err.message);
+      alert('Ошибка при восстановлении бэкапа: ' + err.message);
     }
   };
   reader.readAsText(file);
 });
 
-// ======== PWA УСТАНОВКА ========
+// ======== PWA УСТАНОВКА (CHROME ANDROID) ========
 let deferredPrompt = null;
 const pwaInstallIcon = document.getElementById('pwa-install-icon');
 
@@ -2442,16 +2424,16 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 pwaInstallIcon.addEventListener('click', async () => {
-  if (!deferredPrompt) {
-    alert('Для установки откройте меню браузера (⋮) и выберите «Добавить на главный экран» или «Установить приложение».');
-    return;
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    if (choice.outcome === 'accepted') {
+      pwaInstallIcon.classList.remove('show');
+    }
+    deferredPrompt = null;
+  } else {
+    alert('Чтобы установить: нажмите в меню браузера (⋮) → «Установить приложение» или «Добавить на главный экран».');
   }
-  deferredPrompt.prompt();
-  const choice = await deferredPrompt.userChoice;
-  if (choice.outcome === 'accepted') {
-    pwaInstallIcon.classList.remove('show');
-  }
-  deferredPrompt = null;
 });
 
 window.addEventListener('appinstalled', () => {
@@ -2461,38 +2443,88 @@ window.addEventListener('appinstalled', () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed', err));
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
   });
 }
 
-// Мобильное меню и жесты шторки
-if (window.innerWidth <= 768) {
-  const sidebar = document.getElementById('sidebar');
-  const menuToggle = document.getElementById('mobile-menu-toggle');
-  const centerBtn = document.getElementById('mobile-center-btn');
-  const dragHandle = document.getElementById('drag-handle');
-  
-  menuToggle.addEventListener('click', (e) => {
-    e.stopPropagation();
-    sidebar.classList.toggle('expanded');
-  });
-  
-  dragHandle.addEventListener('click', () => sidebar.classList.toggle('expanded'));
-  
-  centerBtn.addEventListener('click', () => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(pos => {
-      const { latitude, longitude } = pos.coords;
-      if (userLocationMarker) map.removeLayer(userLocationMarker);
-      userLocationMarker = L.marker([latitude, longitude], { icon: userLocationIcon }).addTo(map);
-      map.setView([latitude, longitude], 15);
-    });
-  });
-  
-  map.on('click', () => sidebar.classList.remove('expanded'));
-}
+// ======== МОБИЛЬНОЕ МЕНЮ: КЛИК И СВАЙП ДЛЯ ШТОРКИ ========
+const sidebar = document.getElementById('sidebar');
+const menuToggle = document.getElementById('mobile-menu-toggle');
+const centerBtn = document.getElementById('mobile-center-btn');
+const dragHandle = document.getElementById('drag-handle');
 
-// Запуск приложения
+let touchStartY = 0;
+let touchCurrentY = 0;
+let isSwipingSidebar = false;
+
+// Клик по бургеру
+menuToggle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  sidebar.classList.toggle('expanded');
+});
+
+// Клик по ручке шторки
+dragHandle.addEventListener('click', (e) => {
+  e.stopPropagation();
+  sidebar.classList.toggle('expanded');
+});
+
+// Свайп по ручке и верхней части шторки
+sidebar.addEventListener('touchstart', (e) => {
+  if (window.innerWidth > 768) return;
+  // Свайп разрешаем от ручки или когда сайдбар свернут
+  const isHandle = e.target.closest('#drag-handle');
+  const isCollapsed = !sidebar.classList.contains('expanded');
+  
+  if (isHandle || (isCollapsed && sidebar.scrollTop <= 0)) {
+    touchStartY = e.touches[0].clientY;
+    touchCurrentY = touchStartY;
+    isSwipingSidebar = true;
+  }
+}, { passive: true });
+
+sidebar.addEventListener('touchmove', (e) => {
+  if (!isSwipingSidebar) return;
+  touchCurrentY = e.touches[0].clientY;
+  const deltaY = touchCurrentY - touchStartY;
+  
+  // Если тянем вниз открытый сайдбар
+  if (sidebar.classList.contains('expanded') && deltaY > 35) {
+    sidebar.classList.remove('expanded');
+    isSwipingSidebar = false;
+  }
+  // Если тянем вверх закрытый сайдбар
+  else if (!sidebar.classList.contains('expanded') && deltaY < -35) {
+    sidebar.classList.add('expanded');
+    isSwipingSidebar = false;
+  }
+}, { passive: true });
+
+sidebar.addEventListener('touchend', () => {
+  isSwipingSidebar = false;
+}, { passive: true });
+
+centerBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!navigator.geolocation) {
+    alert('Геолокация недоступна');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(pos => {
+    const { latitude, longitude } = pos.coords;
+    if (userLocationMarker) map.removeLayer(userLocationMarker);
+    userLocationMarker = L.marker([latitude, longitude], { icon: userLocationIcon }).addTo(map);
+    map.setView([latitude, longitude], 15);
+  });
+});
+
+map.on('click', () => {
+  if (window.innerWidth <= 768 && sidebar.classList.contains('expanded')) {
+    sidebar.classList.remove('expanded');
+  }
+});
+
+// Запуск и синхронизация
 loadFromLocalStorage();
 updateGridLinePreview();
 fillSiteSelect();
@@ -2509,8 +2541,6 @@ restoreGridOnMap();
 restoreAzimuthLines();
 if (drawnZonesVisible) drawAllZones();
 updateBackupStats();
-
-console.log('✅ Доброспас-Биллинг V7.0 готов к работе');
 </script>
 
 </body>
