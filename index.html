@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Анализ биллинга и построение зон — Автор: Ергер Виталий, позывной "Ветер"</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <!-- Иконка вкладки браузера (Favicon) -->
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
   <link rel="icon" type="image/png" href="./logo.png">
-  <link rel="icon" type="image/jpeg" href="./logo.jpg">
   <link rel="shortcut icon" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/icon-192.png">
   
@@ -44,7 +43,7 @@
     #app {
       position: relative;
       width: 100vw;
-      height: 100vh;
+      height: 100vh; height: 100dvh;
       overflow: hidden;
     }
 
@@ -199,7 +198,7 @@
       position: absolute;
       top: 0;
       left: 0;
-      height: 100vh;
+      height: 100vh; height: 100dvh;
       width: 410px;
       min-width: 340px;
       max-width: 450px;
@@ -801,9 +800,9 @@
   <!-- Заставка с чистым круглым логотипом (без рамок и квадратов) -->
   <div id="splash-screen">
     <div class="splash-content">
-      <img src="./icons/icon-192.png" alt="Доброспас-Омск" class="splash-logo" onerror="this.onerror=null; this.src='./logo.jpg';">
+      <img src="./icons/icon-192.png" alt="Доброспас-Омск" class="splash-logo">
       <h1 class="splash-title">БИЛЛИНГ</h1>
-      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V7.5</p>
+      <p class="splash-subtitle">АНАЛИЗ И ПОСТРОЕНИЕ ЗОН ПОКРЫТИЯ V8.0</p>
       <div class="splash-loader"><div class="splash-spinner"></div></div>
       <p class="splash-author">АВТОР: ЕРГЕР ВИТАЛИЙ, ПОЗЫВНОЙ "ВЕТЕР"</p>
     </div>
@@ -865,7 +864,7 @@
   <div id="map-container">
     <div id="map"></div>
     <div class="custom-logo-control">
-      <img src="./icons/icon-192.png" alt="Логотип Доброспас" onerror="this.onerror=null; this.src='./logo.jpg';">
+      <img src="./icons/icon-192.png" alt="Логотип Доброспас">
     </div>
   </div>
   
@@ -922,10 +921,10 @@
         <span class="panel-title">📍 Координаты вышки</span>
         <div class="field-grid">
           <label for="latInput">Широта</label>
-          <input id="latInput" type="number" step="0.0001" placeholder="54.9900">
+          <input id="latInput" type="number" step="any" placeholder="54.9900">
           
           <label for="lngInput">Долгота</label>
-          <input id="lngInput" type="number" step="0.0001" placeholder="73.3700">
+          <input id="lngInput" type="number" step="any" placeholder="73.3700">
         </div>
         <div class="buttons-row">
           <button id="btnSetCoords">🔄 Обновить</button>
@@ -985,10 +984,10 @@
           <select id="freeZoneSelect"></select>
           
           <label for="freeLat">Широта</label>
-          <input id="freeLat" type="number" step="0.0001">
+          <input id="freeLat" type="number" step="any">
           
           <label for="freeLng">Долгота</label>
-          <input id="freeLng" type="number" step="0.0001">
+          <input id="freeLng" type="number" step="any">
           
           <label for="freeAz">Азимут</label>
           <input id="freeAz" type="number">
@@ -1029,10 +1028,10 @@
         
         <div id="gridCustomCoordsContainer" style="display:none;" class="field-grid">
           <label for="gridStartLat">Нач. Широта</label>
-          <input id="gridStartLat" type="number" step="0.00001" placeholder="54.99000">
+          <input id="gridStartLat" type="number" step="any" placeholder="54.99000">
           
           <label for="gridStartLng">Нач. Долгота</label>
-          <input id="gridStartLng" type="number" step="0.00001" placeholder="73.37000">
+          <input id="gridStartLng" type="number" step="any" placeholder="73.37000">
           
           <label for="gridColsCount">Кол-во X</label>
           <input id="gridColsCount" type="number" value="10" min="2" max="60">
@@ -1179,6 +1178,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js" crossorigin="" async></script>
 
 <script>
 // ======== ХРАНИЛИЩЕ И КОНСТАНТЫ ========
@@ -1198,7 +1198,7 @@ const STORAGE_KEYS = {
   INPUT_FIELDS: 'billing_inputFields'
 };
 
-const DATA_VERSION = '2.7';
+const DATA_VERSION = '3.0';
 const BACKUP_SIGNATURE = 'BILLING_FULL_BACKUP_V2';
 
 const LINE_STYLES = {
@@ -1338,7 +1338,7 @@ function exportGpxString(gpxStr, defaultFileName) {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([gpxStr], { type: 'application/gpx+xml;charset=utf-8' }));
     a.download = finalName;
-    a.click();
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     showSaveIndicator(`📥 Файл ${finalName} сохранён`);
   });
 }
@@ -1395,7 +1395,7 @@ function updateBackupStats() {
 }
 
 // Карта Leaflet
-const map = L.map('map', { attributionControl: false }).setView([54.99, 73.37], 12);
+const map = L.map('map', { attributionControl: true }).setView([54.99, 73.37], 12);
 
 const mapProviders = {
   'OSM Стандартная': L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }),
@@ -1407,9 +1407,6 @@ const mapProviders = {
   'ESRI Топо': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
   'ESRI Улицы': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19 }),
   'Топографическая': L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { maxZoom: 17 }),
-  'Stadia Smooth': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
-  'Stadia Тёмная': L.tileLayer('https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
-  'Stadia Outdoors': L.tileLayer('https://tiles.stadiamaps.com/tiles/outdoors/{z}/{x}/{y}{r}.png', { maxZoom: 20 }),
   'Google Карта': L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', { maxZoom: 20 }),
   'Google Спутник': L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', { maxZoom: 20 }),
   'Google Гибрид': L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', { maxZoom: 20 }),
@@ -1418,6 +1415,9 @@ const mapProviders = {
   'Yandex Спутник': L.tileLayer('https://core-sat.maps.yandex.net/tiles?l=sat&v=3.1030.0&x={x}&y={y}&z={z}&scale=1&lang=ru_RU', { maxZoom: 19 }),
   '2GIS': L.tileLayer('https://tile2.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1', { maxZoom: 18 })
 };
+const MAP_ATTR = { 'OSM': '© OpenStreetMap', 'CartoDB': '© OpenStreetMap © CARTO', 'ESRI': 'Tiles © Esri', 'Топограф': '© OpenTopoMap', 'Google': '© Google', 'Yandex': '© Яндекс', '2GIS': '© 2GIS' };
+Object.entries(mapProviders).forEach(([n, l]) => { const k = Object.keys(MAP_ATTR).find(k => n.startsWith(k)); if (k) l.options.attribution = MAP_ATTR[k]; });
+map.attributionControl.setPrefix(false);
 mapProviders['OSM Стандартная'].addTo(map);
 
 const layerControl = L.control.layers(mapProviders, {}, { position: 'topleft', collapsed: true }).addTo(map);
@@ -1461,11 +1461,10 @@ function getUniqueColor(index) {
 }
 
 function makeSectorPolygon(lat, lng, azimuth, beamWidth, radius, steps = 32) {
-  const coords = []; const R = 6371000; const start = azimuth - beamWidth / 2; const end = azimuth + beamWidth / 2; const step = beamWidth / steps;
-  coords.push([lat, lng]);
-  for (let a = start; a <= end; a += step) {
-    const brng = deg2rad(a); const dR = radius / R;
-    const lat1 = deg2rad(lat); const lon1 = deg2rad(lng);
+  const R = 6371000, bw = Math.min(360, Math.max(0.1, +beamWidth || 60)), start = azimuth - bw / 2;
+  const dR = radius / R, lat1 = deg2rad(lat), lon1 = deg2rad(lng), coords = [[lat, lng]];
+  for (let i = 0; i <= steps; i++) {
+    const brng = deg2rad(start + bw * i / steps);
     const lat2 = Math.asin(Math.sin(lat1) * Math.cos(dR) + Math.cos(lat1) * Math.sin(dR) * Math.cos(brng));
     const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(dR) * Math.cos(lat1), Math.cos(dR) - Math.sin(lat1) * Math.sin(lat2));
     coords.push([lat2 * 180 / Math.PI, lon2 * 180 / Math.PI]);
@@ -1496,7 +1495,7 @@ function drawSectorsForSite(site) {
       fillOpacity: 0.28,
       weight: 1.5
     }).addTo(zonesLayerGroup);
-    poly.bindTooltip(`${site.name}\nСектор ${sec.id}\nAz ${sec.azimuth}°`);
+    poly.bindTooltip(`${esc(site.name)}<br>Сектор ${sec.id}<br>Az ${sec.azimuth}°`);
   });
 }
 
@@ -1583,6 +1582,8 @@ function generateGrid() {
     const lonStep = step / (111000 * Math.cos(deg2rad(centerLat)));
     let startLat = Math.floor(northWest.lat / latStep) * latStep;
     let startLon = Math.floor(northWest.lng / lonStep) * lonStep;
+    const _est = Math.ceil((northWest.lat - southEast.lat) / latStep) * Math.min(26, Math.ceil((southEast.lng - northWest.lng) / lonStep));
+    if (_est > 2500) { alert(`Слишком много узлов (~${_est}). Приблизьте карту или увеличьте шаг (лимит 2500).`); return; }
     
     let currentLat = startLat;
     let row = 0;
@@ -1646,14 +1647,14 @@ function exportGridToGpx() {
   
   let wpts = '';
   gridPoints.forEach(p => {
-    wpts += `  <wpt lat="${p.lat.toFixed(6)}" lon="${p.lng.toFixed(6)}">\n    <name>${p.label}</name>\n  </wpt>\n`;
+    wpts += `  <wpt lat="${p.lat.toFixed(6)}" lon="${p.lng.toFixed(6)}">\n    <name>${xe(`${p.label}`)}</name>\n  </wpt>\n`;
   });
   
   let trks = '';
   gridLines.forEach((line, idx) => {
     const latlngs = line.getLatLngs();
     if (latlngs.length >= 2) {
-      trks += `  <trk>\n    <name>Сетка_Линия_${idx + 1}</name>\n    <trkseg>\n`;
+      trks += `  <trk>\n    <name>${xe(`Сетка_Линия_${idx + 1}`)}</name>\n    <trkseg>\n`;
       latlngs.forEach(pt => {
         trks += `      <trkpt lat="${pt.lat.toFixed(6)}" lon="${pt.lng.toFixed(6)}"/>\n`;
       });
@@ -1661,7 +1662,7 @@ function exportGridToGpx() {
     }
   });
   
-  const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DobroSpas-Billing">\n${wpts}${trks}</gpx>`;
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DobroSpas-Billing" xmlns="http://www.topografix.com/GPX/1/1">\n${wpts}${trks}</gpx>`;
   exportGpxString(gpx, 'grid.gpx');
 }
 
@@ -1698,7 +1699,7 @@ function redrawCustomPolygons() {
       weight: weight
     }).addTo(polygonLayerGroup);
     
-    leafletPoly.bindTooltip(poly.name || `Полигон ${poly.id}`, { permanent: true, direction: 'center' });
+    leafletPoly.bindTooltip(esc(poly.name || `Полигон ${poly.id}`), { permanent: true, direction: 'center' });
     leafletPoly.on('click', () => {
       polygonSelect.value = poly.id;
       polygonNameInput.value = poly.name || '';
@@ -1825,7 +1826,7 @@ btnExportPolygonGpx.addEventListener('click', () => {
   
   let trks = '';
   toExport.forEach(poly => {
-    trks += `  <trk>\n    <name>${poly.name || 'Полигон ' + poly.id}</name>\n    <trkseg>\n`;
+    trks += `  <trk>\n    <name>${xe(`${poly.name || 'Полигон ' + poly.id}`)}</name>\n    <trkseg>\n`;
     poly.coords.forEach(pt => {
       trks += `      <trkpt lat="${pt[0].toFixed(6)}" lon="${pt[1].toFixed(6)}"/>\n`;
     });
@@ -1835,7 +1836,7 @@ btnExportPolygonGpx.addEventListener('click', () => {
     trks += `    </trkseg>\n  </trk>\n`;
   });
   
-  const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DobroSpas-Billing">\n${trks}</gpx>`;
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DobroSpas-Billing" xmlns="http://www.topografix.com/GPX/1/1">\n${trks}</gpx>`;
   exportGpxString(gpx, filename);
 });
 
@@ -1890,7 +1891,7 @@ map.on('click', (e) => {
   }
   
   if (addSiteMode) {
-    const newId = 'SITE_' + (sites.length + 1);
+    const newId = nextSiteId();
     sites.push({
       id: newId,
       name: 'Вышка ' + (sites.length + 1),
@@ -1985,12 +1986,12 @@ btnAddSite.addEventListener('click', () => {
 btnDeleteSite.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site || !confirm(`Удалить ${site.name}?`)) return;
+  snapshot();
   sites = sites.filter(s => s.id !== site.id);
   fillSiteSelect();
-  zonesLayerGroup.clearLayers();
-  azimuthLayerGroup.clearLayers();
-  azimuthLinesData = [];
-  drawnZonesVisible = false;
+  azimuthLinesData = azimuthLinesData.filter(l => l.siteId !== site.id);
+  azimuthLayerGroup.clearLayers(); restoreAzimuthLines();
+  zonesLayerGroup.clearLayers(); if (drawnZonesVisible) sites.forEach(drawSectorsForSite);
   drawSiteMarkers();
   if (sites.length > 0) {
     siteSelect.value = sites[0].id;
@@ -2004,7 +2005,7 @@ function drawSiteMarkers() {
   siteMarkerGroup.clearLayers();
   sites.forEach(site => {
     const m = L.marker([site.lat, site.lng]).addTo(siteMarkerGroup);
-    m.bindPopup(`${site.name} (${site.id})<br>CellID: ${site.cellId || '-'}<br>Оператор: ${site.operator || '-'}`);
+    m.bindPopup(`${esc(site.name)} (${esc(site.id)})<br>CellID: ${esc(site.cellId || '-')}<br>Оператор: ${esc(site.operator || '-')}`);
     m.on('contextmenu', (e) => {
       L.DomEvent.stopPropagation(e);
       copyCoordinates(site.lat, site.lng);
@@ -2081,7 +2082,7 @@ btnDrawCurrentSiteSectors.addEventListener('click', () => {
     alert('Выберите или добавьте вышку');
     return;
   }
-  drawAllZones();
+  zonesLayerGroup.clearLayers(); drawSectorsForSite(site);
   map.setView([site.lat, site.lng], 14);
 });
 
@@ -2090,9 +2091,9 @@ btnApplySector.addEventListener('click', () => {
   if (!site) return;
   const sec = site.sectors.find(s => s.id === parseInt(sectorSelect.value));
   if (!sec) return;
-  sec.azimuth = parseFloat(azInput.value);
-  sec.beamWidth = parseFloat(bwInput.value);
-  sec.radius = parseFloat(rInput.value);
+  const _az = parseFloat(azInput.value), _bw = parseFloat(bwInput.value), _r = parseFloat(rInput.value);
+  if (!isFinite(_az) || !(_bw > 0 && _bw <= 360) || !(_r > 0)) { alert('Проверьте: азимут — число, ширина 1–360°, радиус > 0'); return; }
+  sec.azimuth = ((_az % 360) + 360) % 360; sec.beamWidth = _bw; sec.radius = _r;
   sec.selectedForExport = sectorExportCheckbox.checked;
   fillSectorSelect();
   sectorSelect.value = sec.id;
@@ -2174,7 +2175,7 @@ function redrawFreeZones() {
     const color = zone.color || getUniqueColor(zone.id);
     const poly = L.polygon(makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius), { color, fillColor: color, fillOpacity: 0.28, weight: 1.5 }).addTo(freeLayerGroup);
     const line = L.polyline(makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius), { color, weight: 2, dashArray: '4,4' }).addTo(freeLayerGroup);
-    poly.bindTooltip(`${zone.name || 'zone ' + zone.id}\nAz ${zone.azimuth}°`);
+    poly.bindTooltip(`${esc(zone.name || 'zone ' + zone.id)}<br>Az ${zone.azimuth}°`);
     zone.polyLayer = poly;
     zone.lineLayer = line;
     zone.color = color;
@@ -2306,7 +2307,7 @@ function saveToLocalStorage(silent = false) {
     updateBackupStats();
     if (!silent) showAutosaveBadge();
   } catch (e) {
-    console.error('Ошибка сохранения:', e);
+    console.error('Ошибка сохранения:', e); showSaveIndicator('⚠️ Не удалось сохранить (память браузера заполнена?). Сделайте бэкап!', true);
   }
 }
 
@@ -2345,7 +2346,7 @@ function autoSave(immediate = false) {
 }
 
 function buildGpxFromTracks(tracks) {
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DobroSpas-Billing">\n${tracks.join('\n')}\n</gpx>`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="DobroSpas-Billing" xmlns="http://www.topografix.com/GPX/1/1">\n${tracks.join('\n')}\n</gpx>`;
 }
 
 function buildAzimuthGpx(onlySelected = false) {
@@ -2354,13 +2355,13 @@ function buildAzimuthGpx(onlySelected = false) {
     site.sectors.forEach(sec => {
       if (onlySelected && !sec.selectedForExport) return;
       const line = makeAzimuthLine(site.lat, site.lng, sec.azimuth, sec.radius);
-      tracks.push(`  <trk><name>${site.name} Az ${sec.azimuth}°</name><trkseg><trkpt lat="${line[0][0].toFixed(6)}" lon="${line[0][1].toFixed(6)}"/><trkpt lat="${line[1][0].toFixed(6)}" lon="${line[1][1].toFixed(6)}"/></trkseg></trk>`);
+      tracks.push(`  <trk><name>${xe(`${site.name} Az ${sec.azimuth}°`)}</name><trkseg><trkpt lat="${line[0][0].toFixed(6)}" lon="${line[0][1].toFixed(6)}"/><trkpt lat="${line[1][0].toFixed(6)}" lon="${line[1][1].toFixed(6)}"/></trkseg></trk>`);
     });
   });
   freeZones.forEach(zone => {
     if (onlySelected && !zone.selectedForExport) return;
     const line = makeAzimuthLine(zone.lat, zone.lng, zone.azimuth, zone.radius);
-    tracks.push(`  <trk><name>${zone.name || 'zone'} Az ${zone.azimuth}°</name><trkseg><trkpt lat="${line[0][0].toFixed(6)}" lon="${line[0][1].toFixed(6)}"/><trkpt lat="${line[1][0].toFixed(6)}" lon="${line[1][1].toFixed(6)}"/></trkseg></trk>`);
+    tracks.push(`  <trk><name>${xe(`${zone.name || 'zone'} Az ${zone.azimuth}°`)}</name><trkseg><trkpt lat="${line[0][0].toFixed(6)}" lon="${line[0][1].toFixed(6)}"/><trkpt lat="${line[1][0].toFixed(6)}" lon="${line[1][1].toFixed(6)}"/></trkseg></trk>`);
   });
   return buildGpxFromTracks(tracks);
 }
@@ -2372,14 +2373,14 @@ function buildZonesGpx(onlySelected = false) {
       if (onlySelected && !sec.selectedForExport) return;
       const poly = makeSectorPolygon(site.lat, site.lng, sec.azimuth, sec.beamWidth, sec.radius);
       let pts = poly.map(p => `        <trkpt lat="${p[0].toFixed(6)}" lon="${p[1].toFixed(6)}"/>`).join('\n');
-      tracks.push(`  <trk><name>${site.name} Сектор ${sec.id}</name><trkseg>\n${pts}\n      </trkseg></trk>`);
+      tracks.push(`  <trk><name>${xe(`${site.name} Сектор ${sec.id}`)}</name><trkseg>\n${pts}\n      </trkseg></trk>`);
     });
   });
   freeZones.forEach(zone => {
     if (onlySelected && !zone.selectedForExport) return;
     const poly = makeSectorPolygon(zone.lat, zone.lng, zone.azimuth, zone.beamWidth, zone.radius);
     let pts = poly.map(p => `        <trkpt lat="${p[0].toFixed(6)}" lon="${p[1].toFixed(6)}"/>`).join('\n');
-    tracks.push(`  <trk><name>${zone.name || 'zone'}</name><trkseg>\n${pts}\n      </trkseg></trk>`);
+    tracks.push(`  <trk><name>${xe(`${zone.name || 'zone'}`)}</name><trkseg>\n${pts}\n      </trkseg></trk>`);
   });
   return buildGpxFromTracks(tracks);
 }
@@ -2405,7 +2406,7 @@ btnSearchAddress.addEventListener('click', async () => {
     if (!data || !data.length) { alert('Адрес не найден'); return; }
     const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
     if (searchMarker) map.removeLayer(searchMarker);
-    searchMarker = L.marker([lat, lng]).addTo(map).bindPopup(data[0].display_name).openPopup();
+    searchMarker = L.marker([lat, lng]).addTo(map).bindPopup(esc(data[0].display_name)).openPopup();
     map.setView([lat, lng], 16);
     freeLatInput.value = lat.toFixed(5);
     freeLngInput.value = lng.toFixed(5);
@@ -2418,11 +2419,12 @@ btnSearchAddress.addEventListener('click', async () => {
 btnSetCoords.addEventListener('click', () => {
   const site = getCurrentSite();
   if (!site) return;
-  site.lat = parseFloat(latInput.value);
-  site.lng = parseFloat(lngInput.value);
+  const _la = parseFloat(latInput.value), _ln = parseFloat(lngInput.value);
+  if (!(Math.abs(_la) <= 90 && Math.abs(_ln) <= 180)) { alert('Некорректные координаты'); return; }
+  site.lat = _la; site.lng = _ln;
   drawSiteMarkers();
   map.setView([site.lat, site.lng], 15);
-  drawAllZones();
+  refreshZones();
   autoSave();
 });
 
@@ -2435,7 +2437,7 @@ btnApplySiteFields.addEventListener('click', () => {
   fillSiteSelect();
   siteSelect.value = site.id;
   drawSiteMarkers();
-  drawAllZones();
+  refreshZones();
   autoSave();
   showSaveIndicator('💾 Параметры вышки сохранены');
 });
@@ -2459,7 +2461,8 @@ polygonWeightInput.addEventListener('input', () => autoSave());
 polygonColorInput.addEventListener('input', () => autoSave());
 
 function clearAllData() {
-  if (!confirm('Удалить ВСЕ сохранённые данные?')) return;
+  if (!confirm('Удалить ВСЕ сохранённые данные? (можно откатить кнопкой «Откатить»)')) return;
+  snapshot();
   sites = []; freeZones = []; customPolygons = []; gridPointsData = []; gridPoints = []; gridLines = []; azimuthLinesData = []; drawnZonesVisible = false;
   Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
   siteMarkerGroup.clearLayers(); zonesLayerGroup.clearLayers(); azimuthLayerGroup.clearLayers(); freeLayerGroup.clearLayers(); gridLayerGroup.clearLayers(); polygonLayerGroup.clearLayers();
@@ -2471,60 +2474,28 @@ function clearAllData() {
 btnClearAll.addEventListener('click', clearAllData);
 
 btnExportJson.addEventListener('click', () => {
-  const data = { sites, freeZones, customPolygons, gridPointsData, gridStyle };
+  const data = { _signature: BACKUP_SIGNATURE, _version: DATA_VERSION, ...cleanState() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'billing_config.json';
-  a.click();
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 });
 
 btnFullBackup.addEventListener('click', () => {
   const data = {
     _signature: BACKUP_SIGNATURE,
     _version: DATA_VERSION,
-    sites, freeZones, customPolygons, gridPointsData, gridStyle, azimuthLinesData
+    ...cleanState()
   };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `backup_${new Date().toISOString().slice(0,10)}.backup`;
-  a.click();
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 });
 
 btnRestoreBackup.addEventListener('click', () => backupFileInput.click());
-backupFileInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    try {
-      const data = JSON.parse(evt.target.result);
-      if (Array.isArray(data.sites)) sites = data.sites;
-      if (Array.isArray(data.freeZones)) freeZones = data.freeZones;
-      if (Array.isArray(data.customPolygons)) customPolygons = data.customPolygons;
-      if (Array.isArray(data.gridPointsData)) gridPointsData = data.gridPointsData;
-      if (data.gridStyle) {
-        gridStyle = data.gridStyle;
-        document.getElementById('gridLineWeight').value = gridStyle.weight || 1.5;
-        document.getElementById('gridLineColor').value = gridStyle.color || '#3f51b5';
-      }
-      fillSiteSelect();
-      fillFreeZoneSelect();
-      fillPolygonSelect();
-      drawSiteMarkers();
-      redrawFreeZones();
-      redrawCustomPolygons();
-      restoreGridOnMap();
-      drawAllZones();
-      autoSave(true);
-      showSaveIndicator('✅ Бэкап успешно восстановлен');
-    } catch (err) {
-      alert('Ошибка при восстановлении бэкапа: ' + err.message);
-    }
-  };
-  reader.readAsText(file);
-});
 
 // ======== СВОРАЧИВАНИЕ САЙДБАРА НА ДЕСКТОПЕ ========
 const sidebarDesktopToggle = document.getElementById('sidebar-desktop-toggle');
@@ -2640,7 +2611,7 @@ centerBtn.addEventListener('click', (e) => {
     if (userLocationMarker) map.removeLayer(userLocationMarker);
     userLocationMarker = L.marker([latitude, longitude], { icon: userLocationIcon }).addTo(map);
     map.setView([latitude, longitude], 15);
-  });
+  }, err => alert('Не удалось определить местоположение: ' + err.message), { enableHighAccuracy: true, timeout: 15000 });
 });
 
 map.on('click', () => {
@@ -2651,6 +2622,7 @@ map.on('click', () => {
 
 // Запуск и синхронизация
 loadFromLocalStorage();
+restoreViewAndLayer();
 updateGridLinePreview();
 fillSiteSelect();
 if (sites.length > 0) {
@@ -2666,6 +2638,265 @@ restoreGridOnMap();
 restoreAzimuthLines();
 if (drawnZonesVisible) drawAllZones();
 updateBackupStats();
+
+// ================= V8.0: ИСПРАВЛЕНИЯ И НОВЫЕ ФУНКЦИИ =================
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function xe(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function nextSiteId(){let n=1;while(sites.some(s=>s.id==='SITE_'+n))n++;return 'SITE_'+n;}
+function refreshZones(){if(drawnZonesVisible)drawAllZones();}
+function cleanState(){
+  return JSON.parse(JSON.stringify({
+    sites,
+    freeZones:freeZones.map(({polyLayer,lineLayer,...z})=>z),
+    customPolygons:customPolygons.map(({layer,...p})=>p),
+    gridPointsData,gridStyle,azimuthLinesData
+  }));
+}
+function snapshot(){
+  try{const a=JSON.parse(localStorage.getItem('billing_snapshots')||'[]');
+    a.unshift({t:Date.now(),d:cleanState()});
+    localStorage.setItem('billing_snapshots',JSON.stringify(a.slice(0,3)));}catch(e){}
+}
+function restoreViewAndLayer(){
+  try{
+    const v=JSON.parse(localStorage.getItem(STORAGE_KEYS.MAP_VIEW)||'null');
+    if(v&&isFinite(v.lat)&&isFinite(v.lng))map.setView([v.lat,v.lng],v.zoom||12);
+    const n=localStorage.getItem(STORAGE_KEYS.MAP_LAYER);
+    if(n&&mapProviders[n]&&n!==currentMapLayer){
+      Object.values(mapProviders).forEach(l=>map.hasLayer(l)&&map.removeLayer(l));
+      mapProviders[n].addTo(map);currentMapLayer=n;
+    }
+  }catch(e){}
+}
+function applyState(d){
+  if(!d||typeof d!=='object')throw new Error('Неверный формат файла');
+  const ok=Array.isArray;
+  if(ok(d.sites)&&d.sites.some(s=>!s||!isFinite(+s.lat)||!isFinite(+s.lng)||!ok(s.sectors)))throw new Error('Некорректные данные вышек');
+  snapshot();
+  if(ok(d.sites))sites=d.sites.map(s=>({...s,id:String(s.id),lat:+s.lat,lng:+s.lng,
+    sectors:s.sectors.map(c=>({...c,id:+c.id,azimuth:+c.azimuth,beamWidth:+c.beamWidth,radius:+c.radius}))}));
+  if(ok(d.freeZones))freeZones=d.freeZones.map(z=>({...z,polyLayer:null,lineLayer:null,color:z.color||getUniqueColor(z.id)}));
+  if(ok(d.customPolygons))customPolygons=d.customPolygons.filter(p=>p&&ok(p.coords));
+  if(ok(d.gridPointsData))gridPointsData=d.gridPointsData;
+  if(d.gridStyle){gridStyle={...gridStyle,...d.gridStyle};
+    ['Color','Style','Weight','Opacity'].forEach(k=>{const el=document.getElementById('gridLine'+k),v=gridStyle[k.toLowerCase()];if(el&&v!=null)el.value=v;});}
+  if(ok(d.azimuthLinesData))azimuthLinesData=d.azimuthLinesData;
+  azimuthLayerGroup.clearLayers();restoreAzimuthLines();
+  fillSiteSelect();if(sites.length){siteSelect.value=sites[0].id;syncUiFromSite();}
+  fillFreeZoneSelect();fillPolygonSelect();drawSiteMarkers();redrawFreeZones();redrawCustomPolygons();
+  gridLayerGroup.clearLayers();gridPoints=[];gridLines=[];restoreGridOnMap();
+  zonesLayerGroup.clearLayers();if(sites.length)drawAllZones();
+  autoSave(true);updateBackupStats();
+}
+function readFileAs(file,cb){const r=new FileReader();r.onload=e=>{try{cb(e.target.result);}catch(err){alert('Ошибка: '+err.message);}};r.readAsText(file);}
+function saveBlob(text,name,mime){
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:mime}));a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+
+// --- ПРАВКА: обработчики выпадающих списков (раньше отсутствовали) ---
+siteSelect.addEventListener('change',()=>{syncUiFromSite();const s=getCurrentSite();if(s)map.setView([s.lat,s.lng],Math.max(map.getZoom(),13));});
+sectorSelect.addEventListener('change',syncSectorInputsFromSelect);
+freeZoneSelect.addEventListener('change',()=>{
+  syncInputsFromFreeZone();
+  const z=freeZones.find(z=>z.id===parseInt(freeZoneSelect.value));
+  if(z)map.setView([z.lat,z.lng],Math.max(map.getZoom(),13));
+});
+let _fzPrev='',_fzCnt=0;
+btnDrawFree.addEventListener('click',()=>{_fzPrev=freeZoneSelect.value;_fzCnt=freeZones.length;},true);
+btnDrawFree.addEventListener('click',()=>{
+  if(_fzPrev)freeZoneSelect.value=_fzPrev;
+  else if(freeZones.length>_fzCnt)freeZoneSelect.value=String(Math.max(...freeZones.map(z=>z.id)));
+});
+
+// --- ПРАВКА: Импорт JSON и восстановление бэкапа ---
+btnImportJson.addEventListener('click',()=>jsonFileInput.click());
+jsonFileInput.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
+  readFileAs(f,t=>{applyState(JSON.parse(t));showSaveIndicator('✅ Конфигурация импортирована');});e.target.value='';});
+backupFileInput.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
+  readFileAs(f,t=>{applyState(JSON.parse(t));showSaveIndicator('✅ Бэкап восстановлен');});e.target.value='';});
+
+// --- НОВОЕ: откат (до 3 последних состояний) ---
+(function(){
+  const b=document.createElement('button');b.textContent='↩️ Откатить';b.title='Вернуть состояние до последнего удаления/импорта (повторное нажатие — вернуть обратно)';
+  document.querySelector('.backup-panel .buttons-row').appendChild(b);
+  b.addEventListener('click',()=>{
+    const a=JSON.parse(localStorage.getItem('billing_snapshots')||'[]');
+    if(!a.length)return alert('Нет сохранённых состояний для отката');
+    const s=a.shift();localStorage.setItem('billing_snapshots',JSON.stringify(a));
+    applyState(s.d);showSaveIndicator('↩️ Состояние от '+new Date(s.t).toLocaleTimeString()+' восстановлено');
+  });
+})();
+
+// --- Клавиши: Esc отменяет режимы, Ctrl+Z убирает последнюю вершину ---
+function undoVertex(){
+  if(!isDrawingPolygon||!currentDrawingCoords.length)return;
+  currentDrawingCoords.pop();
+  if(currentDrawingPolyline)currentDrawingPolyline.setLatLngs(currentDrawingCoords);
+  polygonStatusHint.textContent='Точек: '+currentDrawingCoords.length;
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){if(addSiteMode)btnAddSite.click();if(isDrawingPolygon)cancelDrawingPolygon();}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'&&isDrawingPolygon&&!/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();undoVertex();}
+});
+(function(){
+  const b=document.createElement('button');b.textContent='↶ Отменить точку';
+  btnFinishPolygon.parentElement.appendChild(b);b.addEventListener('click',undoVertex);
+})();
+
+// --- НОВОЕ: площадь и периметр полигона ---
+function polyStats(c){
+  const lat0=deg2rad(c.reduce((s,p)=>s+p[0],0)/c.length),k=111320;
+  const P=c.map(p=>[p[1]*k*Math.cos(lat0),p[0]*k]);let a=0,per=0;
+  for(let i=0;i<P.length;i++){const q=P[(i+1)%P.length];a+=P[i][0]*q[1]-q[0]*P[i][1];per+=Math.hypot(q[0]-P[i][0],q[1]-P[i][1]);}
+  return{area:Math.abs(a)/2,per};
+}
+function showPolyStats(){
+  const p=customPolygons.find(p=>p.id===parseInt(polygonSelect.value));if(!p||!p.coords||p.coords.length<3)return;
+  const s=polyStats(p.coords);
+  polygonStatusHint.textContent='Площадь: '+(s.area/1e6).toFixed(3)+' км² ('+(s.area/1e4).toFixed(1)+' га) · Периметр: '+(s.per/1000).toFixed(2)+' км';
+  polygonStatusHint.style.color='#111';
+}
+polygonSelect.addEventListener('change',showPolyStats);
+btnFinishPolygon.addEventListener('click',()=>setTimeout(showPolyStats,0));
+
+// --- НОВОЕ: пересечение отмеченных секторов («В экспорт») ---
+function intersectSelected(){
+  if(typeof turf==='undefined')return alert('Библиотека turf.js не загружена (нужен интернет при первом запуске)');
+  const L=[];
+  sites.forEach(s=>s.sectors.forEach(c=>{if(c.selectedForExport)L.push(makeSectorPolygon(s.lat,s.lng,c.azimuth,c.beamWidth,c.radius));}));
+  freeZones.forEach(z=>{if(z.selectedForExport)L.push(makeSectorPolygon(z.lat,z.lng,z.azimuth,z.beamWidth,z.radius));});
+  if(L.length<2)return alert('Отметьте «В экспорт» минимум у двух секторов/зон');
+  const F=c=>turf.polygon([c.map(p=>[p[1],p[0]])]);
+  let acc=F(L[0]);
+  try{for(let i=1;i<L.length&&acc;i++)acc=turf.intersect(acc,F(L[i]));}catch(e){return alert('Не удалось вычислить пересечение: '+e.message);}
+  if(!acc)return alert('Выбранные сектора не пересекаются');
+  const g=acc.geometry,rings=g.type==='Polygon'?[g.coordinates]:g.coordinates;
+  let id=customPolygons.length?Math.max(...customPolygons.map(p=>p.id)):0,area=0;
+  rings.forEach((r,i)=>{
+    const coords=r[0].slice(0,-1).map(p=>[p[1],p[0]]);area+=polyStats(coords).area;
+    customPolygons.push({id:++id,name:'Пересечение ('+L.length+')'+(rings.length>1?' №'+(i+1):''),color:'#ff5722',weight:2.5,coords});
+  });
+  redrawCustomPolygons();fillPolygonSelect();polygonSelect.value=id;autoSave();updateBackupStats();
+  const last=customPolygons[customPolygons.length-1];if(last.layer)map.fitBounds(last.layer.getBounds(),{maxZoom:16});
+  showSaveIndicator('🧩 Пересечение: '+(area/1e6).toFixed(3)+' км²');
+}
+(function(){
+  const b=document.createElement('button');b.textContent='🧩 Пересечение отмеченных';
+  b.title='Пересечение всех секторов/зон с галочкой «В экспорт» → новый полигон';
+  document.getElementById('btnClearZones').parentElement.appendChild(b);b.addEventListener('click',intersectSelected);
+})();
+
+// --- НОВОЕ: импорт вышек из CSV ---
+function importCsv(text){
+  const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)throw new Error('Пустой файл');
+  const sep=[';','\t',','].find(s=>lines[0].includes(s))||',';
+  const H=lines[0].split(sep).map(h=>h.trim().toLowerCase());
+  const col=(...n)=>H.findIndex(h=>n.includes(h));
+  const iN=col('name','имя','название'),iC=col('cellid','cell_id','cid'),iO=col('operator','оператор'),
+    iLa=col('lat','latitude','широта'),iLn=col('lng','lon','longitude','долгота'),
+    iA=col('azimuth','az','азимут'),iB=col('beamwidth','width','ширина'),iR=col('radius','r','радиус');
+  if(iLa<0||iLn<0||iA<0)throw new Error('Нужны колонки lat, lng, azimuth (необязательно: name, cellid, operator, width, radius)');
+  const f=v=>parseFloat(String(v||'').replace(',','.'));
+  snapshot();let added=0,bad=0;
+  lines.slice(1).forEach(l=>{
+    const v=l.split(sep).map(x=>x.trim()),lat=f(v[iLa]),lng=f(v[iLn]),az=f(v[iA]);
+    if(!isFinite(lat)||!isFinite(lng)||!isFinite(az)||Math.abs(lat)>90||Math.abs(lng)>180){bad++;return;}
+    const cell=iC>=0?v[iC]:'';
+    let s=sites.find(s=>Math.abs(s.lat-lat)<1e-5&&Math.abs(s.lng-lng)<1e-5&&(s.cellId||'')===cell);
+    if(!s){s={id:nextSiteId(),name:(iN>=0&&v[iN])||'Вышка '+(sites.length+1),cellId:cell,operator:iO>=0?v[iO]:'',lat,lng,sectors:[]};sites.push(s);}
+    const bw=iB>=0&&f(v[iB])>0?Math.min(360,f(v[iB])):120,r=iR>=0&&f(v[iR])>0?f(v[iR]):2000;
+    s.sectors.push({id:s.sectors.length+1,azimuth:((az%360)+360)%360,beamWidth:bw,radius:r,selectedForExport:false});added++;
+  });
+  fillSiteSelect();if(sites.length){siteSelect.value=sites[sites.length-1].id;syncUiFromSite();}
+  drawSiteMarkers();drawAllZones();autoSave();updateBackupStats();
+  showSaveIndicator('📥 CSV: секторов '+added+(bad?', пропущено строк '+bad:''),bad>0&&!added);
+}
+(function(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.csv,.txt,.tsv';inp.style.display='none';document.body.appendChild(inp);
+  inp.addEventListener('change',e=>{const f=e.target.files[0];if(f)readFileAs(f,importCsv);e.target.value='';});
+  const b=document.createElement('button');b.textContent='📄 CSV вышек';
+  b.title='Колонки: lat, lng, azimuth [, name, cellid, operator, width, radius]. Разделитель ; , или Tab';
+  document.getElementById('btnClearAll').parentElement.appendChild(b);b.addEventListener('click',()=>inp.click());
+})();
+
+// --- НОВОЕ: экспорт KML ---
+function buildKml(){
+  const pm=(n,c)=>'<Placemark><name>'+xe(n)+'</name><Style><LineStyle><color>ff2196f3</color><width>2</width></LineStyle><PolyStyle><color>552196f3</color></PolyStyle></Style><Polygon><outerBoundaryIs><LinearRing><coordinates>'+
+    c.concat([c[0]]).map(p=>p[1].toFixed(6)+','+p[0].toFixed(6)+',0').join(' ')+'</coordinates></LinearRing></outerBoundaryIs></Polygon></Placemark>';
+  let o='';
+  sites.forEach(s=>s.sectors.forEach(c=>{o+=pm(s.name+' Сектор '+c.id,makeSectorPolygon(s.lat,s.lng,c.azimuth,c.beamWidth,c.radius));}));
+  freeZones.forEach(z=>{o+=pm(z.name||'zone '+z.id,makeSectorPolygon(z.lat,z.lng,z.azimuth,z.beamWidth,z.radius));});
+  customPolygons.forEach(p=>{if(p.coords&&p.coords.length>2)o+=pm(p.name||'Полигон '+p.id,p.coords);});
+  return '<?xml version="1.0" encoding="UTF-8"?>\n<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>Billing</name>'+o+'</Document></kml>';
+}
+(function(){
+  const b=document.createElement('button');b.textContent='🌍 KML (всё)';
+  document.getElementById('btnExportAllGpx').parentElement.appendChild(b);
+  b.addEventListener('click',()=>{saveBlob(buildKml(),'billing_zones.kml','application/vnd.google-earth.kml+xml');showSaveIndicator('📥 KML сохранён');});
+})();
+
+// --- НОВОЕ: поиск по координатам (десятичные, градусы-минуты-секунды) ---
+function parseCoords(s){
+  s=String(s).trim();
+  if(!/^[\d\s.,;°'′"″NSEWСЮВЗnsewсювз+-]+$/.test(s)||!/\d/.test(s))return null;
+  const n=(s.match(/\d+(?:[.,]\d+)?/g)||[]).map(x=>parseFloat(x.replace(',','.')));
+  let a,b;
+  if(n.length===2){const m=s.match(/(-?\d+(?:[.,]\d+)?)\D+?(-?\d+(?:[.,]\d+)?)/);a=parseFloat(m[1].replace(',','.'));b=parseFloat(m[2].replace(',','.'));}
+  else if(n.length===4){a=n[0]+n[1]/60;b=n[2]+n[3]/60;}
+  else if(n.length===6){a=n[0]+n[1]/60+n[2]/3600;b=n[3]+n[4]/60+n[5]/3600;}
+  else return null;
+  if(/[SЮ]/i.test(s))a=-Math.abs(a);if(/[WЗ]/i.test(s))b=-Math.abs(b);
+  if(Math.abs(a)>90&&Math.abs(b)<=90){const t=a;a=b;b=t;}
+  return(Math.abs(a)<=90&&Math.abs(b)<=180)?[a,b]:null;
+}
+btnSearchAddress.addEventListener('click',ev=>{
+  const c=parseCoords(addressInput.value);if(!c)return;
+  ev.stopImmediatePropagation();
+  if(searchMarker)map.removeLayer(searchMarker);
+  searchMarker=L.marker(c).addTo(map).bindPopup(esc(formatCoords(c[0],c[1]))).openPopup();
+  map.setView(c,16);freeLatInput.value=c[0].toFixed(5);freeLngInput.value=c[1].toFixed(5);autoSave();
+},true);
+addressInput.addEventListener('keydown',e=>{if(e.key==='Enter')btnSearchAddress.click();});
+
+// --- НОВОЕ: офлайн-кэш тайлов видимой области ---
+(function(){
+  const p=document.createElement('div');p.className='panel-block';
+  p.innerHTML='<span class="panel-title">📶 Офлайн-карта</span><div class="buttons-row"><button id="btnCacheArea">📥 Скачать видимую область</button><button id="btnClearTiles">🧹 Очистить кэш</button></div><div id="tilesStatus" style="font-size:11px;font-weight:600;margin-top:4px"></div>';
+  document.getElementById('controls').appendChild(p);
+  const st=document.getElementById('tilesStatus');
+  document.getElementById('btnClearTiles').addEventListener('click',async()=>{await caches.delete('billing-tiles-v1');st.textContent='Кэш тайлов очищен';});
+  document.getElementById('btnCacheArea').addEventListener('click',async()=>{
+    const l=mapProviders[currentMapLayer];
+    if(!l||!l._url||!('caches' in window))return alert('Офлайн-кэш недоступен');
+    const bd=map.getBounds(),z0=Math.round(map.getZoom()),zMax=Math.min(z0+2,l.options.maxZoom||17,17);
+    const tx=(g,z)=>Math.floor((g+180)/360*2**z),ty=(t,z)=>Math.floor((1-Math.log(Math.tan(deg2rad(t))+1/Math.cos(deg2rad(t)))/Math.PI)/2*2**z);
+    const urls=[];
+    for(let z=z0;z<=zMax;z++)for(let x=tx(bd.getWest(),z);x<=tx(bd.getEast(),z);x++)for(let y=ty(bd.getNorth(),z);y<=ty(bd.getSouth(),z);y++)
+      urls.push(l._url.replace('{s}','a').replace('{r}','').replace('{x}',x).replace('{y}',y).replace('{z}',z));
+    if(urls.length>1500)return alert('Слишком много тайлов ('+urls.length+'). Приблизьте карту (лимит 1500).');
+    if(!confirm('Скачать '+urls.length+' тайлов слоя «'+currentMapLayer+'» (zoom '+z0+'–'+zMax+') для работы без интернета?'))return;
+    const c=await caches.open('billing-tiles-v1');let ok=0;
+    for(let i=0;i<urls.length;i+=6){
+      await Promise.all(urls.slice(i,i+6).map(u=>fetch(u).then(r=>r.ok?c.put(u,r).then(()=>ok++):0).catch(()=>{})));
+      st.textContent='Загрузка: '+Math.min(i+6,urls.length)+'/'+urls.length;
+    }
+    st.textContent='Готово: сохранено '+ok+' из '+urls.length+(ok<urls.length?' (часть провайдеров блокирует загрузку)':'');
+  });
+})();
+
+// --- НОВОЕ: уведомление об обновлении приложения ---
+if('serviceWorker' in navigator){
+  const had=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(!had)return;
+    const b=document.createElement('div');
+    b.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:100000;background:#1976d2;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.4)';
+    b.innerHTML='🔄 Доступна новая версия <button style="margin-left:8px;padding:4px 10px">Обновить</button>';
+    b.querySelector('button').onclick=()=>location.reload();document.body.appendChild(b);
+  });
+}
 </script>
 
 </body>
