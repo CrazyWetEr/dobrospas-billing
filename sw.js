@@ -1,4 +1,4 @@
-const VERSION = 'billing-v8.1';
+const VERSION = 'billing-v8.2';
 const TILES = 'billing-tiles-v1';
 const MAX_TILES = 4000;
 
