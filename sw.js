@@ -1,4 +1,4 @@
-const VERSION = 'billing-v8.0';
+const VERSION = 'billing-v8.1';
 const TILES = 'billing-tiles-v1';
 const MAX_TILES = 4000;
 
@@ -17,7 +17,6 @@ self.addEventListener('install', (event) => {
     for (const url of EXTERNAL) {
       try { const r = await fetch(url, { mode: 'cors' }); if (r.ok) await cache.put(url, r); } catch (e) { console.warn('[SW] ext skip', url); }
     }
-    await self.skipWaiting();
   })());
 });
 

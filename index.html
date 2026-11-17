@@ -2886,17 +2886,35 @@ addressInput.addEventListener('keydown',e=>{if(e.key==='Enter')btnSearchAddress.
   });
 })();
 
-// --- НОВОЕ: уведомление об обновлении приложения ---
-if('serviceWorker' in navigator){
-  const had=!!navigator.serviceWorker.controller;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(!had)return;
-    const b=document.createElement('div');
-    b.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:100000;background:#1976d2;color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.4)';
-    b.innerHTML='🔄 Доступна новая версия <button style="margin-left:8px;padding:4px 10px">Обновить</button>';
-    b.querySelector('button').onclick=()=>location.reload();document.body.appendChild(b);
+// --- НОВОЕ: обновление приложения с кнопкой «Обновить» ---
+(function(){
+  if(!('serviceWorker' in navigator))return;
+  let reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(reloading)return;reloading=true;location.reload();});
+  function showUpdateBanner(worker){
+    if(document.getElementById('updateBanner'))return;
+    const b=document.createElement('div');b.id='updateBanner';
+    b.style.cssText='position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:100000;background:#1976d2;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,.45);display:flex;gap:10px;align-items:center;max-width:92vw';
+    b.innerHTML='<span>🔄 Доступна новая версия</span><button id="updNow" style="padding:6px 12px;border:0;border-radius:8px;font-weight:700;cursor:pointer">Обновить</button><button id="updLater" style="padding:6px 10px;border:0;border-radius:8px;background:transparent;color:#fff;cursor:pointer">Позже</button>';
+    document.body.appendChild(b);
+    document.getElementById('updNow').onclick=()=>{
+      try{autoSave(true);}catch(e){}
+      b.querySelector('span').textContent='⏳ Обновляю…';
+      worker.postMessage({type:'SKIP_WAITING'});
+    };
+    document.getElementById('updLater').onclick=()=>b.remove();
+  }
+  navigator.serviceWorker.ready.then(reg=>{
+    if(reg.waiting&&navigator.serviceWorker.controller)showUpdateBanner(reg.waiting);
+    reg.addEventListener('updatefound',()=>{
+      const nw=reg.installing;if(!nw)return;
+      nw.addEventListener('statechange',()=>{if(nw.state==='installed'&&navigator.serviceWorker.controller)showUpdateBanner(nw);});
+    });
+    const check=()=>reg.update().catch(()=>{});
+    setInterval(check,30*60*1000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
   });
-}
+})();
 </script>
 
 </body>
